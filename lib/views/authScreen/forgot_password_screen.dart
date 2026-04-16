@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../customWidgets/custom_text_field.dart';
 import '../../theme/theme.dart';
 import '../../utils/validators.dart';
+import '../../services/auth_services.dart';
+import '../../config/get_it.dart';
 import 'auth_logo.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -16,11 +18,35 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await getIt<AuthService>().resetPassword(_emailController.text.trim());
+      Get.snackbar(
+        'Link Sent',
+        'Password reset instructions sent to your email.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppTheme.primary,
+        colorText: AppTheme.white,
+        margin: const EdgeInsets.all(24),
+        borderRadius: 12,
+      );
+      Get.back(); // Go back to Login Screen
+    } catch (e) {
+      Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -82,20 +108,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                 // Submit Button
                 ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Get.snackbar(
-                        'Link Sent',
-                        'Password reset instructions sent to your email.',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: AppTheme.primary,
-                        colorText: AppTheme.white,
-                        margin: const EdgeInsets.all(24),
-                        borderRadius: 12,
-                      );
-                      Get.back(); // Go back to Login Screen
-                    }
-                  },
+                  onPressed: _isLoading ? null : _resetPassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     foregroundColor: AppTheme.white,
@@ -104,13 +117,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'Reset Password',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          'Reset Password',
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                 ),
               ],
             ),

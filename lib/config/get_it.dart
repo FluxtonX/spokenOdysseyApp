@@ -7,6 +7,8 @@ import 'package:talker_bloc_logger/talker_bloc_logger_settings.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'logger_services/talker_success_log.dart';
 import '../cache/shared_preferences_helper.dart';
+import '../services/auth_services.dart';
+import '../services/biometric_service.dart';
 part 'logger_services/logger_service.dart';
 
 final GetIt getIt = GetIt.instance;
@@ -17,4 +19,6 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<SharedPrefsHelper>(
     () => SharedPrefsHelper(sharedPreferences: prefs),
   );
+  getIt.registerLazySingleton<AuthService>(() => AuthService());
+  getIt.registerLazySingleton<BiometricService>(() => BiometricService());
 }

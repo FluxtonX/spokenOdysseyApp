@@ -3,7 +3,10 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../../theme/theme.dart';
-import '../onboarding/onboarding_screen.dart';
+import '../../controllers/auth_controller.dart';
+
+import '../authScreen/login_screen.dart';
+import '../tabs/main_tab_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,7 +49,12 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Navigate after 3 seconds
     Timer(const Duration(seconds: 3), () {
-      Get.off(() => const OnboardingScreen());
+      final authController = Get.find<AuthController>();
+      if (authController.firebaseUser.value != null) {
+        Get.offAll(() => const MainTabScreen());
+      } else {
+        Get.offAll(() => const LoginScreen());
+      }
     });
   }
 

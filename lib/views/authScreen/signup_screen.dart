@@ -4,7 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../customWidgets/custom_text_field.dart';
 import '../../theme/theme.dart';
 import '../../utils/validators.dart';
-import '../tabs/main_tab_screen.dart';
+import '../../controllers/auth_controller.dart';
+
 import 'auth_logo.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -21,9 +22,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
+  final AuthController _authController = Get.find<AuthController>();
 
   @override
   void dispose() {
@@ -32,6 +31,25 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _signUp() {
+    if (_formKey.currentState!.validate()) {
+      if (_passwordController.text != _confirmPasswordController.text) {
+        Get.snackbar(
+          'Error',
+          'Passwords do not match',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      _authController.register(
+        _emailController.text.trim(),
+        _nameController.text.trim(),
+        _passwordController.text.trim(),
+      );
+    }
   }
 
   @override
@@ -128,26 +146,33 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 14),
 
                 // Create Account Button
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Get.offAll(() => const MainTabScreen());
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: AppTheme.white,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Obx(
+                  () => ElevatedButton(
+                    onPressed: _authController.isLoading.value ? null : _signUp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: AppTheme.white,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'Create Account',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    child: _authController.isLoading.value
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Create Account',
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),

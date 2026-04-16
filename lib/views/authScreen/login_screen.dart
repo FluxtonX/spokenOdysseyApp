@@ -4,7 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../customWidgets/custom_text_field.dart';
 import '../../theme/theme.dart';
 import '../../utils/validators.dart';
-import '../tabs/main_tab_screen.dart';
+import '../../controllers/auth_controller.dart';
+
 import 'auth_logo.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
@@ -20,13 +21,22 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
+  final AuthController _authController = Get.find<AuthController>();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _signIn() {
+    if (_formKey.currentState!.validate()) {
+      _authController.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+    }
   }
 
   @override
@@ -106,26 +116,33 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 32),
 
                 // Sign In Button
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Get.offAll(() => const MainTabScreen());
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: AppTheme.white,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Obx(
+                  () => ElevatedButton(
+                    onPressed: _authController.isLoading.value ? null : _signIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: AppTheme.white,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'Sign In',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    child: _authController.isLoading.value
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Sign In',
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -150,28 +167,39 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
 
                 // Use Biometrics Button
-                OutlinedButton.icon(
-                  onPressed: () {
-                    // Biometrics
-                  },
-                  icon: const Icon(
-                    Icons.fingerprint,
-                    color: AppTheme.textPrimary,
-                  ),
-                  label: Text(
-                    'Use Biometrics',
-                    style: GoogleFonts.outfit(
+                Obx(
+                  () => OutlinedButton.icon(
+                    onPressed: _authController.isBiometricLoading.value
+                        ? null
+                        : () => _authController.loginWithBiometrics(),
+                    icon: const Icon(
+                      Icons.fingerprint,
                       color: AppTheme.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: AppTheme.white,
-                    side: const BorderSide(color: AppTheme.border),
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    label: _authController.isBiometricLoading.value
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.textPrimary,
+                            ),
+                          )
+                        : Text(
+                            'Use Biometrics',
+                            style: GoogleFonts.outfit(
+                              color: AppTheme.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: AppTheme.white,
+                      side: const BorderSide(color: AppTheme.border),
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),

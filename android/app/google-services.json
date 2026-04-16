@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "884058304379",
+    "project_id": "spoken-odesey",
+    "storage_bucket": "spoken-odesey.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884058304379:android:5ddba5860564786ece97de",
+        "android_client_info": {
+          "package_name": "com.fluxtonx.spokenodyssey"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBHsX-5YzkyQ9DBNJgpTfL8tZUdl4Q0C4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
