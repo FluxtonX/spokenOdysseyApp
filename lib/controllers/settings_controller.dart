@@ -12,6 +12,7 @@ class SettingsController extends GetxController {
 
   // Biometric state
   final RxBool isBiometricEnabled = false.obs;
+  final RxString biometricType = 'Biometric'.obs;
 
   // Privacy Settings (matching new screenshot)
   final RxString defaultEntryPrivacy = 'Private - Only by you'.obs;
@@ -57,12 +58,31 @@ class SettingsController extends GetxController {
     super.onInit();
     // Load persisted biometric setting
     isBiometricEnabled.value = _biometricService.isBiometricEnabled();
+    // Load biometric type
+    _loadBiometricType();
+  }
+
+  Future<void> _loadBiometricType() async {
+    biometricType.value = await _biometricService.getBiometricType();
   }
 
   void toggleBiometrics(bool value) async {
     final AuthController authController = Get.find<AuthController>();
 
     if (value) {
+      // Check if device supports biometrics first
+      bool deviceSupported = await _biometricService.isDeviceSupported();
+      if (!deviceSupported) {
+        isBiometricEnabled.value = false;
+        Get.snackbar(
+          'Not Supported',
+          'Biometric authentication is not supported on this device.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withOpacity(0.1),
+        );
+        return;
+      }
+
       // Check if we have credentials in the session to store
       if (authController.sessionEmail == null ||
           authController.sessionPassword == null) {
@@ -91,16 +111,17 @@ class SettingsController extends GetxController {
 
         Get.snackbar(
           'Success',
-          'Biometric login enabled successfully!',
+          '${biometricType.value} login enabled successfully!',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green.withOpacity(0.1),
         );
       } else {
         isBiometricEnabled.value = false;
         Get.snackbar(
-          'Cancelled',
-          'Authentication failed or cancelled.',
+          'Authentication Failed',
+          'Biometric authentication was cancelled or failed. Please ensure Face ID/Touch ID is properly set up on your device.',
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withOpacity(0.1),
         );
       }
     } else {

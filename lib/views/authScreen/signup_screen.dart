@@ -70,8 +70,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   'Create your archive',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
                   ),
                 ),
@@ -81,6 +81,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     fontSize: 16,
+                    height: 1.5,
                     color: AppTheme.textSecondary,
                   ),
                 ),
@@ -138,9 +139,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   'Your recordings are encrypted and private by default. You control access completely.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    fontSize: 12,
+                    fontSize: 13,
                     color: AppTheme.textSecondary,
-                    height: 1.5,
+                    height: 1.6,
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -169,8 +170,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         : Text(
                             'Create Account',
                             style: GoogleFonts.outfit(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                   ),
@@ -185,7 +186,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       'Already have an account? ',
                       style: GoogleFonts.outfit(
                         color: AppTheme.textSecondary,
-                        fontSize: 14,
+                        fontSize: 15,
                       ),
                     ),
                     GestureDetector(
@@ -196,8 +197,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         'Sign in',
                         style: GoogleFonts.outfit(
                           color: AppTheme.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

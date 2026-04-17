@@ -87,8 +87,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
               Text(
                 widget.label!,
                 style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimary,
                 ),
               ),
@@ -114,9 +114,13 @@ class _CustomTextFieldState extends State<CustomTextField> {
           focusNode: widget.focusNode,
           autofocus: widget.autofocus,
           inputFormatters: widget.inputFormatters,
-          style: GoogleFonts.outfit(fontSize: 15, color: AppTheme.textPrimary),
+          style: GoogleFonts.outfit(fontSize: 16, color: AppTheme.textPrimary),
           decoration: InputDecoration(
             hintText: widget.hintText,
+            hintStyle: GoogleFonts.outfit(
+              fontSize: 15,
+              color: AppTheme.textSecondary,
+            ),
             errorText: widget.errorText,
             contentPadding:
                 widget.contentPadding ??

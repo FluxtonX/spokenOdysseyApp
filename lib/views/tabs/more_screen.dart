@@ -364,15 +364,17 @@ class MoreScreen extends StatelessWidget {
           const SizedBox(height: 25),
 
           // Biometric Toggle Section
-          _buildSettingsCard(
-            title: 'Biometric Verification',
-            subtitle: 'Secure your archive with FaceID or Fingerprint',
-            icon: Icons.fingerprint,
-            trailing: Obx(
-              () => Switch(
-                value: controller.isBiometricEnabled.value,
-                onChanged: (val) => controller.toggleBiometrics(val),
-                activeColor: const Color(0xFF5D5FEF),
+          Obx(
+            () => _buildSettingsCard(
+              title: '${controller.biometricType.value} Verification',
+              subtitle: 'Secure your archive with ${controller.biometricType.value.toLowerCase()}',
+              icon: controller.biometricType.value == 'Face ID' ? Icons.face : Icons.fingerprint,
+              trailing: Obx(
+                () => Switch(
+                  value: controller.isBiometricEnabled.value,
+                  onChanged: (val) => controller.toggleBiometrics(val),
+                  activeColor: const Color(0xFF5D5FEF),
+                ),
               ),
             ),
           ),

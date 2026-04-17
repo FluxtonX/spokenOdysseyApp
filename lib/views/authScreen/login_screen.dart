@@ -58,8 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Welcome back',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
                   ),
                 ),
@@ -69,6 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     fontSize: 16,
+                    height: 1.5,
                     color: AppTheme.textSecondary,
                   ),
                 ),
@@ -106,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'Forgot your password?',
                       style: GoogleFonts.outfit(
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: AppTheme.textSecondary,
                       ),
@@ -139,8 +140,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Text(
                             'Sign In',
                             style: GoogleFonts.outfit(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                   ),
@@ -167,41 +168,47 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
 
                 // Use Biometrics Button
-                Obx(
-                  () => OutlinedButton.icon(
-                    onPressed: _authController.isBiometricLoading.value
-                        ? null
-                        : () => _authController.loginWithBiometrics(),
-                    icon: const Icon(
-                      Icons.fingerprint,
-                      color: AppTheme.textPrimary,
-                    ),
-                    label: _authController.isBiometricLoading.value
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.textPrimary,
-                            ),
-                          )
-                        : Text(
-                            'Use Biometrics',
-                            style: GoogleFonts.outfit(
-                              color: AppTheme.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
+                FutureBuilder<String>(
+                  future: _authController.getBiometricType(),
+                  builder: (context, snapshot) {
+                    final biometricType = snapshot.data ?? 'Biometric';
+                    return Obx(
+                      () => OutlinedButton.icon(
+                        onPressed: _authController.isBiometricLoading.value
+                            ? null
+                            : () => _authController.loginWithBiometrics(),
+                        icon: Icon(
+                          biometricType == 'Face ID' ? Icons.face : Icons.fingerprint,
+                          color: AppTheme.textPrimary,
+                        ),
+                        label: _authController.isBiometricLoading.value
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              )
+                            : Text(
+                                'Use $biometricType',
+                                style: GoogleFonts.outfit(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: AppTheme.white,
+                          side: const BorderSide(color: AppTheme.border),
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: AppTheme.white,
-                      side: const BorderSide(color: AppTheme.border),
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -213,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       "Don't have an account? ",
                       style: GoogleFonts.outfit(
                         color: AppTheme.textSecondary,
-                        fontSize: 14,
+                        fontSize: 15,
                       ),
                     ),
                     GestureDetector(
@@ -224,8 +231,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         'Sign up',
                         style: GoogleFonts.outfit(
                           color: AppTheme.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

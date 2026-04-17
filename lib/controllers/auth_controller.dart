@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/auth_services.dart';
 import '../services/biometric_service.dart';
@@ -22,6 +23,11 @@ class AuthController extends GetxController {
 
   String? get sessionEmail => _sessionEmail;
   String? get sessionPassword => _sessionPassword;
+
+  // Get biometric type for UI display
+  Future<String> getBiometricType() async {
+    return await _biometricService.getBiometricType();
+  }
 
   @override
   void onInit() {
@@ -65,10 +71,24 @@ class AuthController extends GetxController {
   Future<void> loginWithBiometrics() async {
     try {
       if (!_biometricService.isBiometricEnabled()) {
+        String biometricType = await _biometricService.getBiometricType();
         Get.snackbar(
-          'Biometrics Disabled',
-          'Please first manual login and enable the biometric in settings',
+          '${biometricType} Disabled',
+          'Please first manual login and enable ${biometricType.toLowerCase()} in settings',
           snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      // Check if device supports biometrics
+      bool deviceSupported = await _biometricService.isDeviceSupported();
+      if (!deviceSupported) {
+        String biometricType = await _biometricService.getBiometricType();
+        Get.snackbar(
+          'Not Supported',
+          '${biometricType} authentication is not supported on this device.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withOpacity(0.1),
         );
         return;
       }
@@ -91,12 +111,21 @@ class AuthController extends GetxController {
             snackPosition: SnackPosition.BOTTOM,
           );
         }
+      } else {
+        String biometricType = await _biometricService.getBiometricType();
+        Get.snackbar(
+          'Authentication Failed',
+          '${biometricType} authentication was cancelled or failed.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withOpacity(0.1),
+        );
       }
     } catch (e) {
       Get.snackbar(
         'Biometric Login Failed',
-        e.toString(),
+        'An error occurred during biometric authentication. Please try manual login.',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.1),
       );
     } finally {
       isBiometricLoading.value = false;

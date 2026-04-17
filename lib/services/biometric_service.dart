@@ -13,7 +13,25 @@ class BiometricService {
 
   // Check if device supports biometrics
   Future<bool> isDeviceSupported() async {
-    return await _auth.isDeviceSupported();
+    try {
+      // On iOS, check both canCheckBiometrics and isDeviceSupported
+      final bool canCheck = await _auth.canCheckBiometrics;
+      final bool deviceSupported = await _auth.isDeviceSupported();
+      
+      return canCheck || deviceSupported;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Check if biometrics are available and enrolled
+  Future<bool> areBiometricsAvailable() async {
+    try {
+      List<BiometricType> availableBiometrics = await _auth.getAvailableBiometrics();
+      return availableBiometrics.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
   }
 
   // Check if user has enabled biometrics in settings
@@ -49,20 +67,42 @@ class BiometricService {
     await _secureStorage.delete(key: _keyPassword);
   }
 
+  // Get the primary biometric type available on the device
+  Future<String> getBiometricType() async {
+    try {
+      List<BiometricType> availableBiometrics = await _auth.getAvailableBiometrics();
+      
+      if (availableBiometrics.contains(BiometricType.face)) {
+        return 'Face ID';
+      } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
+        return 'Touch ID';
+      } else if (availableBiometrics.contains(BiometricType.strong)) {
+        return 'Biometric';
+      } else {
+        return 'Biometric';
+      }
+    } catch (e) {
+      return 'Biometric';
+    }
+  }
+
   // Authenticate user with biometrics
   Future<bool> authenticate() async {
     try {
-      bool canCheck = await _auth.canCheckBiometrics;
-      if (!canCheck) return false;
+      // Check if device supports any form of authentication
+      final bool deviceSupported = await isDeviceSupported();
+      if (!deviceSupported) return false;
 
+      // On iOS, even if no biometrics are enrolled, we can still authenticate with passcode
+      // The local_auth package handles this automatically
       return await _auth.authenticate(
-        localizedReason: 'Please authenticate to log in',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
+        localizedReason: 'Please authenticate to access your account',
+        biometricOnly: false, // Allow fallback to passcode on iOS
+        sensitiveTransaction: true,
       );
     } catch (e) {
+      // Handle specific iOS errors
+      print('Biometric authentication error: $e');
       return false;
     }
   }
