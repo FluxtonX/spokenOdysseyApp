@@ -5,7 +5,7 @@ import 'dart:async';
 import '../../theme/theme.dart';
 import '../../controllers/auth_controller.dart';
 
-import '../authScreen/login_screen.dart';
+import '../onboarding/onboarding_screen.dart';
 import '../tabs/main_tab_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (authController.firebaseUser.value != null) {
         Get.offAll(() => const MainTabScreen());
       } else {
-        Get.offAll(() => const LoginScreen());
+        Get.offAll(() => const OnboardingScreen());
       }
     });
   }
@@ -77,29 +77,7 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Logo Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppTheme.logoGradient,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.more_horiz,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                ),
-
+                Image.asset('assets/images/logo.png', width: 80, height: 80),
                 const SizedBox(height: 32),
 
                 // Title

@@ -117,6 +117,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       // Floating Plus Button Overlay
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
+        heroTag: 'discover_fab',
         backgroundColor: const Color(
           0xFF5544FF,
         ), // Vivid blue/blurple from design

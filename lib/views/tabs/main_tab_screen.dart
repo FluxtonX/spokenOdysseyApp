@@ -19,12 +19,12 @@ class MainTabScreen extends StatefulWidget {
 class _MainTabScreenState extends State<MainTabScreen> {
   late int _currentIndex;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    DiscoverScreen(),
-    AlbumsScreen(),
-    FamilyScreen(),
-    MoreScreen(),
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const DiscoverScreen(),
+    const AlbumsScreen(),
+    const FamilyScreen(),
+    const MoreScreen(),
   ];
 
   @override
