@@ -5,6 +5,7 @@ import '../../theme/theme.dart';
 import '../../controllers/settings_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../customWidgets/custom_text_field.dart';
+import 'insights_view.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -15,111 +16,261 @@ class MoreScreen extends StatelessWidget {
     final SettingsController controller = Get.put(SettingsController());
     final AuthController authController = Get.find<AuthController>();
 
-    return Scaffold(
-      backgroundColor:
-          Colors.white, // Settings screen uses white BG in screenshot
-      appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          _buildTabSelector(controller),
-          Expanded(
-            child: Obx(() {
-              switch (controller.activeTabIndex.value) {
-                case 0:
-                  return _buildProfileTab(controller);
-                case 1:
-                  return _buildPrivacyTab(controller, authController);
-                case 2:
-                  return _buildInsightsTab();
-                default:
-                  return const SizedBox();
-              }
-            }),
+    return Obx(() {
+      final int subPage = controller.activeSubPage.value;
+      final bool isMenu = subPage == -1;
+
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: isMenu ? null : _buildAppBar(context, controller, isMenu),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: _buildCurrentPage(controller, authController, subPage),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  Widget _buildCurrentPage(
+    SettingsController controller,
+    AuthController authController,
+    int subPage,
+  ) {
+    switch (subPage) {
+      case 0:
+        return _buildProfileTab(controller);
+      case 1:
+        return _buildPrivacyTab(controller, authController);
+      case 2:
+        return InsightsView();
+      default:
+        return _buildSettingsMenu(controller, authController);
+    }
+  }
+
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    SettingsController controller,
+    bool isMenu,
+  ) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
-        onPressed: () => Get.back(),
-      ),
+      leading: isMenu
+          ? null
+          : IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+              onPressed: () => controller.activeSubPage.value = -1,
+            ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Settings',
-            style: GoogleFonts.outfit(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
+            isMenu ? 'Settings' : _getPageTitle(controller.activeSubPage.value),
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
               color: AppTheme.textPrimary,
             ),
           ),
-          Text(
-            'Manage your profile and see Insights',
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              color: AppTheme.textSecondary,
-              fontWeight: FontWeight.w400,
+          if (isMenu)
+            Text(
+              'Manage your profile and see Insights',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          ),
         ],
       ),
       centerTitle: false,
     );
   }
 
-  Widget _buildTabSelector(SettingsController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      child: Container(
-        height: 50,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF1EFE9), // Match theme beige
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Obx(
-          () => Row(
-            children: [
-              _buildTabItem('Profile', 0, controller),
-              _buildTabItem('Privacy', 1, controller),
-              _buildTabItem('Insights', 2, controller),
-            ],
+  String _getPageTitle(int subPage) {
+    switch (subPage) {
+      case 0:
+        return 'Your Profile';
+      case 1:
+        return 'Privacy & Security';
+      case 2:
+        return 'Insights';
+      default:
+        return 'Settings';
+    }
+  }
+
+  Widget _buildSettingsMenu(
+    SettingsController controller,
+    AuthController authController,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      children: [
+        Text(
+          'Settings',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Manage your profile and see Insights',
+          style: GoogleFonts.outfit(
+            fontSize: 15,
+            color: AppTheme.textSecondary,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 32),
+        _buildMenuTile(
+          icon: Icons.person_outline,
+          title: 'Profile Details',
+          subtitle: 'Update your display name, photo, and bio',
+          onTap: () => controller.activeSubPage.value = 0,
+        ),
+        _buildMenuTile(
+          icon: Icons.bar_chart_outlined,
+          title: 'Visual Insights',
+          subtitle: 'View your archive activity and impact',
+          onTap: () => controller.activeSubPage.value = 2,
+        ),
+        _buildMenuTile(
+          icon: Icons.lock_outline,
+          title: 'Privacy & Security',
+          subtitle: 'Manage your visibility and encryption',
+          onTap: () => controller.activeSubPage.value = 1,
+        ),
+        const SizedBox(height: 32),
+        Text(
+          'Security',
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Obx(() => _buildBiometricTile(controller)),
+        const SizedBox(height: 48),
+        _buildMenuTile(
+          icon: Icons.logout,
+          title: 'Log Out',
+          subtitle: 'Safely exit your account',
+          iconColor: AppTheme.error,
+          textColor: AppTheme.error,
+          onTap: () => _showLogoutDialog(authController),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color? iconColor,
+    Color? textColor,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (iconColor ?? AppTheme.primary).withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: iconColor ?? AppTheme.primary, size: 22),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: textColor ?? AppTheme.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.outfit(
+            fontSize: 13,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        trailing: Icon(Icons.chevron_right, color: AppTheme.textHint, size: 20),
       ),
     );
   }
 
-  Widget _buildTabItem(String title, int index, SettingsController controller) {
-    final bool isActive = controller.activeTabIndex.value == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => controller.activeTabIndex.value = index,
-        child: Container(
-          decoration: BoxDecoration(
-            color: isActive
-                ? const Color(0xFF5D5FEF)
-                : Colors.transparent, // Purple accent matching screenshot
-            borderRadius: BorderRadius.circular(10),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              color: isActive ? Colors.white : AppTheme.textSecondary,
+  Widget _buildBiometricTile(SettingsController controller) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              controller.biometricType.value == 'Face ID'
+                  ? Icons.face
+                  : Icons.fingerprint,
+              color: AppTheme.primary,
+              size: 22,
             ),
           ),
-        ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${controller.biometricType.value} Login',
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Enable secure biometric access',
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: controller.isBiometricEnabled.value,
+            onChanged: (val) => controller.toggleBiometrics(val),
+            activeColor: AppTheme.primary,
+          ),
+        ],
       ),
     );
   }
@@ -349,109 +500,123 @@ class MoreScreen extends StatelessWidget {
     AuthController authController,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Privacy & Security',
+            'Control who can see your content',
             style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              fontSize: 16,
+              color: AppTheme.textSecondary,
             ),
           ),
-          const SizedBox(height: 25),
-
-          // Biometric Toggle Section
-          Obx(
-            () => _buildSettingsCard(
-              title: '${controller.biometricType.value} Verification',
-              subtitle: 'Secure your archive with ${controller.biometricType.value.toLowerCase()}',
-              icon: controller.biometricType.value == 'Face ID' ? Icons.face : Icons.fingerprint,
-              trailing: Obx(
-                () => Switch(
-                  value: controller.isBiometricEnabled.value,
-                  onChanged: (val) => controller.toggleBiometrics(val),
-                  activeColor: const Color(0xFF5D5FEF),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.01),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Default Entry Privacy
+                Text(
+                  'Default Entry Privacy',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'New memories will use this privacy setting by default',
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildPrivacySelector(
+                  value: controller.defaultEntryPrivacy.value,
+                  onTap:
+                      () {}, // Implement dropdown logic if needed or just mockup for now
+                ),
+                const SizedBox(height: 32),
 
-          _buildSettingsCard(
-            title: 'Encryption',
-            subtitle: 'End-to-end encryption for all recordings',
-            icon: Icons.lock_outline,
-            trailing: const Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 24,
+                // Profile Visibility
+                Text(
+                  'Profile Visibility',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Who can view your profile and public stories',
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildPrivacySelector(
+                  value: controller.profileVisibility.value,
+                  onTap: () {},
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 40),
-
-          // Logout Button
-          Text(
-            'Account Actions',
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 15),
-          ListTile(
-            onTap: () => _showLogoutDialog(authController),
-            leading: const Icon(Icons.logout, color: AppTheme.error),
-            title: Text(
-              'Log Out',
-              style: GoogleFonts.outfit(
-                color: AppTheme.error,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            tileColor: AppTheme.error.withOpacity(0.05),
-            hoverColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildInsightsTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.insights_outlined,
-            size: 80,
-            color: Color(0xFF5D5FEF),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Insights coming soon!',
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+  Widget _buildPrivacySelector({
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                value,
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.keyboard_arrow_down,
               color: AppTheme.textPrimary,
+              size: 24,
             ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              'Track your preservation progress and voice trends here.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: AppTheme.textSecondary),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

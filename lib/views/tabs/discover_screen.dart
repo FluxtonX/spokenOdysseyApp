@@ -4,6 +4,8 @@ import '../../customWidgets/custom_search_field.dart';
 import '../../customWidgets/custom_tab_selector.dart';
 import '../../customWidgets/person_card.dart';
 import '../../theme/theme.dart';
+import 'person_detail_screen.dart';
+import 'package:get/get.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -107,6 +109,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   description: person['description'],
                   followersCount: person['followers'],
                   onFollowTrigger: () {},
+                  onTap: () => Get.to(() => PersonDetailScreen(person: person)),
                 );
               }),
             ],

@@ -69,9 +69,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 Text(
                   'Create your archive',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w600,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
                     color: AppTheme.textPrimary,
                   ),
                 ),

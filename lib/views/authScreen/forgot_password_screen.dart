@@ -4,8 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../customWidgets/custom_text_field.dart';
 import '../../theme/theme.dart';
 import '../../utils/validators.dart';
-import '../../services/auth_services.dart';
-import '../../config/get_it.dart';
+import '../../controllers/auth_controller.dart';
 import 'auth_logo.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -18,7 +17,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
+  final AuthController _authController = Get.find<AuthController>();
 
   @override
   void dispose() {
@@ -26,26 +25,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  Future<void> _resetPassword() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-    try {
-      await getIt<AuthService>().resetPassword(_emailController.text.trim());
-      Get.snackbar(
-        'Link Sent',
-        'Password reset instructions sent to your email.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.primary,
-        colorText: AppTheme.white,
-        margin: const EdgeInsets.all(24),
-        borderRadius: 12,
-      );
-      Get.back(); // Go back to Login Screen
-    } catch (e) {
-      Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
-    } finally {
-      setState(() => _isLoading = false);
+  void _handleReset() {
+    if (_formKey.currentState!.validate()) {
+      _authController.resetPassword(_emailController.text.trim());
     }
   }
 
@@ -56,6 +38,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new,
@@ -67,7 +50,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -76,20 +59,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const Center(child: AuthLogo()),
                 const SizedBox(height: 32),
                 Text(
-                  'Forgot your Password?',
+                  'Forgot Password?',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w500,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
                     color: AppTheme.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
-                  'Enter the email here',
+                  'Enter your email address and we will send you a link to reset your password.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    fontSize: 16,
+                    fontSize: 15,
+                    height: 1.5,
                     color: AppTheme.textSecondary,
                   ),
                 ),
@@ -97,35 +81,59 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                 // Email Field
                 CustomTextField(
-                  label: 'Email',
+                  label: 'Email Address',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   hintText: 'Enter your email',
                   prefixIcon: Icons.mail_outline,
                   validator: Validators.validateEmail,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
 
                 // Submit Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _resetPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: AppTheme.white,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Obx(
+                  () => ElevatedButton(
+                    onPressed: _authController.isLoading.value ? null : _handleReset,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: AppTheme.white,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _authController.isLoading.value
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Send Reset Link',
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Back to Login Link
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text(
+                    'Back to Login',
+                    style: GoogleFonts.outfit(
+                      color: AppTheme.textSecondary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          'Reset Password',
-                          style: GoogleFonts.outfit(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
                 ),
               ],
             ),

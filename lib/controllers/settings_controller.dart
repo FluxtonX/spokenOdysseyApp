@@ -7,8 +7,10 @@ import 'auth_controller.dart';
 class SettingsController extends GetxController {
   final BiometricService _biometricService = getIt<BiometricService>();
 
-  // Tab management...
-  final RxInt activeTabIndex = 0.obs;
+  // Tab and Navigation management
+  final RxInt activeTabIndex = 0.obs; // Legacy for now
+  final RxInt insightsSubTabIndex = 0.obs;
+  final RxInt activeSubPage = (-1).obs; // -1: Menu, 0: Profile, 1: Privacy, 2: Insights
 
   // Biometric state
   final RxBool isBiometricEnabled = false.obs;

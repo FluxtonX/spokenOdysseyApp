@@ -57,13 +57,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Welcome back',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w600,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
                     color: AppTheme.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   'Continue preserving your story',
                   textAlign: TextAlign.center,
