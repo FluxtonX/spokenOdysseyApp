@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/theme.dart';
+import '../../theme/typography.dart';
 import '../../controllers/settings_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../customWidgets/custom_text_field.dart';
@@ -12,7 +13,6 @@ class MoreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize controller
     final SettingsController controller = Get.put(SettingsController());
     final AuthController authController = Get.find<AuthController>();
 
@@ -73,20 +73,12 @@ class MoreScreen extends StatelessWidget {
         children: [
           Text(
             isMenu ? 'Settings' : _getPageTitle(controller.activeSubPage.value),
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
-            ),
+            style: AppTextStyles.h1,
           ),
           if (isMenu)
             Text(
               'Manage your profile and see Insights',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-                fontWeight: FontWeight.w400,
-              ),
+              style: AppTextStyles.bodySmall,
             ),
         ],
       ),
@@ -116,20 +108,12 @@ class MoreScreen extends StatelessWidget {
       children: [
         Text(
           'Settings',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.textPrimary,
-          ),
+          style: AppTextStyles.h1,
         ),
         const SizedBox(height: 8),
         Text(
           'Manage your profile and see Insights',
-          style: GoogleFonts.outfit(
-            fontSize: 15,
-            color: AppTheme.textSecondary,
-            height: 1.5,
-          ),
+          style: AppTextStyles.bodyMedium,
         ),
         const SizedBox(height: 32),
         _buildMenuTile(
@@ -153,11 +137,7 @@ class MoreScreen extends StatelessWidget {
         const SizedBox(height: 32),
         Text(
           'Security',
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-          ),
+          style: AppTextStyles.labelBold,
         ),
         const SizedBox(height: 16),
         Obx(() => _buildBiometricTile(controller)),
@@ -201,18 +181,11 @@ class MoreScreen extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textColor ?? AppTheme.textPrimary,
-          ),
+          style: AppTextStyles.labelBold,
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.outfit(
-            fontSize: 13,
-            color: AppTheme.textSecondary,
-          ),
+          style: AppTextStyles.caption,
         ),
         trailing: Icon(Icons.chevron_right, color: AppTheme.textHint, size: 20),
       ),
@@ -249,18 +222,11 @@ class MoreScreen extends StatelessWidget {
               children: [
                 Text(
                   '${controller.biometricType.value} Login',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
+                  style: AppTextStyles.labelBold,
                 ),
                 Text(
                   'Enable secure biometric access',
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: AppTextStyles.caption,
                 ),
               ],
             ),
@@ -283,21 +249,14 @@ class MoreScreen extends StatelessWidget {
         children: [
           Text(
             'Your Profile',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
+            style: AppTextStyles.h2,
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 8),
           Text(
             'This is how others will see you',
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              color: AppTheme.textSecondary,
-            ),
+            style: AppTextStyles.bodyMedium,
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 32),
 
           // Profile Image Section
           Text('Profile Photo', style: _labelStyle()),
@@ -506,10 +465,7 @@ class MoreScreen extends StatelessWidget {
         children: [
           Text(
             'Control who can see your content',
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              color: AppTheme.textSecondary,
-            ),
+            style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: 24),
           Container(
@@ -532,19 +488,12 @@ class MoreScreen extends StatelessWidget {
                 // Default Entry Privacy
                 Text(
                   'Default Entry Privacy',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
+                  style: AppTextStyles.labelBold.copyWith(fontSize: 18),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'New memories will use this privacy setting by default',
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: AppTextStyles.bodySmall,
                 ),
                 const SizedBox(height: 16),
                 _buildPrivacySelector(
@@ -557,19 +506,12 @@ class MoreScreen extends StatelessWidget {
                 // Profile Visibility
                 Text(
                   'Profile Visibility',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
+                  style: AppTextStyles.labelBold.copyWith(fontSize: 18),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Who can view your profile and public stories',
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: AppTextStyles.bodySmall,
                 ),
                 const SizedBox(height: 16),
                 _buildPrivacySelector(
@@ -603,11 +545,7 @@ class MoreScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 value,
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  color: AppTheme.textPrimary,
-                  fontWeight: FontWeight.w400,
-                ),
+                style: AppTextStyles.bodyMedium,
               ),
             ),
             const Icon(
@@ -617,56 +555,6 @@ class MoreScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Widget trailing,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1EFE9),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: const Color(0xFF5D5FEF)),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.outfit(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.outfit(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          trailing,
-        ],
       ),
     );
   }
@@ -709,9 +597,7 @@ class MoreScreen extends StatelessWidget {
     );
   }
 
-  TextStyle _labelStyle() => GoogleFonts.outfit(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppTheme.textPrimary,
-  );
+  TextStyle _labelStyle() {
+    return AppTextStyles.labelBold;
+  }
 }

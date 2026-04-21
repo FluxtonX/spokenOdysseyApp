@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../customWidgets/custom_bottom_navbar.dart';
 import '../../theme/theme.dart';
-import 'home_screen.dart';
+import 'Home/home_screen.dart';
 import 'discover_screen.dart';
 import 'albums_screen.dart';
 import 'family_screen.dart';
@@ -9,7 +9,7 @@ import 'more_screen.dart';
 
 class MainTabScreen extends StatefulWidget {
   final int initialIndex;
-  
+
   const MainTabScreen({super.key, this.initialIndex = 1});
 
   @override
@@ -37,10 +37,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) {

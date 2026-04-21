@@ -121,14 +121,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         heroTag: 'discover_fab',
-        backgroundColor: const Color(
-          0xFF5544FF,
-        ), // Vivid blue/blurple from design
+        backgroundColor: AppTheme.floatingActionButton,
+        foregroundColor: AppTheme.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
         elevation: 4,
         child: const Icon(Icons.add, color: AppTheme.white, size: 28),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import '../../theme/theme.dart';
+import '../../theme/typography.dart';
 import 'family_tree_detail_screen.dart';
 import 'legacy_access_bottom_sheet.dart';
 
@@ -24,22 +25,11 @@ class _FamilyScreenState extends State<FamilyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header section
-              Text(
-                'Family Circles',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
+              Text('Family Circles', style: AppTextStyles.h1),
               const SizedBox(height: 8),
               Text(
                 'Share your stories with those who matter most.\nCreate a legacy that spans generations.',
-                style: GoogleFonts.outfit(
-                  fontSize: 15,
-                  color: AppTheme.textSecondary,
-                  height: 1.5,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(height: 1.5),
               ),
               const SizedBox(height: 32),
 
@@ -111,6 +101,15 @@ class _FamilyScreenState extends State<FamilyScreen> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppTheme.floatingActionButton,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+        onPressed: () {
+          Get.to(() => const FamilyTreeDetailScreen());
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -141,19 +140,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 children: [
                   Text(
                     'Mitchell Family Tree',
-                    style: GoogleFonts.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    ),
+                    style: AppTextStyles.labelBold.copyWith(fontSize: 18),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '4 generations • 9 members',
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      color: AppTheme.textSecondary,
-                    ),
+                    style: AppTextStyles.caption,
                   ),
                 ],
               ),
@@ -174,9 +166,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                       const SizedBox(width: 6),
                       Text(
                         'Add',
-                        style: GoogleFonts.outfit(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                        style: AppTextStyles.labelMedium.copyWith(
                           color: const Color(0xFF5544FF),
                         ),
                       ),
@@ -236,9 +226,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                    style: AppTextStyles.labelBold.copyWith(
                       color: textColor ?? Colors.white,
                     ),
                   ),
@@ -268,19 +256,10 @@ class _FamilyScreenState extends State<FamilyScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Connected Family',
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textPrimary,
-              ),
-            ),
+            Text('Connected Family', style: AppTextStyles.h3),
             Text(
               '4 members',
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                color: AppTheme.textSecondary,
+              style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -338,27 +317,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 ),
               ],
             ),
+
             // Floating Plus Button as seen in the image
-            Positioned(
-              right: -5,
-              top: 130, // Positioned near the second item
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5544FF),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF5544FF).withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 28),
-              ),
-            ),
           ],
         ),
       ],
@@ -399,9 +359,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 alignment: Alignment.center,
                 child: Text(
                   initials,
-                  style: GoogleFonts.outfit(
+                  style: AppTextStyles.labelBold.copyWith(
                     fontSize: 18,
-                    fontWeight: FontWeight.w700,
                     color: tagTextColor,
                   ),
                 ),
@@ -411,21 +370,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      role,
-                      style: GoogleFonts.outfit(
-                        fontSize: 13,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
+                    Text(name, style: AppTextStyles.labelBold),
+                    Text(role, style: AppTextStyles.caption),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -437,10 +383,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                         const SizedBox(width: 4),
                         Text(
                           shared,
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
+                          style: AppTextStyles.caption.copyWith(fontSize: 12),
                         ),
                         const SizedBox(width: 12),
                         Icon(
@@ -451,10 +394,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                         const SizedBox(width: 4),
                         Text(
                           date,
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
+                          style: AppTextStyles.caption.copyWith(fontSize: 12),
                         ),
                       ],
                     ),
@@ -481,9 +421,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
                           const SizedBox(width: 6),
                           Text(
                             tag,
-                            style: GoogleFonts.outfit(
+                            style: AppTextStyles.labelMedium.copyWith(
                               fontSize: 11,
-                              fontWeight: FontWeight.w700,
                               color: tagTextColor,
                             ),
                           ),
@@ -508,14 +447,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'View Shared',
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
+                  child: Text('View Shared', style: AppTextStyles.labelMedium),
                 ),
               ),
               const SizedBox(width: 12),
@@ -531,11 +463,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                   ),
                   child: Text(
                     'Manage Access',
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
+                    style: AppTextStyles.labelMedium,
                   ),
                 ),
               ),
@@ -571,21 +499,13 @@ class _FamilyScreenState extends State<FamilyScreen> {
           const SizedBox(height: 20),
           Text(
             'Invite Family Members',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
-            ),
+            style: AppTextStyles.h3.copyWith(fontSize: 20),
           ),
           const SizedBox(height: 8),
           Text(
             'Share your legacy with family. They will receive an invitation to join your circle and access the memories you choose to share.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              color: AppTheme.textSecondary,
-              height: 1.5,
-            ),
+            style: AppTextStyles.bodySmall.copyWith(height: 1.5),
           ),
           const SizedBox(height: 24),
           Row(
@@ -658,9 +578,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
             ),
             Text(
               'View all',
-              style: GoogleFonts.outfit(
+              style: AppTextStyles.labelMedium.copyWith(
                 fontSize: 13,
-                fontWeight: FontWeight.w700,
                 color: const Color(0xFF5544FF),
               ),
             ),
@@ -715,11 +634,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.outfit(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
+                  style: AppTextStyles.labelBold.copyWith(fontSize: 17),
                 ),
               ),
               Container(
@@ -738,9 +653,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
                     const SizedBox(width: 4),
                     Text(
                       'Family Circle',
-                      style: GoogleFonts.outfit(
+                      style: AppTextStyles.labelMedium.copyWith(
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
                         color: const Color(0xFF5544FF),
                       ),
                     ),
@@ -752,20 +666,15 @@ class _FamilyScreenState extends State<FamilyScreen> {
           const SizedBox(height: 6),
           Text(
             'by $author • $date',
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
+            style: AppTextStyles.caption.copyWith(
               fontWeight: FontWeight.w500,
+              fontSize: 12,
             ),
           ),
           const SizedBox(height: 12),
           Text(
             snippet,
-            style: GoogleFonts.outfit(
-              fontSize: 13,
-              color: AppTheme.textSecondary,
-              height: 1.5,
-            ),
+            style: AppTextStyles.bodySmall.copyWith(height: 1.5, fontSize: 13),
           ),
         ],
       ),
@@ -804,17 +713,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
           const SizedBox(height: 20),
           Text(
             'Configure Legacy Settings',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+            style: AppTextStyles.h3.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 10),
           Text(
             'Designate trusted custodians, set activation conditions, and ensure your voice lives on exactly as you intend. Your digital legacy, your terms.',
-            style: GoogleFonts.outfit(
-              fontSize: 14,
+            style: AppTextStyles.bodySmall.copyWith(
               color: Colors.white.withOpacity(0.6),
               height: 1.6,
             ),
@@ -850,9 +754,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
             ),
             child: Text(
               'Configure Now',
-              style: GoogleFonts.outfit(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
+              style: AppTextStyles.button.copyWith(
+                color: const Color(0xFF1E2532),
               ),
             ),
           ),
@@ -887,10 +790,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
             ),
             Text(
               value,
-              style: GoogleFonts.outfit(
+              style: AppTextStyles.labelBold.copyWith(
                 fontSize: 14,
                 color: Colors.white,
-                fontWeight: FontWeight.w700,
               ),
             ),
           ],

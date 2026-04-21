@@ -17,37 +17,36 @@ class CustomSearchField extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppTheme.border),
+          child: TextField(
+            controller: controller,
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: AppTheme.textPrimary,
             ),
-            child: TextField(
-              controller: controller,
-              style: GoogleFonts.outfit(
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: GoogleFonts.outfit(
                 fontSize: 14,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textHint,
               ),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: GoogleFonts.outfit(
-                  fontSize: 14,
-                  color: AppTheme.textHint,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: AppTheme.textSecondary,
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppTheme.textSecondary,
+                size: 20,
+              ),
+              border: InputBorder.none,
+
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(50),
+                borderSide: BorderSide(color: AppTheme.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(50),
+                borderSide: BorderSide(color: AppTheme.floatingActionButton),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
               ),
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'typography.dart';
 
 class AppTheme {
   // ── Primary Brand Colors ───────────────────────────────────────────
@@ -28,6 +29,7 @@ class AppTheme {
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
   static const Color info = Color(0xFF3B82F6);
+  static const Color floatingActionButton = Color(0xFF5544FF);
 
   // ── Gradient presets ───────────────────────────────────────────────
   static const LinearGradient logoGradient = LinearGradient(
@@ -46,6 +48,9 @@ class AppTheme {
   // ── ThemeData ──────────────────────────────────────────────────────
   static ThemeData get theme => ThemeData(
     useMaterial3: true,
+    platform: TargetPlatform
+        .android, // Ensure consistent layout and typography behavior
+    typography: Typography.material2021(platform: TargetPlatform.android),
     brightness: Brightness.light,
     scaffoldBackgroundColor: scaffoldBg,
     primaryColor: primary,
@@ -59,58 +64,18 @@ class AppTheme {
       error: error,
       onError: white,
     ),
-    textTheme: GoogleFonts.outfitTextTheme().copyWith(
-      displayLarge: GoogleFonts.outfit(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: textPrimary,
-      ),
-      headlineMedium: GoogleFonts.outfit(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        color: textPrimary,
-      ),
-      titleLarge: GoogleFonts.outfit(
-        fontSize: 24,
-        fontWeight: FontWeight.w500,
-        color: textPrimary,
-      ),
-      titleMedium: GoogleFonts.outfit(
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: textPrimary,
-      ),
-      titleSmall: GoogleFonts.outfit(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: textPrimary,
-      ),
-      bodyLarge: GoogleFonts.outfit(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: textSecondary,
-      ),
-      bodyMedium: GoogleFonts.outfit(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: textSecondary,
-      ),
-      bodySmall: GoogleFonts.outfit(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: textSecondary,
-      ),
-      labelLarge: GoogleFonts.outfit(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: white,
-      ),
-      labelSmall: GoogleFonts.outfit(
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.0,
-        color: textHint,
-      ),
+    textTheme: TextTheme(
+      displayLarge: AppTextStyles.h1,
+      headlineMedium: AppTextStyles.h2,
+      displaySmall: AppTextStyles.h3,
+      titleLarge: AppTextStyles.h3,
+      titleMedium: AppTextStyles.labelBold,
+      titleSmall: AppTextStyles.labelMedium,
+      bodyLarge: AppTextStyles.bodyLarge,
+      bodyMedium: AppTextStyles.bodyMedium,
+      bodySmall: AppTextStyles.bodySmall,
+      labelLarge: AppTextStyles.button,
+      labelSmall: AppTextStyles.caption,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -119,10 +84,7 @@ class AppTheme {
         minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
-        textStyle: GoogleFonts.outfit(
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-        ),
+        textStyle: AppTextStyles.button,
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -131,10 +93,7 @@ class AppTheme {
         side: const BorderSide(color: primary, width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        textStyle: GoogleFonts.outfit(
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-        ),
+        textStyle: AppTextStyles.button.copyWith(color: primary),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -149,7 +108,7 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: white,
-      hintStyle: GoogleFonts.outfit(color: textHint, fontSize: 14),
+      hintStyle: AppTextStyles.bodyMedium.copyWith(color: textHint),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

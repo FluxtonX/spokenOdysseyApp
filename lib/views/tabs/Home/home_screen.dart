@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../theme/theme.dart';
-import '../memories/memory_detail_screen.dart';
+import '../../../theme/theme.dart';
+import '../../memories/memory_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,11 +13,30 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _viewType = 0; // 0: Grid, 1: List, 2: Folder
   int _activeTabIndex = 0;
   DateTime? _fromDate;
   DateTime? _toDate;
   bool _isFromCalendarOpen = false;
   bool _isToCalendarOpen = false;
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   final List<Map<String, dynamic>> _memories = [
     {
@@ -993,6 +1012,27 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildViewIcon(IconData icon, int type, double size) {
+    final bool isActive = _viewType == type;
+    return InkWell(
+      onTap: () => setState(() => _viewType = type),
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF5D5FEF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Icon(
+          icon,
+          size: size,
+          color: isActive ? Colors.white : AppTheme.textSecondary,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTabButton(String label, int index) {
     final bool isActive = _activeTabIndex == index;
     return GestureDetector(
@@ -1263,7 +1303,9 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         heroTag: 'home_fab',
-        backgroundColor: const Color(0xFF5D5FEF),
+        backgroundColor: AppTheme.floatingActionButton,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
         child: const Icon(Icons.add),
       ),
       body: SafeArea(
@@ -1296,31 +1338,66 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.search,
-                            color: AppTheme.textSecondary,
+                    GestureDetector(
+                      onTap: () => _searchFocusNode.requestFocus(),
+                      behavior: HitTestBehavior.opaque,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        height: 56,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                            color: _isSearchFocused
+                                ? const Color(0xFF5D5FEF)
+                                : const Color(0xFFE5E7EB),
+                            width: _isSearchFocused ? 2 : 1,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Search memories...',
-                              style: GoogleFonts.outfit(
-                                color: AppTheme.textHint,
-                                fontSize: 15,
+                          boxShadow: _isSearchFocused
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF5D5FEF,
+                                    ).withOpacity(0.1),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.search,
+                              color: _isSearchFocused
+                                  ? const Color(0xFF5D5FEF)
+                                  : AppTheme.textSecondary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                focusNode: _searchFocusNode,
+                                decoration: InputDecoration(
+                                  hintText: 'Search memories...',
+                                  hintStyle: GoogleFonts.outfit(
+                                    color: AppTheme.textHint,
+                                    fontSize: 15,
+                                  ),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  isDense: true,
+                                ),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimary,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1371,30 +1448,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF5D5FEF),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.grid_view_rounded,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              _buildViewIcon(Icons.grid_view_rounded, 0, 20),
                               const SizedBox(width: 8),
-                              const Icon(
-                                Icons.list_rounded,
-                                size: 24,
-                                color: AppTheme.textSecondary,
-                              ),
+                              _buildViewIcon(Icons.list_rounded, 1, 24),
                               const SizedBox(width: 8),
-                              const Icon(
-                                Icons.folder_open_rounded,
-                                size: 22,
-                                color: AppTheme.textSecondary,
-                              ),
+                              _buildViewIcon(Icons.folder_open_rounded, 2, 22),
                             ],
                           ),
                         ],
