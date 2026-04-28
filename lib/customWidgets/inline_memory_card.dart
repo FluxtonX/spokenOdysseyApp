@@ -452,14 +452,17 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
   }
 
   Widget _buildMediaContent() {
-    if (type == 'video') {
+    final displayUrl = thumbnailUrl.isNotEmpty ? thumbnailUrl : mediaUrl;
+    final typeLower = type.toLowerCase();
+
+    if (typeLower.contains('video')) {
       return _buildVideoPlayer();
-    } else if (type == 'voice' || type == 'audio') {
+    } else if (typeLower.contains('voice') || typeLower.contains('audio')) {
       return _buildAudioPlayer();
-    } else if (type == 'photo') {
-      return mediaUrl.isNotEmpty
+    } else if (typeLower.contains('photo')) {
+      return displayUrl.isNotEmpty
           ? Image.network(
-              mediaUrl,
+              displayUrl,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _buildFallbackIcon(),
             )
@@ -473,33 +476,33 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
   Widget build(BuildContext context) {
     String displayDate = '';
     if (widget.memoryDate != null) {
-      displayDate = DateFormat('MMM d, yyyy · h:mm a').format(widget.memoryDate!);
+      displayDate = DateFormat('MMM d, yyyy · h:mm a').format(widget.memoryDate!.toLocal());
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 220,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEDF2F9),
-              borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 220,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEDF2F9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _buildMediaContent(),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: _buildMediaContent(),
-          ),
-          if (_audioPlayer != null && (type == 'voice' || type == 'audio')) 
-            _buildAudioControls(),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: widget.onTap,
-            behavior: HitTestBehavior.opaque,
-            child: Column(
+            if (_audioPlayer != null && (type.toLowerCase().contains('voice') || type.toLowerCase().contains('audio'))) 
+              _buildAudioControls(),
+            const SizedBox(height: 16),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -556,8 +559,8 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
                 ],
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
