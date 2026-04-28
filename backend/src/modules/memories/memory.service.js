@@ -213,6 +213,9 @@ const createMemory = async ({
           if (fs.existsSync(tempVideoPath)) fs.unlinkSync(tempVideoPath);
           if (fs.existsSync(tempThumbPath)) fs.unlinkSync(tempThumbPath);
         }
+      } else if (mediaMimeType.startsWith("image/")) {
+        // For images, use the original image as the thumbnail
+        thumbnailKey = mediaKey;
       }
     } catch (error) {
       mediaUploadWarning =

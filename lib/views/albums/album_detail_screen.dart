@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../customWidgets/inline_memory_card.dart';
 import '../../services/memory_service.dart';
+import '../../services/album_service.dart';
 import '../../theme/theme.dart';
 import '../../utils/image_picker_helper.dart';
 import '../memories/memory_detail_screen.dart';
@@ -31,7 +32,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   bool _didChange = false;
   bool _isDeletingMemory = false;
   bool _isAddingMemory = false;
+  bool _isLoading = false;
   DateTime? _selectedRecentDay;
+  final AlbumService _albumService = AlbumService();
 
   List<Map<String, dynamic>> get _memories =>
       ((_album['memories'] as List?) ?? const [])
@@ -85,6 +88,27 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   void initState() {
     super.initState();
     _album = Map<String, dynamic>.from(widget.album);
+    _loadAlbumDetails();
+  }
+
+  Future<void> _loadAlbumDetails() async {
+    final albumId = _album['id']?.toString();
+    if (albumId == null || albumId.isEmpty) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final updatedAlbum = await _albumService.getAlbumDetails(albumId);
+      if (mounted) {
+        setState(() {
+          _album = updatedAlbum;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _closeWithResult() async {
@@ -397,179 +421,194 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                 )
               : const Icon(Icons.add_rounded),
         ),
-        body: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              elevation: 0,
-              leading: IconButton(
-                onPressed: _closeWithResult,
-                icon: const Icon(Icons.arrow_back_rounded),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-                child: _buildAlbumHeader(),
-              ),
-            ),
-            if (_memories.isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 140),
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppTheme.adaptiveCardBg,
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: AppTheme.adaptiveBorder),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(
-                              0xFF5D5FEF,
-                            ).withValues(alpha: 0.08),
-                          ),
-                          child: const Icon(
-                            Icons.add_photo_alternate_outlined,
-                            color: Color(0xFF5D5FEF),
-                            size: 30,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Start filling this album',
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.adaptiveTextPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Use the add button below to drop in photos, videos, voice notes, or text memories.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            height: 1.55,
-                            color: AppTheme.adaptiveTextSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+        body: RefreshIndicator(
+          onRefresh: _loadAlbumDetails,
+          color: const Color(0xFF5D5FEF),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                elevation: 0,
+                leading: IconButton(
+                  onPressed: _closeWithResult,
+                  icon: const Icon(Icons.arrow_back_rounded),
                 ),
-              )
-            else
+              ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Recent',
-                              style: GoogleFonts.outfit(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.adaptiveTextPrimary,
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                  child: _buildAlbumHeader(),
+                ),
+              ),
+              if (_memories.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 140),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppTheme.adaptiveCardBg,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppTheme.adaptiveBorder),
+                      ),
+                      child: _isLoading && _memories.isEmpty
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF5D5FEF),
                               ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: _showRecentFilterSheet,
-                            style: IconButton.styleFrom(
-                              backgroundColor: AppTheme.adaptiveSoftSurface,
-                            ),
-                            icon: Row(
-                              mainAxisSize: MainAxisSize.min,
+                            )
+                          : Column(
                               children: [
-                                Icon(
-                                  Icons.calendar_month_rounded,
-                                  size: 18,
-                                  color: AppTheme.adaptiveTextPrimary,
+                                Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(
+                                      0xFF5D5FEF,
+                                    ).withValues(alpha: 0.08),
+                                  ),
+                                  child: const Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    color: Color(0xFF5D5FEF),
+                                    size: 30,
+                                  ),
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(height: 18),
                                 Text(
-                                  _selectedRecentDay == null
-                                      ? 'All'
-                                      : DateFormat(
-                                          'MMM d',
-                                        ).format(_selectedRecentDay!),
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 12,
+                                  'Start filling this album',
+                                  style: GoogleFonts.playfairDisplay(
+                                    fontSize: 28,
                                     fontWeight: FontWeight.w700,
                                     color: AppTheme.adaptiveTextPrimary,
                                   ),
                                 ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Use the add button below to drop in photos, videos, voice notes, or text memories.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 14,
+                                    height: 1.55,
+                                    color: AppTheme.adaptiveTextSecondary,
+                                  ),
+                                ),
                               ],
                             ),
-                            tooltip: 'Filter recent memories',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      if (_filteredVisualMemories.isEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.adaptiveCardBg,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: AppTheme.adaptiveBorder),
-                          ),
-                          child: Text(
-                            _selectedRecentDay == null
-                                ? 'No memories in this album yet.'
-                                : 'No memories on ${DateFormat('MMM d, y').format(_selectedRecentDay!)}.',
-                            style: GoogleFonts.outfit(
-                              fontSize: 13.5,
-                              color: AppTheme.adaptiveTextSecondary,
-                            ),
-                          ),
-                        )
-                      else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _filteredVisualMemories.length,
-                          itemBuilder: (context, index) {
-                            final memory = _filteredVisualMemories[index];
-                            return InlineMemoryCard(
-                              memory: memory,
-                              onTap: () => _openMemoryDetail(memory),
-                              memoryDate: _memoryDate(memory),
-                            );
-                          },
-                          separatorBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
-                              child: Divider(
-                                color: Colors.grey.withValues(alpha: 0.35),
-                                height: 1,
-                                thickness: 1.5,
+                    ),
+                  ),
+                )
+              else
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Recent',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.adaptiveTextPrimary,
+                                ),
                               ),
-                            );
-                          },
+                            ),
+                            IconButton(
+                              onPressed: _showRecentFilterSheet,
+                              style: IconButton.styleFrom(
+                                backgroundColor: AppTheme.adaptiveSoftSurface,
+                              ),
+                              icon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_month_rounded,
+                                    size: 18,
+                                    color: AppTheme.adaptiveTextPrimary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _selectedRecentDay == null
+                                        ? 'All'
+                                        : DateFormat(
+                                            'MMM d',
+                                          ).format(_selectedRecentDay!),
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.adaptiveTextPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              tooltip: 'Filter recent memories',
+                            ),
+                          ],
                         ),
-                    ],
+                        const SizedBox(height: 2),
+                        if (_filteredVisualMemories.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.adaptiveCardBg,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: AppTheme.adaptiveBorder,
+                              ),
+                            ),
+                            child: Text(
+                              _selectedRecentDay == null
+                                  ? 'No memories in this album yet.'
+                                  : 'No memories on ${DateFormat('MMM d, y').format(_selectedRecentDay!)}.',
+                              style: GoogleFonts.outfit(
+                                fontSize: 13.5,
+                                color: AppTheme.adaptiveTextSecondary,
+                              ),
+                            ),
+                          )
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _filteredVisualMemories.length,
+                            itemBuilder: (context, index) {
+                              final memory = _filteredVisualMemories[index];
+                              return InlineMemoryCard(
+                                memory: memory,
+                                onTap: () => _openMemoryDetail(memory),
+                                memoryDate: _memoryDate(memory),
+                              );
+                            },
+                            separatorBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 24,
+                                ),
+                                child: Divider(
+                                  color: Colors.grey.withValues(alpha: 0.35),
+                                  height: 1,
+                                  thickness: 1.5,
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
+          ),
         ),
       ),
     );

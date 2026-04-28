@@ -87,6 +87,26 @@ class AlbumService {
     }
   }
 
+  Future<Map<String, dynamic>> getAlbumDetails(String albumId) async {
+    try {
+      final response = await _dio.get(
+        '/api/albums/$albumId',
+        options: await _authorizedOptions(),
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic> || data['data'] is! Map) {
+        throw Exception('Failed to load album details.');
+      }
+
+      final album = _normalizeAlbum(Map<String, dynamic>.from(data['data'] as Map));
+      _mergeAlbumIntoCache(album);
+      return album;
+    } on DioException catch (error) {
+      throw Exception(_extractMessage(error));
+    }
+  }
+
   Future<Map<String, dynamic>> createAlbum({
     required String title,
     required String subtitle,

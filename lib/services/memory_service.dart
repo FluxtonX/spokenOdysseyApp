@@ -281,7 +281,12 @@ class MemoryService {
           : '',
       'icon': _iconForType(typeLabel),
       'mediaUrl': _buildAbsoluteUrl(rawMemory['mediaUrl']?.toString()),
-      'thumbnailUrl': _buildAbsoluteUrl(rawMemory['thumbnailUrl']?.toString()),
+      'thumbnailUrl': _buildAbsoluteUrl(
+        (rawMemory['thumbnailUrl']?.toString() != null &&
+                rawMemory['thumbnailUrl']?.toString().isNotEmpty == true)
+            ? rawMemory['thumbnailUrl']?.toString()
+            : rawMemory['mediaUrl']?.toString(),
+      ),
       'mediaKey': rawMemory['mediaKey']?.toString(),
       'mediaMimeType': rawMemory['mediaMimeType']?.toString(),
       'likes': rawMemory['likes'] is int

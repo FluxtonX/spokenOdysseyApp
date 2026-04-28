@@ -155,7 +155,8 @@ class _RecentMemoryMediaCarouselState extends State<RecentMemoryMediaCarousel>
         await player.setUrl(mediaUrl);
         await player.setLoopMode(LoopMode.one);
         await player.setVolume(0.9);
-        await player.play();
+        // Audio auto-play disabled as per user request to avoid intrusive sound on home screen
+        // await player.play(); 
       } catch (_) {
         if (_audioPlayer == player) {
           await player.dispose();
