@@ -47,7 +47,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.adaptiveTextPrimary,
                 ),
               ),
               GestureDetector(
@@ -59,10 +59,10 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close,
                     size: 20,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                   ),
                 ),
               ),
@@ -82,7 +82,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                     decoration: InputDecoration(
                       hintText: 'e.g., Emma Mitchell',
                       hintStyle: GoogleFonts.outfit(
-                        color: AppTheme.textHint,
+                        color: AppTheme.adaptiveTextHint,
                         fontSize: 15,
                       ),
                     ),
@@ -95,7 +95,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                     decoration: InputDecoration(
                       hintText: 'their@email.com',
                       hintStyle: GoogleFonts.outfit(
-                        color: AppTheme.textHint,
+                        color: AppTheme.adaptiveTextHint,
                         fontSize: 15,
                       ),
                     ),
@@ -112,7 +112,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                     style: GoogleFonts.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.adaptiveTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -167,7 +167,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                             'Cancel',
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.textPrimary,
+                              color: AppTheme.adaptiveTextPrimary,
                             ),
                           ),
                         ),
@@ -178,7 +178,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                           onPressed: () => Get.back(),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFEFEBE7),
-                            foregroundColor: AppTheme.textSecondary,
+                            foregroundColor: AppTheme.adaptiveTextSecondary,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -214,7 +214,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
             style: GoogleFonts.outfit(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
+              color: AppTheme.adaptiveTextPrimary,
             ),
           ),
           TextSpan(
@@ -250,8 +250,8 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                   selectedRelationship,
                   style: GoogleFonts.outfit(
                     color: selectedRelationship == 'Select Relationship...'
-                        ? AppTheme.textHint
-                        : AppTheme.textPrimary,
+                        ? AppTheme.adaptiveTextHint
+                        : AppTheme.adaptiveTextPrimary,
                     fontSize: 15,
                   ),
                 ),
@@ -259,7 +259,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                   isRelationshipExpanded
                       ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.adaptiveTextPrimary,
                 ),
               ],
             ),
@@ -274,7 +274,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
               border: Border.all(color: const Color(0xFFE5E7EB)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -308,7 +308,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                             fontSize: 15,
                             color: selectedRelationship == rel
                                 ? const Color(0xFF5544FF)
-                                : AppTheme.textPrimary,
+                                : AppTheme.adaptiveTextPrimary,
                             fontWeight: selectedRelationship == rel
                                 ? FontWeight.w600
                                 : FontWeight.w400,
@@ -348,7 +348,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF5544FF).withOpacity(0.05),
+                    color: const Color(0xFF5544FF).withValues(alpha: 0.05),
                     blurRadius: 10,
                   ),
                 ]
@@ -359,7 +359,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: iconColor, size: 24),
@@ -374,7 +374,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                     style: GoogleFonts.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.adaptiveTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -382,7 +382,7 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
                     subtitle,
                     style: GoogleFonts.outfit(
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.adaptiveTextSecondary,
                       height: 1.4,
                     ),
                   ),

@@ -81,8 +81,8 @@ class _CustomTabSelectorState extends State<CustomTabSelector> {
                                 ? FontWeight.w600
                                 : FontWeight.w500,
                             color: isSelected
-                                ? AppTheme.textPrimary
-                                : AppTheme.textSecondary,
+                                ? AppTheme.adaptiveTextPrimary
+                                : AppTheme.adaptiveTextSecondary,
                           ),
                         ),
                       ),

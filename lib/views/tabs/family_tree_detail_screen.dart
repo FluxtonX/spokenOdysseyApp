@@ -12,7 +12,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: AppTheme.adaptiveScaffoldBg,
       body: SafeArea(
         child: Stack(
           children: [
@@ -42,7 +42,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
                         style: GoogleFonts.playfairDisplay(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.adaptiveTextPrimary,
                         ),
                       ),
                     ],
@@ -54,7 +54,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
                       'Share your stories with those who matter most.\nCreate a legacy that spans generations.',
                       style: GoogleFonts.outfit(
                         fontSize: 14,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.adaptiveTextSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -145,7 +145,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: AppTheme.adaptiveTextPrimary,
               ),
             ),
             const SizedBox(height: 4),
@@ -153,7 +153,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
               '4 generations • 9 members',
               style: GoogleFonts.outfit(
                 fontSize: 13,
-                color: AppTheme.textSecondary,
+                color: AppTheme.adaptiveTextSecondary,
               ),
             ),
           ],
@@ -285,7 +285,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: 10,
               fontWeight: FontWeight.w800,
-              color: AppTheme.textHint,
+              color: AppTheme.adaptiveTextHint,
               letterSpacing: 1.2,
             ),
           ),
@@ -297,7 +297,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: 10,
               fontWeight: FontWeight.w800,
-              color: AppTheme.textHint,
+              color: AppTheme.adaptiveTextHint,
             ),
           ),
         ],
@@ -386,7 +386,7 @@ class FamilyTreeDetailScreen extends StatelessWidget {
           textAlign: TextAlign.center,
           style: GoogleFonts.outfit(
             fontSize: 10,
-            color: AppTheme.textSecondary,
+            color: AppTheme.adaptiveTextSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -395,14 +395,14 @@ class FamilyTreeDetailScreen extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: AppTheme.adaptiveTextPrimary,
           ),
         ),
         Text(
           dates,
           style: GoogleFonts.outfit(
             fontSize: 10,
-            color: AppTheme.textHint,
+            color: AppTheme.adaptiveTextHint,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -442,14 +442,18 @@ class FamilyTreeDetailScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.add, size: 20, color: AppTheme.textSecondary),
+                Icon(
+                  Icons.add,
+                  size: 20,
+                  color: AppTheme.adaptiveTextSecondary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Add family member',
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.adaptiveTextSecondary,
                   ),
                 ),
               ],

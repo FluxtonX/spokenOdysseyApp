@@ -3,12 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/theme.dart';
 
 class PersonCard extends StatelessWidget {
-  final String bgImageUrl; // Cover image
-  final String avatarUrl; // Profile pic
+  final String bgImageUrl;
+  final String avatarUrl;
   final String name;
   final String role;
   final String description;
   final String followersCount;
+  final String? badgeLabel;
+  final bool isFollowing;
   final VoidCallback onFollowTrigger;
   final VoidCallback? onTap;
 
@@ -20,6 +22,8 @@ class PersonCard extends StatelessWidget {
     required this.role,
     required this.description,
     required this.followersCount,
+    this.badgeLabel,
+    this.isFollowing = false,
     required this.onFollowTrigger,
     this.onTap,
   });
@@ -33,7 +37,7 @@ class PersonCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: AppTheme.adaptiveBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -50,9 +54,12 @@ class PersonCard extends StatelessWidget {
                   bgImageUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
-                    color: AppTheme.border,
-                    child: const Center(
-                      child: Icon(Icons.broken_image, color: AppTheme.textHint),
+                    color: AppTheme.adaptiveBorder,
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        color: AppTheme.adaptiveTextHint,
+                      ),
                     ),
                   ),
                 ),
@@ -68,12 +75,35 @@ class PersonCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (badgeLabel != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF5544FF,
+                            ).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            badgeLabel!,
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF5544FF),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
                       Text(
                         name,
                         style: GoogleFonts.playfairDisplay(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.adaptiveTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -81,7 +111,7 @@ class PersonCard extends StatelessWidget {
                         role,
                         style: GoogleFonts.outfit(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.adaptiveTextSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -91,15 +121,17 @@ class PersonCard extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 14,
                           height: 1.4,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.adaptiveTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 24),
 
                       // Footer
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           RichText(
                             text: TextSpan(
@@ -109,14 +141,14 @@ class PersonCard extends StatelessWidget {
                                   style: GoogleFonts.outfit(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
-                                    color: AppTheme.textPrimary,
+                                    color: AppTheme.adaptiveTextPrimary,
                                   ),
                                 ),
                                 TextSpan(
                                   text: ' followers',
                                   style: GoogleFonts.outfit(
                                     fontSize: 12,
-                                    color: AppTheme.textSecondary,
+                                    color: AppTheme.adaptiveTextSecondary,
                                   ),
                                 ),
                               ],
@@ -124,27 +156,42 @@ class PersonCard extends StatelessWidget {
                           ),
 
                           Material(
-                            color: const Color(0xFF5544FF), // Vivid pure blurple
-                            borderRadius: BorderRadius.circular(20),
+                            color: isFollowing
+                                ? Colors.white
+                                : const Color(0xFF5544FF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              side: isFollowing
+                                  ? BorderSide(color: AppTheme.adaptiveBorder)
+                                  : BorderSide.none,
+                            ),
                             child: InkWell(
                               onTap: onFollowTrigger,
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
                                 height: 38,
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
-                                      Icons.person_add_alt_1,
+                                    Icon(
+                                      isFollowing
+                                          ? Icons.check
+                                          : Icons.person_add_alt_1,
                                       size: 16,
-                                      color: AppTheme.white,
+                                      color: isFollowing
+                                          ? AppTheme.adaptiveTextPrimary
+                                          : AppTheme.white,
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Follow',
+                                      isFollowing ? 'Following' : 'Follow',
                                       style: GoogleFonts.outfit(
-                                        color: AppTheme.white,
+                                        color: isFollowing
+                                            ? AppTheme.adaptiveTextPrimary
+                                            : AppTheme.white,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -182,31 +229,33 @@ class PersonCard extends StatelessWidget {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(
-                                    color: AppTheme.border,
-                                    child: const Icon(
+                                    color: AppTheme.adaptiveBorder,
+                                    child: Icon(
                                       Icons.person,
-                                      color: AppTheme.textHint,
+                                      color: AppTheme.adaptiveTextHint,
                                     ),
                                   ),
                             ),
                           ),
                         ),
                       ),
-                      // Small floating badge pencil
                       Positioned(
                         bottom: 0,
                         right: 0,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
                             color: AppTheme.white,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppTheme.border, width: 1),
+                            border: Border.all(
+                              color: AppTheme.adaptiveBorder,
+                              width: 1,
+                            ),
                           ),
                           child: const Icon(
-                            Icons.edit_outlined,
+                            Icons.auto_awesome,
                             size: 10,
-                            color: AppTheme.textSecondary,
+                            color: Color(0xFF5544FF),
                           ),
                         ),
                       ),

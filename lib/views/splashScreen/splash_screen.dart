@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../../theme/theme.dart';
 import '../../controllers/auth_controller.dart';
 
+import '../authScreen/login_screen.dart';
 import '../onboarding/onboarding_screen.dart';
-import '../tabs/main_tab_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,6 +21,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -48,18 +50,33 @@ class _SplashScreenState extends State<SplashScreen>
     _animationController.forward();
 
     // Navigate after 3 seconds
-    Timer(const Duration(seconds: 3), () {
-      final authController = Get.find<AuthController>();
-      if (authController.firebaseUser.value != null) {
-        Get.offAll(() => const MainTabScreen());
-      } else {
-        Get.offAll(() => const OnboardingScreen());
-      }
-    });
+    _navigationTimer = Timer(const Duration(seconds: 3), _handleNavigation);
+  }
+
+  Future<void> _handleNavigation() async {
+    final authController = Get.find<AuthController>();
+    final storage = GetStorage();
+
+    if (authController.firebaseUser.value != null) {
+      await authController.routeAfterAuthentication();
+      return;
+    }
+
+    if (!mounted) return;
+
+    final hasSeenOnboarding =
+        storage.read(AuthController.hasSeenOnboardingKey) == true;
+
+    if (hasSeenOnboarding) {
+      Get.offAll(() => const LoginScreen());
+    } else {
+      Get.offAll(() => const OnboardingScreen());
+    }
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _animationController.dispose();
     super.dispose();
   }
@@ -67,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: AppTheme.adaptiveScaffoldBg,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -85,7 +102,7 @@ class _SplashScreenState extends State<SplashScreen>
                   'Spoken Odyssey',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                     fontSize: 28,
                     fontWeight: FontWeight.w500,
                   ),
@@ -98,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen>
                   'Your voice. Your life. Preserved.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.adaptiveTextSecondary,
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
                   ),

@@ -68,5 +68,13 @@
 	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>This app uses Face ID for secure biometric authentication to protect your account.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Spoken Odyssey uses the camera so you can capture photo and video stories.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Spoken Odyssey uses your photo library so you can attach images and videos to memories.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Spoken Odyssey saves and updates selected profile and memory media when you choose to keep them on your device.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Spoken Odyssey uses the microphone so you can record voice memories.</string>
 </dict>
 </plist>

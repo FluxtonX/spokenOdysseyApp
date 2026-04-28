@@ -55,7 +55,7 @@ class InsightsView extends StatelessWidget {
                               color: const Color(0xFF5D5FEF),
                             )
                           : AppTextStyles.bodyMedium.copyWith(
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.adaptiveTextSecondary,
                             ),
                     ),
                     const SizedBox(height: 8),
@@ -151,7 +151,10 @@ class InsightsView extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+          ),
         ],
       ),
       child: Column(
@@ -160,7 +163,7 @@ class InsightsView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 16, color: color),
@@ -174,7 +177,9 @@ class InsightsView extends StatelessWidget {
           ),
           Text(
             label,
-            style: AppTextStyles.caption.copyWith(color: AppTheme.textHint),
+            style: AppTextStyles.caption.copyWith(
+              color: AppTheme.adaptiveTextHint,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -204,7 +209,7 @@ class InsightsView extends StatelessWidget {
         Text(
           title,
           style: AppTextStyles.h3.copyWith(
-            color: isWhite ? Colors.white : AppTheme.textPrimary,
+            color: isWhite ? Colors.white : AppTheme.adaptiveTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
@@ -212,8 +217,8 @@ class InsightsView extends StatelessWidget {
           subtitle,
           style: AppTextStyles.bodySmall.copyWith(
             color: isWhite
-                ? Colors.white.withOpacity(0.7)
-                : AppTheme.textSecondary,
+                ? Colors.white.withValues(alpha: 0.7)
+                : AppTheme.adaptiveTextSecondary,
           ),
         ),
       ],
@@ -229,7 +234,7 @@ class InsightsView extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -266,7 +271,7 @@ class InsightsView extends StatelessWidget {
               return Text(
                 label,
                 style: AppTextStyles.caption.copyWith(
-                  color: AppTheme.textHint,
+                  color: AppTheme.adaptiveTextHint,
                   fontWeight: FontWeight.w500,
                 ),
               );
@@ -276,30 +281,47 @@ class InsightsView extends StatelessWidget {
         const SizedBox(width: 16),
         // Chart Area
         Expanded(
-          child: Column(
-            children: [
-              SizedBox(
-                height: 200,
-                width: double.infinity,
-                child: CustomPaint(painter: LineChartPainter()),
-              ),
-              const SizedBox(height: 16),
-              // X-Axis Labels
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ['Feb', 'Apr', 'Jun', 'Aug', 'Oct', 'Dec'].map((
-                  label,
-                ) {
-                  return Text(
-                    label,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppTheme.textHint,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const labels = ['Feb', 'Apr', 'Jun', 'Aug', 'Oct', 'Dec'];
+
+              return Column(
+                children: [
+                  SizedBox(
+                    height: 200,
+                    width: double.infinity,
+                    child: CustomPaint(painter: LineChartPainter()),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: labels
+                        .map(
+                          (label) => Expanded(
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      constraints.maxWidth / labels.length,
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    label,
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppTheme.adaptiveTextHint,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],
@@ -315,7 +337,7 @@ class InsightsView extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -344,7 +366,7 @@ class InsightsView extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -373,7 +395,7 @@ class InsightsView extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -384,10 +406,10 @@ class InsightsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.access_time,
                 size: 22,
-                color: AppTheme.textPrimary,
+                color: AppTheme.adaptiveTextPrimary,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -396,7 +418,7 @@ class InsightsView extends StatelessWidget {
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                   ),
                 ),
               ),
@@ -407,7 +429,7 @@ class InsightsView extends StatelessWidget {
             'These stories haven\'t been opened in a while...',
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: AppTheme.textSecondary,
+              color: AppTheme.adaptiveTextSecondary,
             ),
           ),
           const SizedBox(height: 32),
@@ -438,7 +460,7 @@ class InsightsView extends StatelessWidget {
                 label,
                 style: GoogleFonts.outfit(
                   fontSize: 13,
-                  color: AppTheme.textHint,
+                  color: AppTheme.adaptiveTextHint,
                   fontWeight: FontWeight.w500,
                 ),
               );
@@ -448,51 +470,62 @@ class InsightsView extends StatelessWidget {
         const SizedBox(width: 20),
         // Bars Area
         Expanded(
-          child: Column(
-            children: [
-              SizedBox(
-                height: 200,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: data.map((item) {
-                    final isSpace = item['label'] == '';
-                    if (isSpace) return const SizedBox(width: 20);
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Column(
+                children: [
+                  SizedBox(
+                    height: 200,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: data.map((item) {
+                        final isSpace = item['label'] == '';
+                        if (isSpace) {
+                          return SizedBox(width: constraints.maxWidth * 0.04);
+                        }
 
-                    final h =
-                        (item['value'] as double) * 200 / 60; // Scale to 200
-                    return Container(
-                      width: 50,
-                      height: h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF5D5FEF),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // X-Axis Labels
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: data.map((item) {
-                  final isSpace = item['label'] == '';
-                  if (isSpace) return const SizedBox(width: 20);
-                  return SizedBox(
-                    width: 50,
-                    child: Center(
-                      child: Text(
-                        item['label'] as String,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppTheme.textHint,
-                        ),
-                      ),
+                        final height = (item['value'] as double) * 200 / 60;
+                        return Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: FractionallySizedBox(
+                              widthFactor: 0.72,
+                              child: Container(
+                                height: height,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF5D5FEF),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
-              ),
-            ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: data.map((item) {
+                      final isSpace = item['label'] == '';
+                      if (isSpace) {
+                        return SizedBox(width: constraints.maxWidth * 0.04);
+                      }
+                      return Expanded(
+                        child: Text(
+                          item['label'] as String,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppTheme.adaptiveTextHint,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],
@@ -539,7 +572,7 @@ class InsightsView extends StatelessWidget {
           Text(
             percent,
             style: AppTextStyles.labelMedium.copyWith(
-              color: AppTheme.textSecondary,
+              color: AppTheme.adaptiveTextSecondary,
             ),
           ),
         ],
@@ -585,21 +618,22 @@ class InsightsView extends StatelessWidget {
               children: [
                 Text(title, style: AppTextStyles.h3),
                 const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(date, style: AppTextStyles.bodySmall),
-                    const Spacer(),
                     Text(
                       timeAgo,
                       style: AppTextStyles.caption.copyWith(
-                        color: AppTheme.textHint,
+                        color: AppTheme.adaptiveTextHint,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right,
                       size: 18,
-                      color: AppTheme.textHint,
+                      color: AppTheme.adaptiveTextHint,
                     ),
                   ],
                 ),
@@ -612,14 +646,17 @@ class InsightsView extends StatelessWidget {
   }
 
   Widget _buildChartLegend(List<String> labels, List<Color> colors) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 16,
+      runSpacing: 10,
       children: labels.asMap().entries.map((entry) {
         final i = entry.key;
         final label = entry.value;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+        return ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 18,
@@ -630,10 +667,14 @@ class InsightsView extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              Text(
-                label,
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppTheme.textSecondary,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppTheme.adaptiveTextSecondary,
+                  ),
                 ),
               ),
             ],
@@ -667,7 +708,7 @@ class InsightsView extends StatelessWidget {
                   'COLLECTIVE IMPACT',
                   style: AppTextStyles.caption.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -682,20 +723,21 @@ class InsightsView extends StatelessWidget {
                 Text(
                   'people meaningfully reached',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'across counseling, coaching, and support communities',
                   style: AppTextStyles.caption.copyWith(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
                   children: [
                     _buildWhiteStat('47.2K', 'Total\nViews'),
                     _buildWhiteStat('6', 'Counseling\nTopics'),
@@ -762,7 +804,7 @@ class InsightsView extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.caption.copyWith(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 11,
           ),
         ),
@@ -830,7 +872,7 @@ class InsightsView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.psychology_outlined, size: 18, color: color),
@@ -840,13 +882,15 @@ class InsightsView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           title,
                           style: AppTextStyles.labelBold.copyWith(fontSize: 15),
                         ),
-                        const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
@@ -879,7 +923,7 @@ class InsightsView extends StatelessWidget {
                 'Impact score',
                 style: AppTextStyles.caption.copyWith(
                   fontSize: 11,
-                  color: AppTheme.textHint,
+                  color: AppTheme.adaptiveTextHint,
                 ),
               ),
               const Spacer(),
@@ -897,7 +941,7 @@ class InsightsView extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: score / 100,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               color: color,
               minHeight: 6,
             ),
@@ -990,7 +1034,7 @@ class InsightsView extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.05),
+                            color: color.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -1005,27 +1049,19 @@ class InsightsView extends StatelessWidget {
                       .toList(),
                 ),
                 const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.visibility_outlined,
-                      size: 14,
-                      color: AppTheme.textHint,
+                    _buildInlineMetric(
+                      icon: Icons.visibility_outlined,
+                      value: views,
                     ),
-                    const SizedBox(width: 4),
-                    const SizedBox(width: 16),
-                    const Icon(
-                      Icons.favorite_border,
-                      size: 14,
-                      color: AppTheme.textHint,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      helped,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        fontSize: 12,
-                        color: color,
-                      ),
+                    _buildInlineMetric(
+                      icon: Icons.favorite_border,
+                      value: helped,
+                      valueColor: color,
                     ),
                   ],
                 ),
@@ -1083,7 +1119,7 @@ class InsightsView extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5D5FEF).withOpacity(0.1),
+                        color: const Color(0xFF5D5FEF).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1113,7 +1149,7 @@ class InsightsView extends StatelessWidget {
                   '"Your story is one of continuous growth through connection. You\'ve documented not just events, but the emotional wisdom gained from each experience. The thread that ties your memories together is gratitude — not as passive acceptance, but as active recognition of life\'s lessons."',
                   style: AppTextStyles.bodyMedium.copyWith(
                     height: 1.6,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.adaptiveTextSecondary,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -1162,17 +1198,19 @@ class InsightsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(title, style: AppTextStyles.labelBold),
-              const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -1191,7 +1229,7 @@ class InsightsView extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               color: color,
             ),
           ),
@@ -1316,34 +1354,56 @@ class InsightsView extends StatelessWidget {
             },
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               Text(
                 'Less',
                 style: AppTextStyles.caption.copyWith(
                   fontSize: 11,
-                  color: AppTheme.textHint,
+                  color: AppTheme.adaptiveTextHint,
                 ),
               ),
-              const SizedBox(width: 8),
               _heatBox(const Color(0xFFF3F4F6)),
               _heatBox(const Color(0xFFC7D2FE)),
               _heatBox(const Color(0xFF818CF8)),
               _heatBox(const Color(0xFF6366F1)),
               _heatBox(const Color(0xFF4338CA)),
-              const SizedBox(width: 8),
               Text(
                 'More',
                 style: AppTextStyles.caption.copyWith(
                   fontSize: 11,
-                  color: AppTheme.textHint,
+                  color: AppTheme.adaptiveTextHint,
                 ),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInlineMetric({
+    required IconData icon,
+    required String value,
+    Color? valueColor,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: AppTheme.adaptiveTextHint),
+        const SizedBox(width: 4),
+        Text(
+          value,
+          style: AppTextStyles.labelMedium.copyWith(
+            fontSize: 12,
+            color: valueColor ?? AppTheme.adaptiveTextSecondary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1452,7 +1512,7 @@ class LineChartPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [color.withOpacity(0.15), color.withOpacity(0.0)],
+          colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.0)],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
       canvas.drawPath(fillPath, fillPaint);

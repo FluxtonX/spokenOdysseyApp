@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: AppTheme.adaptiveScaffoldBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     height: 1.5,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.adaptiveTextSecondary,
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -109,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.outfit(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.adaptiveTextSecondary,
                       ),
                     ),
                   ),
@@ -151,18 +151,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 // OR Divider
                 Row(
                   children: [
-                    const Expanded(child: Divider(color: AppTheme.border)),
+                    Expanded(child: Divider(color: AppTheme.adaptiveBorder)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'or',
                         style: GoogleFonts.outfit(
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.adaptiveTextSecondary,
                           fontSize: 14,
                         ),
                       ),
                     ),
-                    const Expanded(child: Divider(color: AppTheme.border)),
+                    Expanded(child: Divider(color: AppTheme.adaptiveBorder)),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -178,29 +178,31 @@ class _LoginScreenState extends State<LoginScreen> {
                             ? null
                             : () => _authController.loginWithBiometrics(),
                         icon: Icon(
-                          biometricType == 'Face ID' ? Icons.face : Icons.fingerprint,
-                          color: AppTheme.textPrimary,
+                          biometricType == 'Face ID'
+                              ? Icons.face
+                              : Icons.fingerprint,
+                          color: AppTheme.adaptiveTextPrimary,
                         ),
                         label: _authController.isBiometricLoading.value
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: AppTheme.textPrimary,
+                                  color: AppTheme.adaptiveTextPrimary,
                                 ),
                               )
                             : Text(
                                 'Use $biometricType',
                                 style: GoogleFonts.outfit(
-                                  color: AppTheme.textPrimary,
+                                  color: AppTheme.adaptiveTextPrimary,
                                   fontSize: 17,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppTheme.white,
-                          side: const BorderSide(color: AppTheme.border),
+                          side: BorderSide(color: AppTheme.adaptiveBorder),
                           minimumSize: const Size(double.infinity, 56),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -219,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       "Don't have an account? ",
                       style: GoogleFonts.outfit(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.adaptiveTextSecondary,
                         fontSize: 15,
                       ),
                     ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../controllers/auth_controller.dart';
 import '../authScreen/login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -12,26 +14,34 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.85);
+  final GetStorage _storage = GetStorage();
   int _currentIndex = 0;
 
   final List<Map<String, String>> onboardingData = [
     {
-      'title': 'Capture life as it\nunfolds.',
+      'title': 'Record your story.',
       'description':
-          'Voice recordings that reflect your\ntruth — not performance.',
+          'Capture voice, text, photo stories, and video memories while they still feel honest.',
       'image': 'assets/images/onboarding_1.png',
     },
     {
-      'title': 'Record at your pace.',
-      'description': 'Daily, weekly, monthly, or whenever\nyou choose.',
+      'title': 'Organize into albums.',
+      'description':
+          'Shape memories into chapters so your archive feels intentional instead of scattered.',
       'image': 'assets/images/onboarding_2.png',
     },
     {
-      'title': 'Private by design.',
-      'description': 'Control who hears your story.',
+      'title': 'Share with family privately.',
+      'description':
+          'Decide what stays just yours, what reaches family, and what becomes part of your legacy.',
       'image': 'assets/images/onboarding_3.png',
     },
   ];
+
+  void _finishOnboarding() {
+    _storage.write(AuthController.hasSeenOnboardingKey, true);
+    Get.offAll(() => const LoginScreen());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    Get.offAll(() => const LoginScreen());
+                    _finishOnboarding();
                   },
                   child: Text(
                     'Skip',
@@ -203,7 +213,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         curve: Curves.easeInOut,
                       );
                     } else {
-                      Get.offAll(() => const LoginScreen());
+                      _finishOnboarding();
                     }
                   },
                   child: const Icon(Icons.arrow_forward, color: Colors.white),

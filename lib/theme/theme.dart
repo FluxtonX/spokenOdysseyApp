@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'typography.dart';
 
@@ -30,6 +31,26 @@ class AppTheme {
   static const Color warning = Color(0xFFF59E0B);
   static const Color info = Color(0xFF3B82F6);
   static const Color floatingActionButton = Color(0xFF5544FF);
+  static const Color darkScaffoldBg = Color(0xFF0F172A);
+  static const Color darkCardBg = Color(0xFF162033);
+  static const Color darkBorder = Color(0xFF334155);
+  static const Color darkTextPrimary = Color(0xFFF8FAFC);
+  static const Color darkTextSecondary = Color(0xFFCBD5E1);
+  static const Color darkTextHint = Color(0xFF94A3B8);
+  static const Color darkSoftSurface = Color(0xFF1D2940);
+
+  static Color get adaptiveScaffoldBg =>
+      Get.isDarkMode ? darkScaffoldBg : scaffoldBg;
+  static Color get adaptiveCardBg => Get.isDarkMode ? darkCardBg : white;
+  static Color get adaptiveSoftSurface =>
+      Get.isDarkMode ? darkSoftSurface : const Color(0xFFF9FAFB);
+  static Color get adaptiveBorder => Get.isDarkMode ? darkBorder : border;
+  static Color get adaptiveDivider => Get.isDarkMode ? darkBorder : divider;
+  static Color get adaptiveTextPrimary =>
+      Get.isDarkMode ? darkTextPrimary : textPrimary;
+  static Color get adaptiveTextSecondary =>
+      Get.isDarkMode ? darkTextSecondary : textSecondary;
+  static Color get adaptiveTextHint => Get.isDarkMode ? darkTextHint : textHint;
 
   // ── Gradient presets ───────────────────────────────────────────────
   static const LinearGradient logoGradient = LinearGradient(
@@ -140,6 +161,170 @@ class AppTheme {
       backgroundColor: scaffoldBg,
       selectedItemColor: primary,
       unselectedItemColor: textHint,
+      selectedLabelStyle: GoogleFonts.outfit(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+      unselectedLabelStyle: GoogleFonts.outfit(fontSize: 12),
+      type: BottomNavigationBarType.fixed,
+      elevation: 0,
+    ),
+  );
+
+  static ThemeData get darkTheme => ThemeData(
+    useMaterial3: true,
+    platform: TargetPlatform.android,
+    typography: Typography.material2021(platform: TargetPlatform.android),
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: darkScaffoldBg,
+    primaryColor: const Color(0xFF8B7BFF),
+    cardColor: darkCardBg,
+    colorScheme: const ColorScheme.dark(
+      primary: Color(0xFF8B7BFF),
+      onPrimary: white,
+      secondary: Color(0xFFF6E4D1),
+      onSecondary: darkScaffoldBg,
+      surface: darkCardBg,
+      onSurface: darkTextPrimary,
+      error: error,
+      onError: white,
+    ),
+    textTheme: TextTheme(
+      displayLarge: GoogleFonts.playfairDisplay(
+        fontSize: 34,
+        fontWeight: FontWeight.w800,
+        color: darkTextPrimary,
+        height: 1.2,
+      ),
+      headlineMedium: GoogleFonts.playfairDisplay(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        color: darkTextPrimary,
+        height: 1.2,
+      ),
+      displaySmall: GoogleFonts.playfairDisplay(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+        height: 1.2,
+      ),
+      titleLarge: GoogleFonts.playfairDisplay(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+        height: 1.2,
+      ),
+      titleMedium: GoogleFonts.outfit(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+        height: 1.2,
+      ),
+      titleSmall: GoogleFonts.outfit(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+        height: 1.2,
+      ),
+      bodyLarge: GoogleFonts.outfit(
+        fontSize: 18,
+        fontWeight: FontWeight.w400,
+        color: darkTextPrimary,
+        height: 1.4,
+      ),
+      bodyMedium: GoogleFonts.outfit(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: darkTextPrimary,
+        height: 1.4,
+      ),
+      bodySmall: GoogleFonts.outfit(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: darkTextSecondary,
+        height: 1.4,
+      ),
+      labelLarge: GoogleFonts.outfit(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: white,
+        height: 1.2,
+      ),
+      labelSmall: GoogleFonts.outfit(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: darkTextSecondary,
+        height: 1.2,
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF8B7BFF),
+        foregroundColor: white,
+        minimumSize: const Size(double.infinity, 56),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        textStyle: AppTextStyles.button.copyWith(color: white),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: darkTextPrimary,
+        side: const BorderSide(color: darkBorder, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        textStyle: AppTextStyles.button.copyWith(color: darkTextPrimary),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: darkTextSecondary,
+        textStyle: GoogleFonts.outfit(
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+        ),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: darkCardBg,
+      hintStyle: GoogleFonts.outfit(fontSize: 16, color: darkTextHint),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: darkBorder),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: darkBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF8B7BFF), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: error),
+      ),
+    ),
+    cardTheme: CardThemeData(
+      color: darkCardBg,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: darkBorder),
+      ),
+    ),
+    dividerTheme: const DividerThemeData(color: darkBorder, thickness: 1),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: darkScaffoldBg,
+      foregroundColor: darkTextPrimary,
+      surfaceTintColor: Colors.transparent,
+    ),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: darkScaffoldBg,
+      selectedItemColor: white,
+      unselectedItemColor: darkTextHint,
       selectedLabelStyle: GoogleFonts.outfit(
         fontSize: 12,
         fontWeight: FontWeight.w500,

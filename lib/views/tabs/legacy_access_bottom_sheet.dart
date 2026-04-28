@@ -45,7 +45,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.adaptiveTextPrimary,
                 ),
               ),
               GestureDetector(
@@ -57,10 +57,10 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close,
                     size: 20,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                   ),
                 ),
               ),
@@ -114,7 +114,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                     'This person will manage access requests and your archive.',
                     style: GoogleFonts.outfit(
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.adaptiveTextSecondary,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -124,7 +124,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                     style: GoogleFonts.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.adaptiveTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -176,14 +176,14 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: AppTheme.textPrimary,
+                                  color: AppTheme.adaptiveTextPrimary,
                                 ),
                               ),
                               Text(
                                 'Notify me if I haven\'t logged in for 30 days',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
-                                  color: AppTheme.textSecondary,
+                                  color: AppTheme.adaptiveTextSecondary,
                                 ),
                               ),
                             ],
@@ -193,7 +193,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                           value: notificationsEnabled,
                           onChanged: (val) =>
                               setState(() => notificationsEnabled = val),
-                          activeColor: const Color(0xFF5544FF),
+                          activeThumbColor: const Color(0xFF5544FF),
                         ),
                       ],
                     ),
@@ -217,7 +217,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                             'Cancel',
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.textPrimary,
+                              color: AppTheme.adaptiveTextPrimary,
                             ),
                           ),
                         ),
@@ -264,7 +264,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
             style: GoogleFonts.outfit(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
+              color: AppTheme.adaptiveTextPrimary,
             ),
           ),
           TextSpan(
@@ -298,7 +298,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                 Text(
                   selectedTrustee,
                   style: GoogleFonts.outfit(
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                     fontSize: 15,
                   ),
                 ),
@@ -306,7 +306,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                   isTrusteeExpanded
                       ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.adaptiveTextPrimary,
                 ),
               ],
             ),
@@ -321,7 +321,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
               border: Border.all(color: const Color(0xFFE5E7EB)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -355,7 +355,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                             fontSize: 15,
                             color: selectedTrustee == member
                                 ? const Color(0xFF5544FF)
-                                : AppTheme.textPrimary,
+                                : AppTheme.adaptiveTextPrimary,
                             fontWeight: selectedTrustee == member
                                 ? FontWeight.w600
                                 : FontWeight.w400,
@@ -402,7 +402,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                     style: GoogleFonts.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.adaptiveTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -410,7 +410,7 @@ class _LegacyAccessBottomSheetState extends State<LegacyAccessBottomSheet> {
                     subtitle,
                     style: GoogleFonts.outfit(
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.adaptiveTextSecondary,
                     ),
                   ),
                 ],

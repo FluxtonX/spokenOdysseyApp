@@ -31,6 +31,7 @@ class CustomTextField extends StatefulWidget {
   final EdgeInsetsGeometry? contentPadding;
   final String? errorText;
   final Widget? labelTrailing;
+  final ValueChanged<String>? onSubmitted;
 
   const CustomTextField({
     super.key,
@@ -57,6 +58,7 @@ class CustomTextField extends StatefulWidget {
     this.contentPadding,
     this.errorText,
     this.labelTrailing,
+    this.onSubmitted,
   });
 
   @override
@@ -75,6 +77,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+    final secondaryTextColor =
+        theme.textTheme.bodySmall?.color ?? AppTheme.adaptiveTextSecondary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -89,7 +95,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 style: GoogleFonts.outfit(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  color: textColor,
                 ),
               ),
               if (widget.labelTrailing != null) widget.labelTrailing!,
@@ -110,16 +116,23 @@ class _CustomTextFieldState extends State<CustomTextField> {
           maxLength: widget.maxLength,
           validator: widget.validator,
           onChanged: widget.onChanged,
+          onFieldSubmitted: (value) {
+            widget.onSubmitted?.call(value);
+            if (_isCompletionAction(widget.textInputAction)) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
+          },
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           onTap: widget.onTap,
           focusNode: widget.focusNode,
           autofocus: widget.autofocus,
           inputFormatters: widget.inputFormatters,
-          style: GoogleFonts.outfit(fontSize: 16, color: AppTheme.textPrimary),
+          style: GoogleFonts.outfit(fontSize: 16, color: textColor),
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: GoogleFonts.outfit(
               fontSize: 15,
-              color: AppTheme.textSecondary,
+              color: secondaryTextColor,
             ),
             errorText: widget.errorText,
             contentPadding:
@@ -130,7 +143,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 (widget.prefixIcon != null
                     ? Icon(
                         widget.prefixIcon,
-                        color: AppTheme.textSecondary,
+                        color: secondaryTextColor,
                         size: 24,
                       )
                     : null),
@@ -152,15 +165,29 @@ class _CustomTextFieldState extends State<CustomTextField> {
           _obscureText
               ? Icons.visibility_off_outlined
               : Icons.visibility_outlined,
-          color: AppTheme.textSecondary,
+          color:
+              theme.textTheme.bodySmall?.color ??
+              AppTheme.adaptiveTextSecondary,
           size: 24,
         ),
         onPressed: () => setState(() => _obscureText = !_obscureText),
       );
     }
     if (widget.suffixIcon != null) {
-      return Icon(widget.suffixIcon, color: AppTheme.textSecondary, size: 24);
+      return Icon(
+        widget.suffixIcon,
+        color:
+            theme.textTheme.bodySmall?.color ?? AppTheme.adaptiveTextSecondary,
+        size: 24,
+      );
     }
     return null;
+  }
+
+  bool _isCompletionAction(TextInputAction action) {
+    return action == TextInputAction.done ||
+        action == TextInputAction.go ||
+        action == TextInputAction.send ||
+        action == TextInputAction.search;
   }
 }

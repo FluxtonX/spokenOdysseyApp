@@ -1,9 +1,18 @@
+import 'dart:async';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../customWidgets/recent_memory_media_carousel.dart';
+import '../../../controllers/auth_controller.dart';
+import '../../../services/album_service.dart';
+import '../../../services/memory_service.dart';
 import '../../../theme/theme.dart';
-import '../../memories/memory_detail_screen.dart';
+import '../../albums/album_detail_screen.dart';
+import '../../memories/record_story_screen.dart';
+import '../albums_screen.dart';
+import '../discover_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,976 +22,1181 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _viewType = 0; // 0: Grid, 1: List, 2: Folder
-  int _activeTabIndex = 0;
-  DateTime? _fromDate;
-  DateTime? _toDate;
-  bool _isFromCalendarOpen = false;
-  bool _isToCalendarOpen = false;
-  final FocusNode _searchFocusNode = FocusNode();
-  bool _isSearchFocused = false;
+  final AlbumService _albumService = AlbumService();
+  final MemoryService _memoryService = MemoryService();
+  final AuthController _authController = Get.find<AuthController>();
+  final List<String> _heroBackgroundImages = const [
+    'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=1600&auto=format&fit=crop',
+  ];
+  final List<String> _heroSupportPhrases = const [
+    'Turn everyday memories into a private archive that still feels alive.',
+    'Keep photos, voice notes, and family moments together without losing their emotion.',
+    'Shape the memories your future family will want to revisit in your own voice.',
+  ];
+
+  bool _isLoadingAlbums = true;
+  bool _isLoadingMemories = true;
+  String? _albumError;
+  String? _memoryError;
+  List<Map<String, dynamic>> _recentAlbums = [];
+  List<Map<String, dynamic>> _recentMemories = [];
+  Map<String, dynamic>? _userProfile;
+  Timer? _heroBackgroundTimer;
+  Timer? _heroHeadlineTimer;
+  Timer? _heroSupportTimer;
+  int _heroImageIndex = 0;
+  int _albumSpotlightIndex = 0;
+  int _heroSupportIndex = 0;
+  bool _didPrecacheHeroImages = false;
+  bool _showGreeting = false;
+  bool _showHeroSupport = false;
+  String _animatedHeroHeadline = '';
+
+  final List<Map<String, dynamic>> _featuredVoices = const [
+    {
+      'title': 'Extraordinary Lives',
+      'subtitle': 'Explore archives that inspire how we preserve memory.',
+      'accent': Color(0xFF5544FF),
+      'icon': Icons.auto_stories_outlined,
+    },
+    {
+      'title': 'Family Legacy',
+      'subtitle': 'See how shared memories can become a living archive.',
+      'accent': Color(0xFFE2923A),
+      'icon': Icons.family_restroom_outlined,
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    _searchFocusNode.addListener(() {
-      setState(() {
-        _isSearchFocused = _searchFocusNode.hasFocus;
-      });
+    _startHeroBackgroundRotation();
+    _startHeroCopyAnimation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadHomeData();
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didPrecacheHeroImages) {
+      return;
+    }
+
+    for (final imageUrl in _heroBackgroundImages) {
+      precacheImage(NetworkImage(imageUrl), context);
+    }
+    _didPrecacheHeroImages = true;
+  }
+
+  @override
   void dispose() {
-    _searchFocusNode.dispose();
+    _heroBackgroundTimer?.cancel();
+    _heroHeadlineTimer?.cancel();
+    _heroSupportTimer?.cancel();
     super.dispose();
   }
 
-  final List<Map<String, dynamic>> _memories = [
-    {
-      'title': 'The Day I Started My Own Business',
-      'description':
-          'After years of working for others, I finally took the leap. The fear was real, but so was the excitement. I remember sitting in my...',
-      'tags': ['Proud', 'Career & Growth'],
-      'category': 'Turning Point',
-      'date': 'March 15, 2020',
-      'icon': Icons.public,
-    },
-    {
-      'title': 'Morning Coffee with Dad',
-      'description':
-          'We sat on the porch as the sun rose. He told me stories about his grandfather I had never heard before. Simple moments like these...',
-      'tags': ['Grateful', 'Family Moments'],
-      'category': null,
-      'date': 'July 22, 2023',
-      'icon': Icons.park_outlined,
-    },
-    {
-      'title': 'Conquering My First Marathon',
-      'description':
-          'Mile 20 hit me like a wall. My legs screamed to stop. But I thought of everyone who believed in me, and I kept going. Cross...',
-      'tags': ['Joyful', 'Health & Wellness'],
-      'category': 'Milestone',
-      'date': 'November 5, 2022',
-      'icon': Icons.public,
-    },
-    {
-      'title': 'A Quiet Evening of Reflection',
-      'description':
-          'Sometimes the most profound moments are the quietest ones. Tonight, I sat by the window and realized how far I have co...',
-      'tags': ['Peaceful', 'Personal Growth'],
-      'category': null,
-      'date': 'January 30, 2024',
-      'icon': Icons.wb_sunny_outlined,
-    },
-  ];
+  Future<void> _loadAlbums({bool forceRefresh = false}) async {
+    setState(() {
+      _isLoadingAlbums = true;
+      _albumError = null;
+    });
 
-  final List<Map<String, dynamic>> _albums = [
-    {
-      'title': 'Monal Tour',
-      'subtitle': 'Memories from my mountain journey',
-      'entries': 12,
-      'image': 'assets/images/onboarding_2.png',
-    },
-    {
-      'title': 'Family Reunion',
-      'subtitle': 'The annual gathering in Portland',
-      'entries': 24,
-      'image': 'assets/images/onboarding_1.png',
-    },
-    {
-      'title': 'Career Milestones',
-      'subtitle': 'My professional growth journey',
-      'entries': 8,
-      'image': 'assets/images/onboarding_2.png',
-    },
-  ];
+    try {
+      final albums = await _albumService.fetchAlbums(
+        forceRefresh: forceRefresh,
+      );
+      if (!mounted) return;
 
-  void _showImagePicker(BuildContext context, String title) {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      setState(() {
+        _recentAlbums = albums.take(8).toList();
+        if (_albumSpotlightIndex >= _recentAlbums.length &&
+            _recentAlbums.isNotEmpty) {
+          _albumSpotlightIndex = 0;
+        }
+        _isLoadingAlbums = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _albumError = error.toString().replaceFirst('Exception: ', '');
+        _isLoadingAlbums = false;
+      });
+    }
+  }
+
+  Future<void> _loadMemories({bool forceRefresh = false}) async {
+    setState(() {
+      _isLoadingMemories = true;
+      _memoryError = null;
+    });
+
+    try {
+      final memories = await _memoryService.fetchMemories(
+        forceRefresh: forceRefresh,
+      );
+      if (!mounted) return;
+
+      final published = memories.where(
+        (memory) => memory['status'] == 'published',
+      );
+
+      setState(() {
+        _recentMemories = published.take(6).toList();
+        _isLoadingMemories = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _memoryError = error.toString().replaceFirst('Exception: ', '');
+        _recentMemories = const [];
+        _isLoadingMemories = false;
+      });
+    }
+  }
+
+  Future<void> _loadHomeData({bool forceRefresh = false}) async {
+    await Future.wait([
+      _loadAlbums(forceRefresh: forceRefresh),
+      _loadMemories(forceRefresh: forceRefresh),
+      _loadProfile(forceRefresh: forceRefresh),
+    ]);
+  }
+
+  Future<void> _loadProfile({bool forceRefresh = false}) async {
+    try {
+      final profile = await _authController.fetchBackendProfile();
+      if (!mounted) return;
+      setState(() {
+        _userProfile = profile;
+      });
+    } catch (e) {
+      debugPrint('Error loading home profile: $e');
+    }
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  String _displayName() {
+    // Priority: Backend Profile > Firebase User > Fallback
+    final profileName = _userProfile?['displayName']?.toString().trim();
+    if (profileName != null && profileName.isNotEmpty) return profileName;
+
+    final firebaseUser = _authController.firebaseUser.value;
+    final name = firebaseUser?.displayName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+
+    final email = firebaseUser?.email;
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+
+    return 'Archivist';
+  }
+
+  void _startHeroBackgroundRotation() {
+    _heroBackgroundTimer?.cancel();
+    _heroBackgroundTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _heroImageIndex = (_heroImageIndex + 1) % _heroBackgroundImages.length;
+      });
+    });
+  }
+
+  void _startHeroCopyAnimation() {
+    const headline = 'Keep what matters in your own voice.';
+
+    _heroHeadlineTimer?.cancel();
+    _heroSupportTimer?.cancel();
+    _animatedHeroHeadline = '';
+    _heroSupportIndex = 0;
+    _showGreeting = false;
+    _showHeroSupport = false;
+
+    Future<void>.delayed(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+
+      setState(() {
+        _showGreeting = true;
+      });
+
+      var nextLength = 0;
+      _heroHeadlineTimer = Timer.periodic(const Duration(milliseconds: 26), (
+        timer,
+      ) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+
+        nextLength += 1;
+        if (nextLength >= headline.length) {
+          setState(() {
+            _animatedHeroHeadline = headline;
+            _showHeroSupport = true;
+          });
+          timer.cancel();
+          _startHeroSupportRotation();
+          return;
+        }
+
+        setState(() {
+          _animatedHeroHeadline = headline.substring(0, nextLength);
+        });
+      });
+    });
+  }
+
+  void _startHeroSupportRotation() {
+    _heroSupportTimer?.cancel();
+    _heroSupportTimer = Timer.periodic(const Duration(milliseconds: 2800), (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _heroSupportIndex =
+            (_heroSupportIndex + 1) % _heroSupportPhrases.length;
+      });
+    });
+  }
+
+  Future<void> _startRecordStoryFlow({
+    RecordStoryFormat? initialFormat,
+    Map<String, dynamic>? initialDraft,
+  }) async {
+    final result = await Get.to<Map<String, dynamic>>(
+      () => RecordStoryScreen(
+        initialFormat: initialFormat,
+        initialDraft: initialDraft,
       ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    );
+
+    if (!mounted || result == null) return;
+
+    final memory = result['memory'];
+    if (memory is! Map<String, dynamic>) return;
+
+    await _loadHomeData();
+
+    Get.snackbar(
+      'Memory updated',
+      result['status'] == 'published'
+          ? 'Your memory is now part of the archive.'
+          : 'Draft saved. You can continue it anytime.',
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      backgroundColor: AppTheme.adaptiveCardBg,
+      colorText: AppTheme.adaptiveTextPrimary,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => _loadHomeData(forceRefresh: true),
+          color: AppTheme.primary,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
             children: [
-              Text(
-                title,
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Upload a new photo from your device or take a fresh picture.',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
+              _buildHeroHeader(),
+              const SizedBox(height: 22),
+              _buildCloudAlbumsShowcaseCard(),
               const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Choose from Gallery'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  minimumSize: const Size(double.infinity, 54),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+              _buildSectionHeader(
+                title: 'Quick Actions',
+                subtitle: 'Start in the format that fits the memory.',
+              ),
+              const SizedBox(height: 14),
+              _buildQuickActions(),
+              const SizedBox(height: 28),
+              _buildSectionHeader(
+                title: 'Recent Memories',
+                subtitle: 'Return to moments you captured recently.',
+                trailing: TextButton(
+                  onPressed: () => _startRecordStoryFlow(),
+                  child: const Text('New memory'),
                 ),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.camera_alt_outlined),
-                label: const Text('Take a Photo'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.textPrimary,
-                  side: const BorderSide(color: AppTheme.border),
-                  minimumSize: const Size(double.infinity, 54),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+              const SizedBox(height: 14),
+              _buildRecentMemoriesSection(),
+              const SizedBox(height: 28),
+              _buildSectionHeader(
+                title: 'Recent Albums',
+                subtitle: 'Collections shaping your archive right now.',
+                trailing: TextButton(
+                  onPressed: () => Get.to(() => const AlbumsScreen()),
+                  child: const Text('Open albums'),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              _buildRecentAlbumsSection(),
+              const SizedBox(height: 28),
+              _buildSectionHeader(
+                title: 'Legacy & Activity',
+                subtitle: 'A quick pulse on your preservation journey.',
+              ),
+              const SizedBox(height: 14),
+              _buildInsightsGrid(),
+              const SizedBox(height: 28),
+              _buildSectionHeader(
+                title: 'Discover',
+                subtitle: 'Move beyond your archive when you want inspiration.',
+                trailing: TextButton(
+                  onPressed: () => Get.to(() => const DiscoverScreen()),
+                  child: const Text('Explore'),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildDiscoverSection(),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  bool _isFilterApplied = false;
-  List<String> _selectedMoods = [];
-  String _selectedVisibility = 'All';
-
-  final List<String> _moodOptions = [
-    'Joyful',
-    'Grateful',
-    'Reflective',
-    'Hopeful',
-    'Challenging',
-    'Loving',
-    'Proud',
-    'Peaceful',
-  ];
-
-  Widget _buildFilterAppliedBanner() {
-    if (!_isFilterApplied) return const SizedBox.shrink();
-
+  Widget _buildHeroHeader() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE7F4EE), // Light green from Figma
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
+      height: 320,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(30)),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(
-              color: Color(0xFF5ABA82),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check, size: 12, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Filters applied',
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E4D34),
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isFilterApplied = false;
-                _selectedMoods = [];
-                _selectedVisibility = 'All';
-                _fromDate = null;
-                _toDate = null;
-              });
-            },
-            child: const Icon(Icons.close, size: 20, color: Color(0xFF1E4D34)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: Column(
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 1800),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInOutCubic,
+            layoutBuilder: (currentChild, previousChildren) {
+              return Stack(
+                fit: StackFit.expand,
                 children: [
-                  // Handle
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 12),
-                      width: 40,
-                      height: 4,
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              );
+            },
+            transitionBuilder: (child, animation) {
+              final fade = CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
+              );
+              final slide = Tween<Offset>(
+                begin: const Offset(0.03, 0),
+                end: Offset.zero,
+              ).animate(fade);
+
+              return FadeTransition(
+                opacity: fade,
+                child: SlideTransition(position: slide, child: child),
+              );
+            },
+            child: _buildHeroBackgroundImage(
+              _heroBackgroundImages[_heroImageIndex],
+              ValueKey(_heroBackgroundImages[_heroImageIndex]),
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF141B27).withValues(alpha: 0.84),
+                  const Color(0xFF253247).withValues(alpha: 0.68),
+                  const Color(0xFF8A6A50).withValues(alpha: 0.46),
+                ],
+              ),
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.28),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: (_userProfile?['photoURL'] ?? _authController.firebaseUser.value?.photoURL) != null
+                            ? Image.network(
+                                (_userProfile?['photoURL'] ?? _authController.firebaseUser.value!.photoURL!).toString(),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, _, __) => Container(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  child: const Icon(Icons.person_rounded, color: Colors.white70),
+                                ),
+                              )
+                            : Container(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                child: const Icon(Icons.person_rounded, color: Colors.white70),
+                              ),
                       ),
                     ),
-                  ),
-                  _buildFilterHeader(context),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                    const SizedBox(width: 14),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildDateRangeSection(setModalState),
-                          const SizedBox(height: 32),
-                          _buildMoodSection(setModalState),
-                          const SizedBox(height: 32),
-                          _buildVisibilitySection(setModalState),
-                          const SizedBox(height: 40),
+                          Text(
+                            _displayName(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                          Text(
+                            _userProfile?['email'] ?? _authController.firebaseUser.value?.email ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withValues(alpha: 0.55),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                  _buildFilterActions(context),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Advanced Filters',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: AppTheme.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateRangeSection(StateSetter setModalState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Date Range',
-          style: GoogleFonts.outfit(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  _buildDateInput(
-                    'From',
-                    _fromDate != null
-                        ? '${_fromDate!.day}/${_fromDate!.month}/${_fromDate!.year}'
-                        : 'dd/mm/yy',
-                    () {
-                      setModalState(() {
-                        _isFromCalendarOpen = !_isFromCalendarOpen;
-                        _isToCalendarOpen = false;
-                      });
-                    },
-                    _isFromCalendarOpen,
-                  ),
-                  if (_isFromCalendarOpen)
-                    _buildInlineCalendar(_fromDate ?? DateTime.now(), (date) {
-                      setModalState(() {
-                        _fromDate = date;
-                        _isFromCalendarOpen = false;
-                      });
-                    }),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildDateInput(
-                    'To',
-                    _toDate != null
-                        ? '${_toDate!.day}/${_toDate!.month}/${_toDate!.year}'
-                        : 'dd/mm/yy',
-                    () {
-                      setModalState(() {
-                        _isToCalendarOpen = !_isToCalendarOpen;
-                        _isFromCalendarOpen = false;
-                      });
-                    },
-                    _isToCalendarOpen,
-                  ),
-                  if (_isToCalendarOpen)
-                    _buildInlineCalendar(_toDate ?? DateTime.now(), (date) {
-                      setModalState(() {
-                        _toDate = date;
-                        _isToCalendarOpen = false;
-                      });
-                    }),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateInput(
-    String label,
-    String value,
-    VoidCallback onTap,
-    bool isOpen,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.outfit(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 6),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isOpen
-                    ? const Color(0xFF5D5FEF)
-                    : const Color(0xFFE5E7EB),
-                width: isOpen ? 1.5 : 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  value,
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    color: value == 'dd/mm/yy'
-                        ? AppTheme.textHint
-                        : AppTheme.textPrimary,
+                  ],
+                ),
+                const Spacer(),
+                // Moved greeting here as requested
+                AnimatedSlide(
+                  duration: const Duration(milliseconds: 650),
+                  curve: Curves.easeOutCubic,
+                  offset: _showGreeting ? Offset.zero : const Offset(0, 0.18),
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 650),
+                    curve: Curves.easeOutCubic,
+                    opacity: _showGreeting ? 1 : 0,
+                    child: Text(
+                      '${_greeting()},',
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
                   ),
                 ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                  color: AppTheme.textSecondary,
+                const SizedBox(height: 8),
+                Text(
+                  _animatedHeroHeadline.isEmpty ? ' ' : _animatedHeroHeadline,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 30,
+                    height: 1.14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 450),
+                  opacity: _showHeroSupport ? 1 : 0,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 650),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.22),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      _heroSupportPhrases[_heroSupportIndex],
+                      key: ValueKey<String>(
+                        _heroSupportPhrases[_heroSupportIndex],
+                      ),
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        height: 1.6,
+                        color: Colors.white.withValues(alpha: 0.84),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInlineCalendar(
-    DateTime initialDate,
-    Function(DateTime) onSelected,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      height: 250,
-      width: 250,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF5D5FEF),
-            onPrimary: Colors.white,
-            onSurface: AppTheme.textPrimary,
-          ),
-          textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF5D5FEF),
+    );
+  }
+
+  Widget _buildHeroBackgroundImage(String imageUrl, Key key) {
+    return TweenAnimationBuilder<double>(
+      key: key,
+      tween: Tween<double>(begin: 1.04, end: 1),
+      duration: const Duration(seconds: 5),
+      curve: Curves.easeOut,
+      builder: (context, scale, child) {
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+
+          return DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF202938),
+                  Color(0xFF3A4457),
+                  Color(0xFF7A6858),
+                ],
+              ),
             ),
-          ),
-        ),
-        child: CalendarDatePicker(
-          initialDate: initialDate,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-          onDateChanged: onSelected,
-        ),
+            child: child,
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF202938),
+                  Color(0xFF3A4457),
+                  Color(0xFF7A6858),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildMoodSection(StateSetter setModalState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Mood',
-          style: GoogleFonts.outfit(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textSecondary,
-          ),
+  Widget _buildCloudAlbumsShowcaseCard() {
+    if (_isLoadingAlbums) {
+      return Container(
+        height: 236,
+        decoration: BoxDecoration(
+          color: AppTheme.adaptiveCardBg,
+          borderRadius: BorderRadius.circular(30),
         ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: _moodOptions.map((mood) {
-            final isSelected = _selectedMoods.contains(mood);
-            return GestureDetector(
-              onTap: () {
-                setModalState(() {
-                  if (isSelected) {
-                    _selectedMoods.remove(mood);
-                  } else {
-                    _selectedMoods.add(mood);
-                  }
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF5D5FEF)
-                      : const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  mood,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? Colors.white : AppTheme.textSecondary,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
-  Widget _buildVisibilitySection(StateSetter setModalState) {
-    final options = ['All', 'Public', 'Family', 'Private'];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Visibility',
-          style: GoogleFonts.outfit(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textSecondary,
+    if (_recentAlbums.isEmpty) {
+      return Container(
+        height: 252,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF202938), Color(0xFF445065), Color(0xFF8A755F)],
           ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: options.map((option) {
-              final isSelected = _selectedVisibility == option;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setModalState(() {
-                      _selectedVisibility = option;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.white : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: Text(
-                      option,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(
-                        fontSize: 13,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        color: isSelected
-                            ? AppTheme.textPrimary
-                            : AppTheme.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFilterActions(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[100]!)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextButton(
-              onPressed: () {
-                setState(() {
-                  _selectedMoods = [];
-                  _selectedVisibility = 'All';
-                  _fromDate = null;
-                  _toDate = null;
-                });
-                Navigator.pop(context);
-              },
-              child: Text(
-                'Reset',
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 22,
+              offset: const Offset(0, 12),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _isFilterApplied = true;
-                });
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5D5FEF),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                elevation: 0,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
-                'Apply Filters',
+                'Album Spotlight',
                 style: GoogleFonts.outfit(
-                  fontSize: 16,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
             ),
+            const Spacer(),
+            Flexible(
+              child: Text(
+                'The next cloud album you create will begin rotating here automatically.',
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                'Create an album from the archive tab and keep every memory synced to the cloud.',
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.outfit(
+                  fontSize: 12.5,
+                  height: 1.42,
+                  color: Colors.white.withValues(alpha: 0.86),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final visibleDotCount = _recentAlbums.length > 5 ? 5 : _recentAlbums.length;
+
+    return GestureDetector(
+      onTap: () => Get.to(
+        () => AlbumDetailScreen(album: _recentAlbums[_albumSpotlightIndex]),
+      ),
+      child: Container(
+        height: 236,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CarouselSlider.builder(
+              itemCount: _recentAlbums.length,
+              itemBuilder: (context, index, realIndex) {
+                final album = _recentAlbums[index];
+                return SizedBox.expand(child: _buildAlbumCover(album));
+              },
+              options: CarouselOptions(
+                viewportFraction: 1,
+                height: 236,
+                autoPlay: true,
+                autoPlayInterval: const Duration(milliseconds: 2200),
+                autoPlayAnimationDuration: const Duration(milliseconds: 900),
+                autoPlayCurve: Curves.easeInOutCubic,
+                enlargeCenterPage: false,
+                onPageChanged: (index, reason) {
+                  if (!mounted) return;
+                  setState(() {
+                    _albumSpotlightIndex = index;
+                  });
+                },
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.06),
+                    Colors.black.withValues(alpha: 0.16),
+                    Colors.black.withValues(alpha: 0.64),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 18,
+              left: 18,
+              right: 18,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  child: Text(
+                      'Album',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(visibleDotCount, (index) {
+                      final active =
+                          index == (_albumSpotlightIndex % visibleDotCount);
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 280),
+                        margin: const EdgeInsets.only(left: 6),
+                        width: active ? 18 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: active
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _recentAlbums[_albumSpotlightIndex]['title']?.toString() ??
+                        'Cloud album',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1.08,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _recentAlbums[_albumSpotlightIndex]['subtitle']
+                            ?.toString() ??
+                        'A synced collection ready to keep growing in your archive.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13.5,
+                      height: 1.5,
+                      color: Colors.white.withValues(alpha: 0.86),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentMemoriesSection() {
+    if (_isLoadingMemories) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_memoryError != null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptiveCardBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.adaptiveBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'We could not load your recent memories.',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.adaptiveTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _memoryError!,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                height: 1.5,
+                color: AppTheme.adaptiveTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextButton(
+              onPressed: () => _loadMemories(forceRefresh: true),
+              child: const Text('Try again'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_recentMemories.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptiveCardBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.adaptiveBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No published memories yet.',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.adaptiveTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'The first memory you publish will appear here automatically after it is saved to your archive.',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                height: 1.5,
+                color: AppTheme.adaptiveTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RecentMemoryMediaCarousel(memories: _recentMemories);
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+    Widget? trailing,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.adaptiveTextPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  height: 1.45,
+                  color: AppTheme.adaptiveTextSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (trailing != null) trailing,
+      ],
+    );
+  }
+
+  Widget _buildQuickActions() {
+    final items = [
+      _QuickActionData(
+        title: 'Voice',
+        subtitle: '',
+        icon: Icons.mic_none_rounded,
+        accent: const Color(0xFF5544FF),
+        onTap: () =>
+            _startRecordStoryFlow(initialFormat: RecordStoryFormat.voice),
+      ),
+      _QuickActionData(
+        title: 'Write',
+        subtitle: '',
+        icon: Icons.edit_note_rounded,
+        accent: const Color(0xFF5ABA82),
+        onTap: () =>
+            _startRecordStoryFlow(initialFormat: RecordStoryFormat.text),
+      ),
+      _QuickActionData(
+        title: 'Photo',
+        subtitle: '',
+        icon: Icons.collections_outlined,
+        accent: const Color(0xFFE2923A),
+        onTap: () =>
+            _startRecordStoryFlow(initialFormat: RecordStoryFormat.photoText),
+      ),
+      _QuickActionData(
+        title: 'Video',
+        subtitle: '',
+        icon: Icons.videocam_outlined,
+        accent: const Color(0xFFE85D75),
+        onTap: () =>
+            _startRecordStoryFlow(initialFormat: RecordStoryFormat.video),
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: items.map((item) {
+          return _buildQuickActionIconItem(
+            title: item.title,
+            icon: item.icon,
+            accent: item.accent,
+            onTap: item.onTap,
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionIconItem({
+    required String title,
+    required IconData icon,
+    required Color accent,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: accent.withValues(alpha: 0.18), width: 1.5),
+            ),
+            child: Icon(
+              icon,
+              color: accent,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.adaptiveTextPrimary,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildChip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.outfit(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader(BuildContext context) {
-    const coverHeight = 200.0;
-
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.white,
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Column(
-            children: [
-              Container(
-                height: coverHeight,
-                width: double.infinity,
-                color: const Color(0xFF9FB8D1),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Image.asset(
-                        'assets/images/onboarding_2.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 16,
-                      right: 16,
-                      child: GestureDetector(
-                        onTap: () =>
-                            _showImagePicker(context, 'Change Cover Photo'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.camera_alt_outlined,
-                                size: 18,
-                                color: AppTheme.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Change Cover',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 80, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Sarah Mitchell',
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.textPrimary,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5D5FEF),
-                            minimumSize: const Size(0, 0),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 10,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Edit Profile',
-                            style: GoogleFonts.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.work_outline,
-                          size: 16,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Entrepreneur & Author',
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Portland, OR',
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Icon(
-                          Icons.cake_outlined,
-                          size: 16,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Born March 1985',
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Documenting my journey from small-town dreamer to business owner, mother, and lifelong learner. Every challenge taught me resilience, every joy reminded me to be grateful.',
-                      style: GoogleFonts.outfit(
-                        fontSize: 15,
-                        height: 1.6,
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Life Motto',
-                      style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondary,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '“Live intentionally, love deeply, leave a legacy of kindness.”',
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        height: 1.4,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Areas of Expertise',
-                      style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondary,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        _buildChip('Entrepreneurship', const Color(0xFF5D5FEF)),
-                        _buildChip('Parenting', const Color(0xFFE2923A)),
-                        _buildChip('Wellness', const Color(0xFF5ABA82)),
-                        _buildChip('Creative Writing', const Color(0xFF916CD3)),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      children: [
-                        _buildStatCard('127', 'Memories'),
-                        const SizedBox(width: 12),
-                        _buildStatCard('18', 'Milestones'),
-                        const SizedBox(width: 12),
-                        _buildStatCard('342', 'Followers'),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF5D5FEF).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: const Color(0xFF5D5FEF).withOpacity(0.2),
-                        ),
-                      ),
-                      child: Text(
-                        '“Changing The Way We Preserve Our Legacy”',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
-                          color: const Color(0xFF5D5FEF),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+  Widget _buildRecentAlbumsSection() {
+    if (_isLoadingAlbums) {
+      return SizedBox(
+        height: 228,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: 3,
+          separatorBuilder: (_, __) => const SizedBox(width: 14),
+          itemBuilder: (context, index) => Container(
+            width: 250,
+            decoration: BoxDecoration(
+              color: AppTheme.adaptiveCardBg,
+              borderRadius: BorderRadius.circular(26),
+            ),
+            child: const Center(child: CircularProgressIndicator()),
           ),
         ),
-        Positioned(
-          top: coverHeight - 50,
-          left: 20,
-          child: Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 4),
-                ),
-                child: CircleAvatar(
-                  radius: 54,
-                  backgroundColor: const Color(0xFFF3F4F6),
-                  backgroundImage: const NetworkImage(
-                    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&auto=format&fit=crop',
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 4,
-                right: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF5D5FEF),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.edit, size: 16, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildStatCard(String value, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+    if (_albumError != null) {
+      return Container(
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: AppTheme.white,
-          borderRadius: BorderRadius.circular(20),
+          color: AppTheme.adaptiveCardBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.adaptiveBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Albums could not load',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.adaptiveTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _albumError!,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                height: 1.5,
+                color: AppTheme.adaptiveTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: () => _loadAlbums(forceRefresh: true),
+              child: const Text('Try again'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_recentAlbums.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptiveCardBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.adaptiveBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No albums yet',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.adaptiveTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create your first album to start organizing memories into meaningful chapters.',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                height: 1.5,
+                color: AppTheme.adaptiveTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Get.to(() => const AlbumsScreen()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5544FF),
+                minimumSize: const Size(0, 48),
+              ),
+              child: const Text('Create first album'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 252,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _recentAlbums.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        itemBuilder: (context, index) {
+          final album = _recentAlbums[index];
+          return _buildRecentAlbumCard(album);
+        },
+      ),
+    );
+  }
+
+  Widget _buildRecentAlbumCard(Map<String, dynamic> album) {
+    return GestureDetector(
+      onTap: () => Get.to(() => AlbumDetailScreen(album: album)),
+      child: Container(
+        height: 252,
+        width: 254,
+        decoration: BoxDecoration(
+          color: AppTheme.adaptiveCardBg,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: AppTheme.adaptiveBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 18,
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 14,
               offset: const Offset(0, 8),
             ),
           ],
@@ -990,20 +1204,76 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              value,
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(26),
+              ),
+              child: Stack(
+                children: [
+                  SizedBox(
+                    height: 144,
+                    width: double.infinity,
+                    child: _buildAlbumCover(album),
+                  ),
+                  Positioned(
+                    top: 14,
+                    right: 14,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${album['entries'] ?? 0} memories',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                color: AppTheme.textSecondary,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      album['title']?.toString() ?? 'Untitled Album',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.adaptiveTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Text(
+                        album['subtitle']?.toString().isNotEmpty == true
+                            ? album['subtitle'].toString()
+                            : 'A chapter in your archive waiting to grow.',
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: AppTheme.adaptiveTextSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1012,477 +1282,241 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildViewIcon(IconData icon, int type, double size) {
-    final bool isActive = _viewType == type;
-    return InkWell(
-      onTap: () => setState(() => _viewType = type),
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF5D5FEF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(
-          icon,
-          size: size,
-          color: isActive ? Colors.white : AppTheme.textSecondary,
-        ),
-      ),
-    );
+  Widget _buildAlbumCover(Map<String, dynamic> album) {
+    final imageUrl = album['coverImageUrl']?.toString();
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildAlbumFallback(album),
+      );
+    }
+
+    final assetPath = album['image']?.toString();
+    if (assetPath != null && assetPath.isNotEmpty) {
+      return Image.asset(assetPath, fit: BoxFit.cover);
+    }
+
+    return _buildAlbumFallback(album);
   }
 
-  Widget _buildTabButton(String label, int index) {
-    final bool isActive = _activeTabIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _activeTabIndex = index),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              fontSize: 15,
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: isActive
-                  ? const Color(0xFF5D5FEF)
-                  : AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 3,
-            width: 40,
-            decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF5D5FEF) : Colors.transparent,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAlbumCard(Map<String, dynamic> album) {
+  Widget _buildAlbumFallback(Map<String, dynamic> album) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2E3748), Color(0xFF6E5A4F), Color(0xFFB79E87)],
+        ),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Align(
+        alignment: Alignment.bottomLeft,
+        child: Text(
+          album['title']?.toString() ?? 'Album',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsightsGrid() {
+    final memoryCount = _recentMemories.length;
+    final albumCount = _recentAlbums.length;
+    final publicMemories = _recentMemories
+        .where((memory) => memory['privacy'] == 'Public')
+        .length;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: AppTheme.adaptiveCardBg,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.adaptiveBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Album Image Header
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            child: Stack(
-              children: [
-                Image.asset(
-                  album['image'],
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5ABA82).withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
                 ),
-                // Overlay for better icon visibility if needed
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.1),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
+                child: const Icon(
+                  Icons.auto_graph_rounded,
+                  color: Color(0xFF5ABA82),
+                  size: 20,
                 ),
-                // Entries Badge
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${album['entries']} entries',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                'Archive Overview',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.adaptiveTextPrimary,
                 ),
-                // Folder Icon Badge
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.folder_open_rounded,
-                      size: 20,
-                      color: Color(0xFF5D5FEF),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Album Text Body
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  album['title'],
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInsightStat(
+                  title: 'Memories',
+                  value: '$memoryCount',
+                  subtitle: 'This week',
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  album['subtitle'],
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                    height: 1.4,
-                  ),
+              ),
+              Container(width: 1, height: 40, color: AppTheme.adaptiveDivider),
+              Expanded(
+                child: _buildInsightStat(
+                  title: 'Albums',
+                  value: '$albumCount',
+                  subtitle: 'Active',
                 ),
-              ],
-            ),
+              ),
+              Container(width: 1, height: 40, color: AppTheme.adaptiveDivider),
+              Expanded(
+                child: _buildInsightStat(
+                  title: 'Shared',
+                  value: '$publicMemories',
+                  subtitle: 'Publicly',
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMemoryCard(Map<String, dynamic> memory) {
-    return InkWell(
-      onTap: () => Get.to(() => MemoryDetailScreen(memory: memory)),
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+  Widget _buildInsightStat({
+    required String title,
+    required String value,
+    required String subtitle,
+  }) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.adaptiveTextPrimary,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (memory['category'] != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5D5FEF),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  memory['category'],
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: GoogleFonts.outfit(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.adaptiveTextPrimary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          subtitle,
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            color: AppTheme.adaptiveTextSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDiscoverSection() {
+    return SizedBox(
+      height: 176,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _featuredVoices.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        itemBuilder: (context, index) {
+          final item = _featuredVoices[index];
+          final accent = item['accent'] as Color;
+
+          return GestureDetector(
+            onTap: () => Get.to(() => const DiscoverScreen()),
+            child: Container(
+              width: 280,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.adaptiveCardBg,
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: accent.withValues(alpha: 0.15)),
               ),
-              const SizedBox(height: 12),
-            ],
-            Text(
-              memory['title']!,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
-                height: 1.3,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              memory['description']!,
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                height: 1.6,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: (memory['tags'] as List<String>).map((tag) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF5D5FEF).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    tag,
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF5D5FEF),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.only(top: 16),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
-              ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 14,
-                    color: AppTheme.textSecondary.withOpacity(0.6),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    memory['date']!,
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                      fontWeight: FontWeight.w500,
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    child: Icon(item['icon'] as IconData, color: accent),
                   ),
                   const Spacer(),
-                  Icon(
-                    memory['icon'] as IconData,
-                    size: 16,
-                    color: AppTheme.textSecondary.withOpacity(0.6),
+                  Text(
+                    item['title'] as String,
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.adaptiveTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    item['subtitle'] as String,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      height: 1.55,
+                      color: AppTheme.adaptiveTextSecondary,
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        heroTag: 'home_fab',
-        backgroundColor: AppTheme.floatingActionButton,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-        child: const Icon(Icons.add),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildProfileHeader(context),
-              const SizedBox(height: 24),
+class _QuickActionData {
+  const _QuickActionData({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.accent,
+    required this.onTap,
+  });
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Color(0xFFE5E7EB),
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          _buildTabButton('All Memories', 0),
-                          const SizedBox(width: 32),
-                          _buildTabButton('Albums', 1),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    GestureDetector(
-                      onTap: () => _searchFocusNode.requestFocus(),
-                      behavior: HitTestBehavior.opaque,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: 56,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(28),
-                          border: Border.all(
-                            color: _isSearchFocused
-                                ? const Color(0xFF5D5FEF)
-                                : const Color(0xFFE5E7EB),
-                            width: _isSearchFocused ? 2 : 1,
-                          ),
-                          boxShadow: _isSearchFocused
-                              ? [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFF5D5FEF,
-                                    ).withOpacity(0.1),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.search,
-                              color: _isSearchFocused
-                                  ? const Color(0xFF5D5FEF)
-                                  : AppTheme.textSecondary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                focusNode: _searchFocusNode,
-                                decoration: InputDecoration(
-                                  hintText: 'Search memories...',
-                                  hintStyle: GoogleFonts.outfit(
-                                    color: AppTheme.textHint,
-                                    fontSize: 15,
-                                  ),
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                  isDense: true,
-                                ),
-                                style: GoogleFonts.outfit(
-                                  fontSize: 15,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: InkWell(
-                        onTap: _showFilterBottomSheet,
-                        borderRadius: BorderRadius.circular(28),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.tune,
-                              color: AppTheme.textPrimary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Advanced Filters',
-                              style: GoogleFonts.outfit(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildFilterAppliedBanner(),
-                    if (_activeTabIndex == 0) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '4 memories',
-                            style: GoogleFonts.outfit(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              _buildViewIcon(Icons.grid_view_rounded, 0, 20),
-                              const SizedBox(width: 8),
-                              _buildViewIcon(Icons.list_rounded, 1, 24),
-                              const SizedBox(width: 8),
-                              _buildViewIcon(Icons.folder_open_rounded, 2, 22),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      ..._memories.map(_buildMemoryCard),
-                    ] else ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '3 albums',
-                            style: GoogleFonts.outfit(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      ..._albums.map(_buildAlbumCard),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accent;
+  final VoidCallback onTap;
 }

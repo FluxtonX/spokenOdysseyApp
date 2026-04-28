@@ -1,116 +1,81 @@
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../theme/theme.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
-
   const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
   });
 
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        color: AppTheme.white,
-        border: Border(
-          top: BorderSide(color: AppTheme.border, width: 1),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _NavBarItem(
-              icon: Icons.home_outlined,
-              label: 'Home',
-              isActive: currentIndex == 0,
-              onTap: () => onTap(0),
-            ),
-            _NavBarItem(
-              icon: Icons.explore_outlined,
-              label: 'Discover',
-              isActive: currentIndex == 1,
-              onTap: () => onTap(1),
-            ),
-            _NavBarItem(
-              icon: Icons.folder_outlined,
-              label: 'Albums',
-              isActive: currentIndex == 2,
-              onTap: () => onTap(2),
-            ),
-            _NavBarItem(
-              icon: Icons.people_outline,
-              label: 'Family',
-              isActive: currentIndex == 3,
-              onTap: () => onTap(3),
-            ),
-            _NavBarItem(
-              icon: Icons.settings_outlined,
-              label: 'More',
-              isActive: currentIndex == 4,
-              onTap: () => onTap(4),
-            ),
-          ],
-        ),
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final barColor = isDark ? const Color(0xFF17304D) : const Color(0xFF2F6FDE);
+    final buttonColor = isDark
+        ? const Color(0xFF6EA8FF)
+        : const Color(0xFF0F52D6);
+    final inactiveColor = isDark
+        ? const Color(0xFFB8D3FF)
+        : const Color(0xFFDCE8FF);
+
+    return SafeArea(
+      top: false,
+      child: CurvedNavigationBar(
+        index: currentIndex,
+        height: 66,
+        backgroundColor: Colors.transparent,
+        color: barColor,
+        buttonBackgroundColor: buttonColor,
+        animationDuration: const Duration(milliseconds: 320),
+        animationCurve: Curves.easeOutCubic,
+        items: [
+          _buildNavIcon(
+            icon: Icons.home_outlined,
+            isActive: currentIndex == 0,
+            activeColor: Colors.white,
+            inactiveColor: inactiveColor,
+          ),
+          _buildNavIcon(
+            icon: Icons.fiber_manual_record_rounded,
+            isActive: currentIndex == 1,
+            activeColor: Colors.white,
+            inactiveColor: inactiveColor,
+          ),
+          _buildNavIcon(
+            icon: Icons.folder_outlined,
+            isActive: currentIndex == 2,
+            activeColor: Colors.white,
+            inactiveColor: inactiveColor,
+          ),
+          _buildNavIcon(
+            icon: Icons.people_outline_rounded,
+            isActive: currentIndex == 3,
+            activeColor: Colors.white,
+            inactiveColor: inactiveColor,
+          ),
+          _buildNavIcon(
+            icon: Icons.settings_outlined,
+            isActive: currentIndex == 4,
+            activeColor: Colors.white,
+            inactiveColor: inactiveColor,
+          ),
+        ],
+        onTap: onTap,
       ),
     );
   }
-}
 
-class _NavBarItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _NavBarItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // using vivid purple for active navigation item based on design
-    final color = isActive ? const Color(0xFF5544FF) : AppTheme.textSecondary;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 60,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                color: color,
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive ? color : Colors.transparent,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget _buildNavIcon({
+    required IconData icon,
+    required bool isActive,
+    required Color activeColor,
+    required Color inactiveColor,
+  }) {
+    return Icon(icon, size: 26, color: isActive ? activeColor : inactiveColor);
   }
 }

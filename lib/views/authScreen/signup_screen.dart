@@ -55,7 +55,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: AppTheme.adaptiveScaffoldBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
@@ -72,7 +72,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -82,7 +82,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     height: 1.5,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.adaptiveTextSecondary,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -140,7 +140,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.adaptiveTextSecondary,
                     height: 1.6,
                   ),
                 ),
@@ -185,7 +185,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     Text(
                       'Already have an account? ',
                       style: GoogleFonts.outfit(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.adaptiveTextSecondary,
                         fontSize: 15,
                       ),
                     ),

@@ -34,15 +34,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: AppTheme.adaptiveScaffoldBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
-            color: AppTheme.textPrimary,
+            color: AppTheme.adaptiveTextPrimary,
             size: 20,
           ),
           onPressed: () => Get.back(),
@@ -64,7 +64,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.adaptiveTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -74,7 +74,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   style: GoogleFonts.outfit(
                     fontSize: 15,
                     height: 1.5,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.adaptiveTextSecondary,
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -93,7 +93,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 // Submit Button
                 Obx(
                   () => ElevatedButton(
-                    onPressed: _authController.isLoading.value ? null : _handleReset,
+                    onPressed: _authController.isLoading.value
+                        ? null
+                        : _handleReset,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: AppTheme.white,
@@ -122,14 +124,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Back to Login Link
                 TextButton(
                   onPressed: () => Get.back(),
                   child: Text(
                     'Back to Login',
                     style: GoogleFonts.outfit(
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.adaptiveTextSecondary,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),

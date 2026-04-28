@@ -11,6 +11,11 @@ class ImagePickerHelper {
 
   /// Request camera permission at runtime. Returns true if granted.
   static Future<bool> _requestCameraPermission() async {
+    if (Platform.isIOS) {
+      // Let iOS present its native permission prompt through image_picker.
+      return true;
+    }
+
     final status = await Permission.camera.status;
     if (status.isGranted) return true;
 
@@ -25,15 +30,17 @@ class ImagePickerHelper {
   /// Request storage/photos permission at runtime. Returns true if granted.
   static Future<bool> _requestGalleryPermission() async {
     if (Platform.isIOS) {
-      final status = await Permission.photos.request();
-      return status.isGranted || status.isLimited;
+      // Allow the native iOS photo picker to handle authorization and limited
+      // library access. We'll still guide the user to Settings if the picker
+      // throws a permission-specific error.
+      return true;
     }
 
     // Android
     // On Android 13+ (API 33), Permission.photos handles READ_MEDIA_IMAGES.
     // On older versions, Permission.storage handles READ_EXTERNAL_STORAGE.
     // Modern Android often uses a system picker that needs no permissions.
-    
+
     // Try requesting photos (Android 13+)
     final photoStatus = await Permission.photos.request();
     if (photoStatus.isGranted || photoStatus.isLimited) return true;
@@ -62,10 +69,7 @@ class ImagePickerHelper {
           '$feature access was permanently denied. Please open Settings and grant permission manually.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               Get.back();
@@ -93,12 +97,16 @@ class ImagePickerHelper {
         preferredCameraDevice: preferredCamera,
         imageQuality: imageQuality,
         maxWidth: maxWidth,
+        requestFullMetadata: !Platform.isIOS,
       );
       if (picked != null) return File(picked.path);
     } catch (e) {
+      final message = Platform.isIOS
+          ? 'Could not open the camera on iPhone right now. Check camera permission in Settings and try again.'
+          : 'Could not open camera. Please try again.';
       Get.snackbar(
         'Camera Error',
-        'Could not open camera. Please try again.',
+        message,
         backgroundColor: AppTheme.error.withValues(alpha: 0.1),
         colorText: AppTheme.error,
         margin: const EdgeInsets.all(20),
@@ -121,12 +129,16 @@ class ImagePickerHelper {
         source: ImageSource.gallery,
         imageQuality: imageQuality,
         maxWidth: maxWidth,
+        requestFullMetadata: !Platform.isIOS,
       );
       if (picked != null) return File(picked.path);
     } catch (e) {
+      final message = Platform.isIOS
+          ? 'Could not open Photos on iPhone right now. Check photo access in Settings and try again.'
+          : 'Could not open gallery. Please try again.';
       Get.snackbar(
         'Gallery Error',
-        'Could not open gallery. Please try again.',
+        message,
         backgroundColor: AppTheme.error.withValues(alpha: 0.1),
         colorText: AppTheme.error,
         margin: const EdgeInsets.all(20),
@@ -144,7 +156,7 @@ class ImagePickerHelper {
   }) async {
     final source = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: AppTheme.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -158,17 +170,14 @@ class ImagePickerHelper {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.divider,
+                  color: AppTheme.adaptiveDivider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Select Image Source',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Row(
@@ -202,11 +211,131 @@ class ImagePickerHelper {
     if (source == null) return null;
 
     if (source == 'camera') {
-      return pickFromCamera(
-          imageQuality: imageQuality, maxWidth: maxWidth);
+      return pickFromCamera(imageQuality: imageQuality, maxWidth: maxWidth);
     } else {
-      return pickFromGallery(
-          imageQuality: imageQuality, maxWidth: maxWidth);
+      return pickFromGallery(imageQuality: imageQuality, maxWidth: maxWidth);
+    }
+  }
+
+  /// Pick video from camera with permission check
+  static Future<File?> pickVideoFromCamera({
+    CameraDevice preferredCamera = CameraDevice.rear,
+    Duration? maxDuration,
+  }) async {
+    final hasPermission = await _requestCameraPermission();
+    if (!hasPermission) return null;
+
+    try {
+      final XFile? picked = await _picker.pickVideo(
+        source: ImageSource.camera,
+        preferredCameraDevice: preferredCamera,
+        maxDuration: maxDuration,
+      );
+      if (picked != null) return File(picked.path);
+    } catch (e) {
+      Get.snackbar(
+        'Camera Error',
+        'Could not open camera for video. Please try again.',
+        backgroundColor: AppTheme.error.withValues(alpha: 0.1),
+        colorText: AppTheme.error,
+        margin: const EdgeInsets.all(20),
+        snackPosition: SnackPosition.TOP,
+      );
+    }
+    return null;
+  }
+
+  /// Pick video from gallery with permission check
+  static Future<File?> pickVideoFromGallery({
+    Duration? maxDuration,
+  }) async {
+    final hasPermission = await _requestGalleryPermission();
+    if (!hasPermission) return null;
+
+    try {
+      final XFile? picked = await _picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: maxDuration,
+      );
+      if (picked != null) return File(picked.path);
+    } catch (e) {
+      Get.snackbar(
+        'Gallery Error',
+        'Could not open gallery for video. Please try again.',
+        backgroundColor: AppTheme.error.withValues(alpha: 0.1),
+        colorText: AppTheme.error,
+        margin: const EdgeInsets.all(20),
+        snackPosition: SnackPosition.TOP,
+      );
+    }
+    return null;
+  }
+
+  /// Show bottom sheet to pick source, then pick video
+  static Future<File?> pickVideoWithSourceSheet(
+    BuildContext context, {
+    Duration? maxDuration,
+  }) async {
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.adaptiveDivider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Select Video Source',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSourceTile(
+                      ctx,
+                      Icons.videocam_outlined,
+                      'Camera',
+                      'camera',
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildSourceTile(
+                      ctx,
+                      Icons.video_library_outlined,
+                      'Gallery',
+                      'gallery',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return null;
+
+    if (source == 'camera') {
+      return pickVideoFromCamera(maxDuration: maxDuration);
+    } else {
+      return pickVideoFromGallery(maxDuration: maxDuration);
     }
   }
 
@@ -221,9 +350,9 @@ class ImagePickerHelper {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: AppTheme.scaffoldBg,
+          color: AppTheme.adaptiveScaffoldBg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.divider),
+          border: Border.all(color: AppTheme.adaptiveDivider),
         ),
         child: Column(
           children: [
@@ -231,10 +360,7 @@ class ImagePickerHelper {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ],
         ),
