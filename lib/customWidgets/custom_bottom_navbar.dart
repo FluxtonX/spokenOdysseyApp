@@ -15,10 +15,10 @@ class CustomBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final barColor = isDark ? const Color(0xFF17304D) : const Color(0xFF2F6FDE);
+    final barColor = isDark ? const Color(0xFF17304D) : const Color(0xFF5544FF);
     final buttonColor = isDark
         ? const Color(0xFF6EA8FF)
-        : const Color(0xFF0F52D6);
+        : const Color(0xFF5544FF);
     final inactiveColor = isDark
         ? const Color(0xFFB8D3FF)
         : const Color(0xFFDCE8FF);

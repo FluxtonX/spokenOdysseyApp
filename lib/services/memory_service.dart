@@ -111,7 +111,7 @@ class MemoryService {
         'privacy': privacy,
         'type': type,
         'status': publish ? 'published' : 'draft',
-        'occurredAt': occurredAt.toIso8601String(),
+        'occurredAt': occurredAt.toUtc().toIso8601String(),
         if (albumId != null && albumId.isNotEmpty) 'albumId': albumId,
         if (color != null && color.isNotEmpty) 'color': color,
         if (mediaFile != null)

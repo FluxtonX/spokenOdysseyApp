@@ -13,11 +13,11 @@ class InlineMemoryCard extends StatefulWidget {
   final DateTime? memoryDate;
 
   const InlineMemoryCard({
-    Key? key,
+    super.key,
     required this.memory,
     required this.onTap,
     this.memoryDate,
-  }) : super(key: key);
+  });
 
   @override
   State<InlineMemoryCard> createState() => _InlineMemoryCardState();
@@ -30,7 +30,7 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
   late String title;
   late String description;
   late List<String> tags;
-  
+
   VideoPlayerController? _videoController;
   bool _isVideoPlaying = false;
   bool _showVideoControls = false;
@@ -53,7 +53,9 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
     type = widget.memory['type']?.toString().toLowerCase() ?? '';
     title = widget.memory['title']?.toString() ?? 'Untitled memory';
     description = widget.memory['description']?.toString() ?? '';
-    tags = (widget.memory['tags'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    tags =
+        (widget.memory['tags'] as List?)?.map((e) => e.toString()).toList() ??
+        [];
 
     if (title.isEmpty) title = 'Untitled memory';
   }
@@ -77,7 +79,7 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
     _videoController?.dispose();
     _videoController = null;
     _videoControlsTimer?.cancel();
-    
+
     _audioPlayer?.dispose();
     _audioPlayer = null;
   }
@@ -151,7 +153,9 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
         _audioPlayer!.playerStateStream.listen((state) {
           if (mounted) {
             setState(() {
-              _isAudioPlaying = state.playing && state.processingState != ProcessingState.completed;
+              _isAudioPlaying =
+                  state.playing &&
+                  state.processingState != ProcessingState.completed;
             });
             if (state.processingState == ProcessingState.completed) {
               _audioPlayer!.seek(Duration.zero);
@@ -200,7 +204,9 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isType ? const Color(0xFF5D5FEF).withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+        color: isType
+            ? const Color(0xFF5D5FEF).withValues(alpha: 0.1)
+            : const Color(0xFFE2E8F0),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -333,8 +339,13 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          onPressed: () => _seekVideo(const Duration(seconds: -10)),
-                          icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 36),
+                          onPressed: () =>
+                              _seekVideo(const Duration(seconds: -10)),
+                          icon: const Icon(
+                            Icons.replay_10_rounded,
+                            color: Colors.white,
+                            size: 36,
+                          ),
                         ),
                         const SizedBox(width: 24),
                         GestureDetector(
@@ -356,8 +367,13 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
                         ),
                         const SizedBox(width: 24),
                         IconButton(
-                          onPressed: () => _seekVideo(const Duration(seconds: 10)),
-                          icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 36),
+                          onPressed: () =>
+                              _seekVideo(const Duration(seconds: 10)),
+                          icon: const Icon(
+                            Icons.forward_10_rounded,
+                            color: Colors.white,
+                            size: 36,
+                          ),
                         ),
                       ],
                     ),
@@ -369,7 +385,10 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
                     child: VideoProgressIndicator(
                       _videoController!,
                       allowScrubbing: true,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       colors: const VideoProgressColors(
                         playedColor: Color(0xFF5D5FEF),
                         bufferedColor: Colors.white24,
@@ -400,7 +419,9 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _isAudioPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                _isAudioPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
                 color: const Color(0xFF5D5FEF),
                 size: 48,
               ),
@@ -420,7 +441,10 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
         children: [
           Text(
             _formatDuration(_audioPosition),
-            style: GoogleFonts.outfit(fontSize: 12, color: AppTheme.adaptiveTextSecondary),
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              color: AppTheme.adaptiveTextSecondary,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -435,8 +459,15 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
               ),
               child: Slider(
                 min: 0,
-                max: _audioDuration.inMilliseconds.toDouble() > 0 ? _audioDuration.inMilliseconds.toDouble() : 1.0,
-                value: _audioPosition.inMilliseconds.toDouble().clamp(0.0, _audioDuration.inMilliseconds.toDouble() > 0 ? _audioDuration.inMilliseconds.toDouble() : 1.0),
+                max: _audioDuration.inMilliseconds.toDouble() > 0
+                    ? _audioDuration.inMilliseconds.toDouble()
+                    : 1.0,
+                value: _audioPosition.inMilliseconds.toDouble().clamp(
+                  0.0,
+                  _audioDuration.inMilliseconds.toDouble() > 0
+                      ? _audioDuration.inMilliseconds.toDouble()
+                      : 1.0,
+                ),
                 onChanged: _seekAudio,
               ),
             ),
@@ -444,7 +475,10 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
           const SizedBox(width: 8),
           Text(
             _formatDuration(_audioDuration),
-            style: GoogleFonts.outfit(fontSize: 12, color: AppTheme.adaptiveTextSecondary),
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              color: AppTheme.adaptiveTextSecondary,
+            ),
           ),
         ],
       ),
@@ -476,7 +510,9 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
   Widget build(BuildContext context) {
     String displayDate = '';
     if (widget.memoryDate != null) {
-      displayDate = DateFormat('MMM d, yyyy · h:mm a').format(widget.memoryDate!.toLocal());
+      displayDate = DateFormat(
+        'MMM d, yyyy · h:mm a',
+      ).format(widget.memoryDate!.toLocal());
     }
 
     return GestureDetector(
@@ -499,7 +535,9 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
               clipBehavior: Clip.antiAlias,
               child: _buildMediaContent(),
             ),
-            if (_audioPlayer != null && (type.toLowerCase().contains('voice') || type.toLowerCase().contains('audio'))) 
+            if (_audioPlayer != null &&
+                (type.toLowerCase().contains('voice') ||
+                    type.toLowerCase().contains('audio')))
               _buildAudioControls(),
             const SizedBox(height: 16),
             Column(
@@ -537,7 +575,9 @@ class _InlineMemoryCardState extends State<InlineMemoryCard> {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.outfit(
                       fontSize: 14.5,
-                      color: AppTheme.adaptiveTextSecondary.withValues(alpha: 0.8),
+                      color: AppTheme.adaptiveTextSecondary.withValues(
+                        alpha: 0.8,
+                      ),
                       height: 1.4,
                     ),
                   ),
