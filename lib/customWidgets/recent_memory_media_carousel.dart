@@ -43,7 +43,7 @@ class _RecentMemoryMediaCarouselState extends State<RecentMemoryMediaCarousel>
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.88);
+    _pageController = PageController(viewportFraction: 1.0);
     _audioBarsController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -229,12 +229,9 @@ class _RecentMemoryMediaCarouselState extends State<RecentMemoryMediaCarousel>
                     child: Transform.scale(scale: scale, child: child),
                   );
                 },
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: _buildMemorySlide(
-                    memory,
-                    isActive: index == _currentIndex,
-                  ),
+                child: _buildMemorySlide(
+                  memory,
+                  isActive: index == _currentIndex,
                 ),
               );
             },

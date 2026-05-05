@@ -15,8 +15,6 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await GetStorage.init();
   await configureDependencies();
-
-  // Initialize AuthController
   Get.put(AuthController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
 

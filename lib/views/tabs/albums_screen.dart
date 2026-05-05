@@ -152,12 +152,14 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
   }
 
   Widget _buildBody() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_isLoading) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
         children: [
-          _buildHeroHeader(),
+          _buildHeroHeader(isDark),
           const SizedBox(height: 24),
           ...List.generate(3, (_) => _buildLoadingCard()),
         ],
@@ -169,7 +171,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
         children: [
-          _buildHeroHeader(),
+          _buildHeroHeader(isDark),
           const SizedBox(height: 32),
           _buildFeedbackCard(
             title: 'We could not load your albums',
@@ -186,7 +188,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
         children: [
-          _buildHeroHeader(),
+          _buildHeroHeader(isDark),
           const SizedBox(height: 32),
           _buildFeedbackCard(
             title: 'No albums yet',
@@ -205,7 +207,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
       children: [
-        _buildHeroHeader(),
+        _buildHeroHeader(isDark),
         const SizedBox(height: 28),
         ...groupedAlbums.entries.map((entry) {
           return Padding(
@@ -225,7 +227,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                 ...entry.value.map(
                   (album) => Padding(
                     padding: const EdgeInsets.only(bottom: 18),
-                    child: _buildEditorialAlbumCard(album),
+                    child: _buildEditorialAlbumCard(album, isDark),
                   ),
                 ),
               ],
@@ -236,20 +238,35 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     );
   }
 
-  Widget _buildHeroHeader() {
+  Widget _buildHeroHeader(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF111827),
-            const Color(0xFF1F2937),
-            const Color(0xFF0F172A).withValues(alpha: 0.96),
-          ],
+          colors: isDark
+              ? [
+                  const Color(0xFF111827),
+                  const Color(0xFF1F2937),
+                  const Color(0xFF0F172A).withValues(alpha: 0.96),
+                ]
+              : [
+                  const Color(0xFFF1F5F9),
+                  const Color(0xFFE2E8F0),
+                  const Color(0xFFCBD5E1),
+                ],
         ),
         borderRadius: BorderRadius.circular(30),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,7 +283,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 34,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: AppTheme.adaptiveTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -275,7 +292,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                       style: GoogleFonts.outfit(
                         fontSize: 14.5,
                         height: 1.55,
-                        color: Colors.white.withValues(alpha: 0.78),
+                        color: AppTheme.adaptiveTextSecondary,
                       ),
                     ),
                   ],
@@ -300,10 +317,12 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
               _buildHeroBadge(
                 icon: Icons.cloud_done_rounded,
                 label: 'Cloud only',
+                isDark: isDark,
               ),
               _buildHeroBadge(
                 icon: Icons.collections_bookmark_rounded,
                 label: '${_albums.length} albums',
+                isDark: isDark,
               ),
             ],
           ),
@@ -312,25 +331,38 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     );
   }
 
-  Widget _buildHeroBadge({required IconData icon, required String label}) {
+  Widget _buildHeroBadge({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+  }) {
+    final bgColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.04);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.05);
+    final iconColor = isDark ? Colors.white : AppTheme.adaptiveTextSecondary;
+    final textColor = isDark ? Colors.white : AppTheme.adaptiveTextPrimary;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: bgColor,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 14),
+          Icon(icon, color: iconColor, size: 14),
           const SizedBox(width: 6),
           Text(
             label,
             style: GoogleFonts.outfit(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: textColor,
             ),
           ),
         ],
@@ -338,7 +370,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     );
   }
 
-  Widget _buildEditorialAlbumCard(Map<String, dynamic> album) {
+  Widget _buildEditorialAlbumCard(Map<String, dynamic> album, bool isDark) {
     final createdAt = DateTime.tryParse(
       album['createdAt']?.toString() ?? album['updatedAt']?.toString() ?? '',
     );
@@ -365,12 +397,10 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AspectRatio(aspectRatio: 1.16, child: _buildAlbumCover(album)),
+              AspectRatio(aspectRatio: 1.16, child: _buildAlbumCover(album, isDark)),
               Container(
                 width: double.infinity,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF14161C)
-                    : const Color(0xFF1B1B1F),
+                color: AppTheme.adaptiveCardBg,
                 padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +411,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.1,
-                        color: Colors.white.withValues(alpha: 0.62),
+                        color: AppTheme.adaptiveTextSecondary.withValues(alpha: 0.8),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -390,7 +420,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                       style: GoogleFonts.outfit(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: AppTheme.adaptiveTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -403,7 +433,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                       style: GoogleFonts.outfit(
                         fontSize: 15,
                         height: 1.45,
-                        color: Colors.white.withValues(alpha: 0.78),
+                        color: AppTheme.adaptiveTextSecondary,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -413,11 +443,13 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                           icon: Icons.photo_library_outlined,
                           label:
                               '${album['entries'] ?? (album['memories'] as List?)?.length ?? 0} memories',
+                          isDark: isDark,
                         ),
                         const SizedBox(width: 10),
                         _buildMetaPill(
                           icon: Icons.schedule_rounded,
                           label: _albumDateLabel(album),
+                          isDark: isDark,
                         ),
                       ],
                     ),
@@ -431,18 +463,18 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     );
   }
 
-  Widget _buildAlbumCover(Map<String, dynamic> album) {
+  Widget _buildAlbumCover(Map<String, dynamic> album, bool isDark) {
     final coverImageUrl = album['coverImageUrl']?.toString();
     if (coverImageUrl != null && coverImageUrl.isNotEmpty) {
       return Image.network(
         coverImageUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) =>
-            _buildFallbackCover(album['title']?.toString()),
+            _buildFallbackCover(album['title']?.toString(), isDark),
       );
     }
 
-    return _buildFallbackCover(album['title']?.toString());
+    return _buildFallbackCover(album['title']?.toString(), isDark);
   }
 
   String _albumDateLabel(Map<String, dynamic> album) {
@@ -453,13 +485,15 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     return DateFormat('MMM d, y').format(parsedDate);
   }
 
-  Widget _buildFallbackCover(String? title) {
+  Widget _buildFallbackCover(String? title, bool isDark) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1F2937), Color(0xFF374151), Color(0xFF6B7280)],
+          colors: isDark
+              ? [const Color(0xFF1F2937), const Color(0xFF374151), const Color(0xFF6B7280)]
+              : [const Color(0xFFCBD5E1), const Color(0xFF94A3B8), const Color(0xFF64748B)],
         ),
       ),
       child: Stack(
@@ -473,7 +507,9 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
               height: 110,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.15),
               ),
             ),
           ),
@@ -488,7 +524,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
               style: GoogleFonts.playfairDisplay(
                 fontSize: 30,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: isDark ? Colors.white : Colors.white,
               ),
             ),
           ),
@@ -497,24 +533,34 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     );
   }
 
-  Widget _buildMetaPill({required IconData icon, required String label}) {
+  Widget _buildMetaPill({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+  }) {
+    final bgColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : AppTheme.adaptiveBorder.withValues(alpha: 0.5);
+    final iconColor = isDark ? Colors.white : AppTheme.adaptiveTextSecondary;
+    final textColor = isDark ? Colors.white : AppTheme.adaptiveTextPrimary;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: bgColor,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 14),
+          Icon(icon, color: iconColor, size: 14),
           const SizedBox(width: 6),
           Text(
             label,
             style: GoogleFonts.outfit(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: textColor,
             ),
           ),
         ],

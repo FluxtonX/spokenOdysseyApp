@@ -21,7 +21,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final AlbumService _albumService = AlbumService();
   final MemoryService _memoryService = MemoryService();
   final AuthController _authController = Get.find<AuthController>();
@@ -46,8 +46,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _heroBackgroundTimer;
   Timer? _heroHeadlineTimer;
   Timer? _heroSupportTimer;
+  late final AnimationController _profileBorderAnimController;
   int _heroImageIndex = 0;
   int _albumSpotlightIndex = 0;
+  int _emptyAlbumBgIndex = 0;
+  Timer? _emptyAlbumBgTimer;
+  final List<String> _emptyAlbumBgImages = const [
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1200&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1200&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+  ];
   int _heroSupportIndex = 0;
   bool _didPrecacheHeroImages = false;
   bool _showGreeting = false;
@@ -72,8 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _profileBorderAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
     _startHeroBackgroundRotation();
     _startHeroCopyAnimation();
+    _startEmptyAlbumBgRotation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadHomeData();
     });
@@ -97,7 +111,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _heroBackgroundTimer?.cancel();
     _heroHeadlineTimer?.cancel();
     _heroSupportTimer?.cancel();
+    _emptyAlbumBgTimer?.cancel();
+    _profileBorderAnimController.dispose();
     super.dispose();
+  }
+
+  void _startEmptyAlbumBgRotation() {
+    _emptyAlbumBgTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
+      setState(() {
+        _emptyAlbumBgIndex =
+            (_emptyAlbumBgIndex + 1) % _emptyAlbumBgImages.length;
+      });
+    });
   }
 
   Future<void> _loadAlbums({bool forceRefresh = false}) async {
@@ -447,36 +473,55 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 8,
+                    AnimatedBuilder(
+                      animation: _profileBorderAnimController,
+                      builder: (context, child) {
+                        return CustomPaint(
+                          painter: _GradientBorderPainter(
+                            rotation: _profileBorderAnimController.value * 6.2832,
+                            gradientColors: const [
+                              Color(0xFF5544FF),
+                              Color(0xFF8B7BFF),
+                              Color(0xFFE2923A),
+                              Color(0xFF5ABA82),
+                              Color(0xFF5544FF),
+                            ],
+                            strokeWidth: 2.5,
                           ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: (_userProfile?['photoURL'] ?? _authController.firebaseUser.value?.photoURL) != null
-                            ? Image.network(
-                                (_userProfile?['photoURL'] ?? _authController.firebaseUser.value!.photoURL!).toString(),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, _, __) => Container(
+                          child: child,
+                        );
+                      },
+                      child: Container(
+                        width: 54,
+                        height: 54,
+                        padding: const EdgeInsets.all(3.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: (_userProfile?['photoURL'] ??
+                                      _authController.firebaseUser.value?.photoURL) !=
+                                  null
+                              ? Image.network(
+                                  (_userProfile?['photoURL'] ??
+                                          _authController
+                                              .firebaseUser.value!.photoURL!)
+                                      .toString(),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, _, __) => Container(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                    child: const Icon(Icons.person_rounded,
+                                        color: Colors.white70),
+                                  ),
+                                )
+                              : Container(
                                   color: Colors.white.withValues(alpha: 0.1),
-                                  child: const Icon(Icons.person_rounded, color: Colors.white70),
+                                  child: const Icon(Icons.person_rounded,
+                                      color: Colors.white70),
                                 ),
-                              )
-                            : Container(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                child: const Icon(Icons.person_rounded, color: Colors.white70),
-                              ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -647,66 +692,115 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_recentAlbums.isEmpty) {
       return Container(
-        height: 252,
-        padding: const EdgeInsets.all(20),
+        height: 260,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF202938), Color(0xFF445065), Color(0xFF8A755F)],
-          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 22,
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 24,
               offset: const Offset(0, 12),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            // ── Sliding background images ──
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 1200),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (currentChild, previousChildren) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                );
+              },
+              transitionBuilder: (child, animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: Image.network(
+                _emptyAlbumBgImages[_emptyAlbumBgIndex],
+                key: ValueKey<int>(_emptyAlbumBgIndex),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF202938),
+                        Color(0xFF445065),
+                        Color(0xFF8A755F),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // ── Gradient overlay ──
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                'Album Spotlight',
-                style: GoogleFonts.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF202938).withValues(alpha: 0.45),
+                    const Color(0xFF202938).withValues(alpha: 0.55),
+                    const Color(0xFF202938).withValues(alpha: 0.88),
+                  ],
                 ),
               ),
             ),
-            const Spacer(),
-            Flexible(
-              child: Text(
-                'The next cloud album you create will begin rotating here automatically.',
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
-                  height: 1.15,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: Text(
-                'Create an album from the archive tab and keep every memory synced to the cloud.',
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.outfit(
-                  fontSize: 12.5,
-                  height: 1.42,
-                  color: Colors.white.withValues(alpha: 0.86),
-                ),
+            // ── Content ──
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'Album Spotlight',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'The next cloud album you create will begin rotating here.',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Create an album from the archive tab and keep every memory synced to the cloud.',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1504,6 +1598,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+class _GradientBorderPainter extends CustomPainter {
+  final double rotation;
+  final List<Color> gradientColors;
+  final double strokeWidth;
+
+  _GradientBorderPainter({
+    required this.rotation,
+    required this.gradientColors,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final paint = Paint()
+      ..shader = SweepGradient(
+        colors: gradientColors,
+        transform: GradientRotation(rotation),
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _GradientBorderPainter oldDelegate) {
+    return oldDelegate.rotation != rotation ||
+        oldDelegate.gradientColors != gradientColors ||
+        oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
 
 class _QuickActionData {
   const _QuickActionData({
