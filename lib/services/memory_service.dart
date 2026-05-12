@@ -69,6 +69,22 @@ class MemoryService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> searchMemories(String query) async {
+    final memories = await fetchMemories();
+    if (query.isEmpty) return memories;
+    
+    final lowerQuery = query.toLowerCase();
+    return memories.where((m) {
+      final title = (m['title'] ?? '').toString().toLowerCase();
+      final description = (m['description'] ?? '').toString().toLowerCase();
+      final tags = (m['tags'] as List?)?.join(' ').toLowerCase() ?? '';
+      
+      return title.contains(lowerQuery) || 
+             description.contains(lowerQuery) || 
+             tags.contains(lowerQuery);
+    }).toList();
+  }
+
   Future<List<Map<String, dynamic>>> _fetchMemoriesFromNetwork() async {
     try {
       final response = await _dio.get(
@@ -266,8 +282,12 @@ class MemoryService {
       'type': typeLabel,
       'mood': rawMemory['mood']?.toString() ?? '',
       'status': status,
-      'albumId': rawMemory['albumId']?.toString(),
-      'albumTitle': rawMemory['albumTitle']?.toString(),
+      'albumId': rawMemory['albumId']?.toString() ?? 
+                 rawMemory['album_id']?.toString() ?? 
+                 rawMemory['album']?['id']?.toString() ?? 
+                 rawMemory['album']?['_id']?.toString(),
+      'albumTitle': rawMemory['albumTitle']?.toString() ?? 
+                    rawMemory['album']?['title']?.toString(),
       'date': occurredAt != null
           ? DateFormat('MMMM d, y').format(occurredAt)
           : '',

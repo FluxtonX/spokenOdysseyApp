@@ -17,9 +17,18 @@ import '../memories/voice_memory_screen.dart';
 import '../memories/text_memory_screen.dart';
 
 class AlbumDetailScreen extends StatefulWidget {
-  const AlbumDetailScreen({super.key, required this.album});
+  const AlbumDetailScreen({
+    super.key,
+    this.album,
+    this.albumId,
+    this.initialMemoryId,
+    this.initialAlbumTitle,
+  }) : assert(album != null || albumId != null);
 
-  final Map<String, dynamic> album;
+  final Map<String, dynamic>? album;
+  final String? albumId;
+  final String? initialMemoryId;
+  final String? initialAlbumTitle;
 
   @override
   State<AlbumDetailScreen> createState() => _AlbumDetailScreenState();
@@ -87,7 +96,14 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _album = Map<String, dynamic>.from(widget.album);
+    if (widget.album != null) {
+      _album = Map<String, dynamic>.from(widget.album!);
+    } else {
+      _album = {
+        'id': widget.albumId,
+        'title': widget.initialAlbumTitle ?? 'Album',
+      };
+    }
     _loadAlbumDetails();
   }
 
@@ -103,10 +119,24 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           _album = updatedAlbum;
           _isLoading = false;
         });
+
+        // If an initial memory ID was provided, automatically open it
+        if (widget.initialMemoryId != null) {
+          final memoriesList = _memories;
+          final targetIndex = memoriesList.indexWhere(
+            (m) => m['id']?.toString() == widget.initialMemoryId,
+          );
+          if (targetIndex != -1) {
+            _openMemoryDetail(memoriesList[targetIndex]);
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
       }
     }
   }

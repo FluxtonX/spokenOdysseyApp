@@ -7,6 +7,7 @@ import 'package:spokenodyssey/views/splashScreen/splash_screen.dart';
 import 'package:spokenodyssey/firebase_options.dart';
 import 'config/get_it.dart';
 import 'controllers/auth_controller.dart';
+import 'controllers/navigation_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'theme/theme.dart';
 
@@ -17,6 +18,7 @@ Future<void> main() async {
   await configureDependencies();
   Get.put(AuthController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
+  Get.put(NavigationController(), permanent: true);
 
   runApp(const MyApp());
 }

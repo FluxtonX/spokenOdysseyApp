@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../controllers/navigation_controller.dart';
 import '../../customWidgets/custom_bottom_navbar.dart';
 import 'Home/home_screen.dart';
 import 'albums_screen.dart';
 import 'family_screen.dart';
 import 'more_screen.dart';
 import 'record_tab_screen.dart';
+import 'package:flutter/material.dart';
 
 class MainTabScreen extends StatefulWidget {
   final int initialIndex;
@@ -16,7 +18,7 @@ class MainTabScreen extends StatefulWidget {
 }
 
 class _MainTabScreenState extends State<MainTabScreen> {
-  late int _currentIndex;
+  final NavigationController _navController = Get.find<NavigationController>();
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -29,21 +31,24 @@ class _MainTabScreenState extends State<MainTabScreen> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
+    _navController.setTabIndex(widget.initialIndex);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+    return Obx(
+      () => Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: IndexedStack(
+          index: _navController.selectedIndex,
+          children: _screens,
+        ),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentIndex: _navController.selectedIndex,
+          onTap: (index) {
+            _navController.setTabIndex(index);
+          },
+        ),
       ),
     );
   }

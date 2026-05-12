@@ -67,6 +67,20 @@ class AlbumService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> searchAlbums(String query) async {
+    final albums = await fetchAlbums();
+    if (query.isEmpty) return albums;
+
+    final lowerQuery = query.toLowerCase();
+    return albums.where((a) {
+      final title = (a['title'] ?? '').toString().toLowerCase();
+      final subtitle = (a['subtitle'] ?? '').toString().toLowerCase();
+      
+      return title.contains(lowerQuery) || 
+             subtitle.contains(lowerQuery);
+    }).toList();
+  }
+
   Future<List<Map<String, dynamic>>> _fetchAlbumsFromNetwork() async {
     try {
       final response = await _dio.get(
@@ -103,6 +117,21 @@ class AlbumService {
       _mergeAlbumIntoCache(album);
       return album;
     } on DioException catch (error) {
+      // Fallback: If individual lookup fails (404), try to find it in the full albums list
+      if (error.response?.statusCode == 404) {
+        try {
+          final allAlbums = await fetchAlbums(forceRefresh: true);
+          final found = allAlbums.cast<Map<String, dynamic>?>().firstWhere(
+            (a) => a?['id']?.toString() == albumId,
+            orElse: () => null,
+          );
+          if (found != null) {
+            return found;
+          }
+        } catch (_) {
+          // If fallback fails, throw the original error
+        }
+      }
       throw Exception(_extractMessage(error));
     }
   }
