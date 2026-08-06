@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.3+2
+version: 1.0.3+3
 
 environment:
   sdk: ^3.9.2
@@ -45,6 +45,7 @@ dependencies:
   talker_flutter: ^5.1.13
   get_it: ^9.2.0
   bloc: ^9.2.0
+  flutter_bloc: ^9.0.0
   talker_bloc_logger: ^5.1.13
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
@@ -57,6 +58,7 @@ dependencies:
   just_audio: ^0.10.4
   carousel_slider: ^5.1.1
   curved_navigation_bar: ^1.0.6
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:
@@ -83,10 +85,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/logo.png
-    - assets/images/onboarding_1.png
-    - assets/images/onboarding_2.png
-    - assets/images/onboarding_3.png
+    - assets/images/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDcOOwB2Prrr34u6RqDpUUwMKz50eXZcJ0',
+    apiKey: 'AIzaSyDBHsX-5YzkyQ9DBNJgpTfL8tZUdl4Q0C4',
     appId: '1:884058304379:ios:19dea3751108f429ce97de',
     messagingSenderId: '884058304379',
     projectId: 'spoken-odesey',
