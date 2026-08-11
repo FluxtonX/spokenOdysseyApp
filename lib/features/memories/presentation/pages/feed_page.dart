@@ -71,10 +71,26 @@ class _FeedPageState extends State<FeedPage> {
         SizedBox(
           height: 160,
           width: double.infinity,
-          child: Image.asset(
-            'assets/images/profile_cover.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const FullScreenImageViewer(
+                    imagePath: 'assets/images/profile_cover.png',
+                    heroTag: 'profile_cover_hero',
+                  ),
+                ),
+              );
+            },
+            child: Hero(
+              tag: 'profile_cover_hero',
+              child: Image.asset(
+                'assets/images/profile_cover.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
+              ),
+            ),
           ),
         ),
         // Avatar
@@ -270,7 +286,7 @@ class _FeedPageState extends State<FeedPage> {
           const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => _showShareProfileModal(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6D28D9), // Deep purple
                 shape: RoundedRectangleBorder(
@@ -763,6 +779,214 @@ class _FeedPageState extends State<FeedPage> {
         }
         return const SizedBox();
       },
+    );
+  }
+
+  void _showShareProfileModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFFFF0F5),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + MediaQuery.of(sheetContext).padding.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Share Profile',
+                          style: GoogleFonts.outfit(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+                          onPressed: () => Navigator.pop(sheetContext),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: Colors.black12),
+                  
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Share "The Day I Started My Own Business" with the world or someone special.',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Grid of buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildShareButton(
+                                icon: Icons.share,
+                                label: 'Twitter / X',
+                                color: Colors.black,
+                                textColor: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildShareButton(
+                                icon: Icons.facebook,
+                                label: 'Facebook',
+                                color: const Color(0xFF3B82F6),
+                                textColor: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildShareButton(
+                                icon: Icons.email_outlined,
+                                label: 'Email',
+                                color: const Color(0xFFEF4444),
+                                textColor: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildShareButton(
+                                icon: Icons.link_rounded,
+                                label: 'Copy Link',
+                                color: const Color(0xFFE9D8F5),
+                                textColor: const Color(0xFF6D28D9),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        // Link copy field
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3E8FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.link, color: AppColors.textSecondary, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'spokenodyssey.com/',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF6D28D9),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {},
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.copy, size: 16, color: Colors.white),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Copy',
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShareButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required Color textColor,
+  }) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: textColor),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
