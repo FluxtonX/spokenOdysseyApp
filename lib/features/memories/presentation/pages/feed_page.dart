@@ -95,15 +95,31 @@ class _FeedPageState extends State<FeedPage> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                'assets/images/profile_avatar.png',
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 100,
-                  height: 100,
-                  color: Colors.grey[400],
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FullScreenImageViewer(
+                        imagePath: 'assets/images/profile_avatar.png',
+                        heroTag: 'profile_avatar_hero',
+                      ),
+                    ),
+                  );
+                },
+                child: Hero(
+                  tag: 'profile_avatar_hero',
+                  child: Image.asset(
+                    'assets/images/profile_avatar.png',
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.grey[400],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -758,6 +774,43 @@ class _FeedPageState extends State<FeedPage> {
           Icons.folder_special_rounded,
           size: 40,
           color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class FullScreenImageViewer extends StatelessWidget {
+  final String imagePath;
+  final String heroTag;
+
+  const FullScreenImageViewer({
+    super.key,
+    required this.imagePath,
+    required this.heroTag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          panEnabled: true,
+          minScale: 0.5,
+          maxScale: 4,
+          child: Hero(
+            tag: heroTag,
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
       ),
     );
