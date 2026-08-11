@@ -11,6 +11,7 @@ import '../../../family/presentation/cubits/family_cubit.dart';
 import '../../../family/presentation/pages/family_circle_page.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
 import '../../../memories/presentation/pages/feed_page.dart';
+import '../../../memories/presentation/pages/timeline_page.dart';
 import '../../../memories/presentation/widgets/create_memory_modal.dart';
 import '../../../notifications/presentation/cubits/notifications_cubit.dart';
 import '../../../notifications/presentation/pages/notifications_page.dart';
@@ -31,6 +32,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = const [
     FeedPage(),
+    TimelinePage(),
     DiscoverPage(),
     RecordStudioPage(),
     FamilyCirclePage(),
@@ -93,7 +95,7 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  setState(() => _currentIndex = 2);
+                  setState(() => _currentIndex = 3);
                 },
               ),
               const Divider(height: 16),
@@ -293,66 +295,56 @@ class _MainScreenState extends State<MainScreen> {
           },
           child: IndexedStack(index: _currentIndex, children: _pages),
         ),
+        
+        // True Floating Action Button
+        floatingActionButton: GestureDetector(
+          onTap: () => _showCreateOptionsModal(context),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6D28D9), // Deep purple matching the screenshot
+              borderRadius: BorderRadius.circular(16), // Rounded square
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6D28D9).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
         // Clean, readable, full-width modern Bottom Navigation Bar
         bottomNavigationBar: Builder(
           builder: (context) {
             final bottomPadding = MediaQuery.of(context).padding.bottom;
-            return Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.bottomCenter,
-              children: [
-                Container(
-                  padding: EdgeInsets.only(bottom: bottomPadding), // Respect system safe area
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
-                  ),
-                  child: SizedBox(
-                    height: 72, // Generous height for touch targets and readability
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Home'),
-                        _buildNavItem(1, Icons.explore_outlined, Icons.explore_rounded, 'Discover'),
-                        
-                        // Empty space for the floating center button
-                        const SizedBox(width: 80),
-                        
-                        _buildNavItem(3, Icons.people_outline_rounded, Icons.people_rounded, 'Family'),
-                        _buildNavItem(4, Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
-                      ],
-                    ),
-                  ),
+            return Container(
+              padding: EdgeInsets.only(bottom: bottomPadding), // Respect system safe area
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+              ),
+              child: SizedBox(
+                height: 72, // Generous height for touch targets and readability
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildNavItem(0, Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+                    _buildNavItem(1, Icons.auto_stories_outlined, Icons.auto_stories_rounded, 'Memories'),
+                    _buildNavItem(2, Icons.explore_outlined, Icons.explore_rounded, 'Discover'),
+                    _buildNavItem(4, Icons.people_outline_rounded, Icons.people_rounded, 'Family'),
+                    _buildNavItem(5, Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
+                  ],
                 ),
-                // Center '+' Action Button (Lifted above nav bar)
-                Positioned(
-                  top: -20, // Negative value lifts it above the container
-                  child: GestureDetector(
-                    onTap: () => _showCreateOptionsModal(context),
-                    child: Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6D28D9), // Deep purple matching the screenshot
-                        borderRadius: BorderRadius.circular(16), // Rounded square
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6D28D9).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             );
           },
         ),
