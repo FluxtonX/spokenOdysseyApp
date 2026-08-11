@@ -30,8 +30,392 @@ class _FeedPageState extends State<FeedPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
+      backgroundColor: const Color(0xFFFEF2F4), // Soft pinkish background from screenshot
+      body: _buildDashboardUI(context),
+      // To restore old UI:
+      // body: _buildOldFeedUI(context), 
+    );
+  }
+
+  Widget _buildDashboardUI(BuildContext context) {
+    return SingleChildScrollView(
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              _buildProfileHeader(),
+              const SizedBox(height: 60), // Space for overlapping avatar
+              _buildProfileInfo(),
+              _buildBioCard(),
+              _buildExpertise(),
+              const SizedBox(height: 24),
+              _buildActionButtons(),
+              const SizedBox(height: 24),
+              _buildStatGrid(),
+              const SizedBox(height: 24),
+              _buildQuotes(),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.bottomCenter,
+      children: [
+        // Cover Photo
+        SizedBox(
+          height: 160,
+          width: double.infinity,
+          child: Image.asset(
+            'assets/images/profile_cover.png',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
+          ),
+        ),
+        // Avatar
+        Positioned(
+          bottom: -50,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/images/profile_avatar.png',
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 100,
+                  height: 100,
+                  color: Colors.grey[400],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileInfo() {
+    return Column(
+      children: [
+        Text(
+          'Sarah Mitchell',
+          style: GoogleFonts.outfit(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildInfoItem(Icons.work_outline_rounded, 'Entrepreneur'),
+            const SizedBox(width: 16),
+            _buildInfoItem(Icons.location_on_outlined, 'Portland, OR'),
+            const SizedBox(width: 16),
+            _buildInfoItem(Icons.calendar_month_outlined, 'Born March 1985'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoItem(IconData icon, String text) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: const Color(0xFF8B5CF6)),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          text,
+          style: GoogleFonts.outfit(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBioCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5EEFF), // Light purple bg
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+      ),
+      child: Text(
+        'Documenting my journey from small-town dreamer to business owner, mother, and lifelong learner.',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.outfit(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpertise() {
+    final tags = ['Entrepreneurship', 'Parenting', 'Wellness', 'Writing'];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Areas of Expertise',
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tags.map((tag) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0D4F5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  tag,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6B46C1),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF8B5CF6)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: Text(
+                'Edit Profile',
+                style: GoogleFonts.outfit(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF8B5CF6),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6D28D9), // Deep purple
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
+              ),
+              child: Text(
+                'Share Legacy',
+                style: GoogleFonts.outfit(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatGrid() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                _buildStatCard('174', 'All Memories'),
+                const SizedBox(height: 16),
+                _buildStatCard('18', 'Milestones'),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              children: [
+                _buildStatCard('12', 'Albums'),
+                const SizedBox(height: 16),
+                _buildStatCard('342', 'Followers'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String value, String label) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9D8F5).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.outfit(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuotes() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          // Big quote
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFC4B5FD), Color(0xFFE9D5FF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.4)),
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  top: -40,
+                  left: -10,
+                  child: Text(
+                    '"',
+                    style: GoogleFonts.outfit(
+                      fontSize: 120,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                      height: 1,
+                    ),
+                  ),
+                ),
+                Text(
+                  '"Live intentionally,\nlove deeply, leave a\nlegacy of kindness."',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1E1B4B), // Very dark purple
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Small quote
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3E8FF).withOpacity(0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.5)),
+            ),
+            child: Text(
+              '"Changing The Way We Preserve Our Legacy"',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF6D28D9),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- OLD FEED UI (Kept safe for later use) ---
+  Widget _buildOldFeedUI(BuildContext context) {
+    return SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 12),
@@ -104,8 +488,7 @@ class _FeedPageState extends State<FeedPage> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildMemoriesTab() {

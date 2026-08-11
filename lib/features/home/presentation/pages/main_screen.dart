@@ -294,103 +294,65 @@ class _MainScreenState extends State<MainScreen> {
           child: IndexedStack(index: _currentIndex, children: _pages),
         ),
 
-        // Custom Bottom Navigation Bar using Stack to make '+' button straddle top border line exactly like the screenshot
+        // Clean, readable, full-width modern Bottom Navigation Bar
         bottomNavigationBar: Builder(
           builder: (context) {
-            return SizedBox(
-              height: 86,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.bottomCenter,
-                children: [
-                  // Bottom Bar Container with Top Border Line
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
+            final bottomPadding = MediaQuery.of(context).padding.bottom;
+            return Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  padding: EdgeInsets.only(bottom: bottomPadding), // Respect system safe area
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                  ),
+                  child: SizedBox(
+                    height: 72, // Generous height for touch targets and readability
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Home'),
+                        _buildNavItem(1, Icons.explore_outlined, Icons.explore_rounded, 'Discover'),
+                        
+                        // Empty space for the floating center button
+                        const SizedBox(width: 80),
+                        
+                        _buildNavItem(3, Icons.people_outline_rounded, Icons.people_rounded, 'Family'),
+                        _buildNavItem(4, Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
+                      ],
+                    ),
+                  ),
+                ),
+                // Center '+' Action Button (Lifted above nav bar)
+                Positioned(
+                  top: -20, // Negative value lifts it above the container
+                  child: GestureDetector(
+                    onTap: () => _showCreateOptionsModal(context),
                     child: Container(
-                      height: 60,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border(
-                          top: BorderSide(
-                            color: AppColors.primary.withOpacity(0.6),
-                            width: 1.2,
-                          ),
-                        ),
+                        color: const Color(0xFF6D28D9), // Deep purple matching the screenshot
+                        borderRadius: BorderRadius.circular(16), // Rounded square
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, -2),
+                            color: const Color(0xFF6D28D9).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Row(
-                        children: [
-                          _buildNavItem(
-                            index: 0,
-                            icon: Icons.home_outlined,
-                            activeIcon: Icons.home_rounded,
-                            label: 'Home',
-                          ),
-                          _buildNavItem(
-                            index: 1,
-                            icon: Icons.explore_outlined,
-                            activeIcon: Icons.explore_rounded,
-                            label: 'Discover',
-                          ),
-
-                          // Empty gap for center floating '+' button
-                          const SizedBox(width: 58),
-
-                          _buildNavItem(
-                            index: 3,
-                            icon: Icons.people_outline_rounded,
-                            activeIcon: Icons.people_rounded,
-                            label: 'Family',
-                          ),
-                          _buildNavItem(
-                            index: 4,
-                            icon: Icons.settings_outlined,
-                            activeIcon: Icons.settings_rounded,
-                            label: 'Setting',
-                          ),
-                        ],
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 32,
                       ),
                     ),
                   ),
-
-                  // Floating Center '+' Square Button straddling top purple line
-                  Positioned(
-                    top: 0,
-                    child: GestureDetector(
-                      onTap: () => _showCreateOptionsModal(context),
-                      child: Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.4),
-                              blurRadius: 12,
-                              spreadRadius: 1,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.add_rounded,
-                          color: Colors.white,
-                          size: 34,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),
@@ -398,46 +360,40 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem({
-    required int index,
-    required IconData icon,
-    required IconData activeIcon,
-    required String label,
-  }) {
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
     final isSelected = _currentIndex == index;
 
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () {
           setState(() => _currentIndex = index);
         },
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
+        behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 24,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                key: ValueKey(isSelected),
                 color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                size: 26,
               ),
             ),
-            const SizedBox(height: 2),
-            // Active indicator dot/square under text
-            Container(
-              width: 5,
-              height: 5,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(1.5),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
               ),
             ),
           ],
