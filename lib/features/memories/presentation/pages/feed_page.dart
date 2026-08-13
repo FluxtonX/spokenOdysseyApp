@@ -6,6 +6,8 @@ import '../../../../core/utils/media_url_formatter.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
 import '../../../albums/presentation/pages/album_detail_page.dart';
 import '../../../albums/presentation/widgets/create_album_modal.dart';
+import '../../../profile/presentation/cubits/profile_cubit.dart';
+import '../../../../features/auth/domain/entities/user.dart';
 import '../cubits/memories_cubit.dart';
 import '../widgets/memory_card.dart';
 import 'memory_detail_page.dart';
@@ -23,31 +25,43 @@ class _FeedPageState extends State<FeedPage> {
     super.initState();
     context.read<MemoriesCubit>().loadFeedMemories();
     context.read<AlbumsCubit>().loadAlbums();
+    context.read<ProfileCubit>().loadProfile();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFEF2F4), // Soft pinkish background from screenshot
-      body: _buildDashboardUI(context),
+      body: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, state) {
+          if (state is ProfileLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is ProfileError) {
+            return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+          } else if (state is ProfileLoaded) {
+            return _buildDashboardUI(context, state.user);
+          }
+          return const SizedBox();
+        },
+      ),
     );
   }
 
-  Widget _buildDashboardUI(BuildContext context) {
+  Widget _buildDashboardUI(BuildContext context, User user) {
     return SingleChildScrollView(
       child: Stack(
         children: [
           Column(
             children: [
-              _buildProfileHeader(),
+              _buildProfileHeader(user),
               const SizedBox(height: 60), // Space for overlapping avatar
-              _buildProfileInfo(),
-              _buildBioCard(),
+              _buildProfileInfo(user),
+              if (user.bio != null && user.bio!.isNotEmpty) _buildBioCard(user),
               _buildExpertise(),
               const SizedBox(height: 24),
               _buildActionButtons(),
               const SizedBox(height: 24),
-              _buildStatGrid(),
+              _buildStatGrid(user),
               const SizedBox(height: 24),
               _buildQuotes(),
               const SizedBox(height: 40),
@@ -58,7 +72,7 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(User user) {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.bottomCenter,
@@ -109,29 +123,44 @@ class _FeedPageState extends State<FeedPage> {
               borderRadius: BorderRadius.circular(12),
               child: GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const FullScreenImageViewer(
-                        imagePath: 'assets/images/profile_avatar.png',
-                        heroTag: 'profile_avatar_hero',
+                  if (user.avatarUrl != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FullScreenImageViewer(
+                          imagePath: MediaUrlFormatter.format(user.avatarUrl) ?? 'assets/images/profile_avatar.png',
+                          heroTag: 'profile_avatar_hero',
+                          isNetwork: true,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 child: Hero(
                   tag: 'profile_avatar_hero',
-                  child: Image.asset(
-                    'assets/images/profile_avatar.png',
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 100,
-                      height: 100,
-                      color: Colors.grey[400],
-                    ),
-                  ),
+                  child: user.avatarUrl != null 
+                    ? Image.network(
+                        MediaUrlFormatter.format(user.avatarUrl)!,
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey[400],
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/images/profile_avatar.png',
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey[400],
+                        ),
+                      ),
                 ),
               ),
             ),
@@ -141,11 +170,11 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Widget _buildProfileInfo() {
+  Widget _buildProfileInfo(User user) {
     return Column(
       children: [
         Text(
-          'Sarah Mitchell',
+          user.name ?? 'Odyssey User',
           style: GoogleFonts.outfit(
             fontSize: 26,
             fontWeight: FontWeight.bold,
@@ -156,11 +185,16 @@ class _FeedPageState extends State<FeedPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildInfoItem(Icons.work_outline_rounded, 'Entrepreneur'),
-            const SizedBox(width: 16),
-            _buildInfoItem(Icons.location_on_outlined, 'Portland, OR'),
-            const SizedBox(width: 16),
-            _buildInfoItem(Icons.calendar_month_outlined, 'Born March 1985'),
+            if (user.relationship != null && user.relationship!.isNotEmpty) ...[
+              _buildInfoItem(Icons.work_outline_rounded, user.relationship!),
+              const SizedBox(width: 16),
+            ],
+            if (user.location != null && user.location!.isNotEmpty) ...[
+              _buildInfoItem(Icons.location_on_outlined, user.location!),
+              const SizedBox(width: 16),
+            ],
+            if (user.dateOfBirth != null && user.dateOfBirth!.isNotEmpty)
+              _buildInfoItem(Icons.calendar_month_outlined, user.dateOfBirth!),
           ],
         ),
       ],
@@ -190,7 +224,7 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Widget _buildBioCard() {
+  Widget _buildBioCard(User user) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       padding: const EdgeInsets.all(16),
@@ -200,7 +234,7 @@ class _FeedPageState extends State<FeedPage> {
         border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
       ),
       child: Text(
-        'Documenting my journey from small-town dreamer to business owner, mother, and lifelong learner.',
+        user.bio ?? '',
         textAlign: TextAlign.center,
         style: GoogleFonts.outfit(
           fontSize: 14,
@@ -306,7 +340,7 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Widget _buildStatGrid() {
+  Widget _buildStatGrid(User user) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -314,9 +348,9 @@ class _FeedPageState extends State<FeedPage> {
           Expanded(
             child: Column(
               children: [
-                _buildStatCard('174', 'All Memories'),
+                _buildStatCard('${user.memoriesCount}', 'All Memories'),
                 const SizedBox(height: 16),
-                _buildStatCard('18', 'Milestones'),
+                _buildStatCard('${user.familyCount}', 'Family Members'),
               ],
             ),
           ),
@@ -324,9 +358,9 @@ class _FeedPageState extends State<FeedPage> {
           Expanded(
             child: Column(
               children: [
-                _buildStatCard('12', 'Albums'),
+                _buildStatCard('${user.albumsCount}', 'Albums'),
                 const SizedBox(height: 16),
-                _buildStatCard('342', 'Followers'),
+                _buildStatCard('${user.followersCount}', 'Followers'),
               ],
             ),
           ),
@@ -666,11 +700,13 @@ class _FeedPageState extends State<FeedPage> {
 class FullScreenImageViewer extends StatelessWidget {
   final String imagePath;
   final String heroTag;
+  final bool isNetwork;
 
   const FullScreenImageViewer({
     super.key,
     required this.imagePath,
     required this.heroTag,
+    this.isNetwork = false,
   });
 
   @override
@@ -689,10 +725,15 @@ class FullScreenImageViewer extends StatelessWidget {
           maxScale: 4,
           child: Hero(
             tag: heroTag,
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.contain,
-            ),
+            child: isNetwork 
+              ? Image.network(
+                  imagePath,
+                  fit: BoxFit.contain,
+                )
+              : Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                ),
           ),
         ),
       ),

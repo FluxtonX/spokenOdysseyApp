@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:readmore/readmore.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/media_url_formatter.dart';
 import '../../domain/entities/memory_entity.dart';
@@ -245,6 +246,8 @@ class _MemoryCardState extends State<MemoryCard> {
                 // Title & Description
                 Text(
                   widget.memory.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.outfit(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -254,11 +257,26 @@ class _MemoryCardState extends State<MemoryCard> {
                 if (widget.memory.description != null &&
                     widget.memory.description!.isNotEmpty) ...[
                   const SizedBox(height: 6),
-                  Text(
+                  ReadMoreText(
                     widget.memory.description!,
+                    trimLines: 3,
+                    colorClickableText: AppColors.primary,
+                    trimMode: TrimMode.Line,
+                    trimCollapsedText: ' Read more',
+                    trimExpandedText: ' Show less',
                     style: GoogleFonts.outfit(
                       fontSize: 14,
                       color: AppColors.textSecondary,
+                    ),
+                    moreStyle: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                    lessStyle: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
                   ),
                 ],

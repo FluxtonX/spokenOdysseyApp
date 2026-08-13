@@ -1,6 +1,9 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:in_app_update/in_app_update.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
@@ -29,6 +32,44 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate() async {
+    if (kIsWeb || !Platform.isAndroid) return;
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        final result = await InAppUpdate.startFlexibleUpdate();
+        if (result == AppUpdateResult.success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showMaterialBanner(
+              MaterialBanner(
+                backgroundColor: AppColors.primary,
+                contentTextStyle: GoogleFonts.outfit(color: Colors.white),
+                content: const Text('An update has been downloaded.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      InAppUpdate.completeFlexibleUpdate();
+                      ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                    },
+                    child: Text('INSTALL NOW', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('In-app update error: $e');
+    }
+  }
 
   final List<Widget> _pages = const [
     FeedPage(),
@@ -295,19 +336,18 @@ class _MainScreenState extends State<MainScreen> {
           },
           child: IndexedStack(index: _currentIndex, children: _pages),
         ),
-        
-        // True Floating Action Button
+        // True Floating Action Button docked to center
         floatingActionButton: GestureDetector(
           onTap: () => _showCreateOptionsModal(context),
           child: Container(
-            width: 56,
-            height: 56,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              color: const Color(0xFF6D28D9), // Deep purple matching the screenshot
-              borderRadius: BorderRadius.circular(16), // Rounded square
+              color: AppColors.primary, 
+              borderRadius: BorderRadius.circular(16), // Modern rounded square
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6D28D9).withOpacity(0.3),
+                  color: AppColors.primary.withOpacity(0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -316,32 +356,37 @@ class _MainScreenState extends State<MainScreen> {
             child: const Icon(
               Icons.add,
               color: Colors.white,
-              size: 32,
+              size: 28,
             ),
           ),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
         // Clean, readable, full-width modern Bottom Navigation Bar
         bottomNavigationBar: Builder(
           builder: (context) {
             final bottomPadding = MediaQuery.of(context).padding.bottom;
             return Container(
-              padding: EdgeInsets.only(bottom: bottomPadding), // Respect system safe area
+              padding: EdgeInsets.only(bottom: bottomPadding),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+                ],
               ),
               child: SizedBox(
-                height: 72, // Generous height for touch targets and readability
+                height: 64, // Keep it sleek
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildNavItem(0, Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
                     _buildNavItem(1, Icons.auto_stories_outlined, Icons.auto_stories_rounded, 'Memories'),
+                    
+                    // Empty space in the exact center for the docked FAB
+                    const SizedBox(width: 60),
+                    
                     _buildNavItem(2, Icons.explore_outlined, Icons.explore_rounded, 'Discover'),
                     _buildNavItem(4, Icons.people_outline_rounded, Icons.people_rounded, 'Family'),
-                    _buildNavItem(5, Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
                   ],
                 ),
               ),
