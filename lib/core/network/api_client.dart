@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../error/exceptions.dart';
 import '../storage/secure_storage_service.dart';
+import '../di/service_locator.dart';
+import '../../features/auth/presentation/cubit/auth_cubit.dart';
 
 class ApiClient {
   final Dio dio;
@@ -39,6 +41,10 @@ class ApiClient {
             '❌ [API Error ${response?.statusCode}] ${error.requestOptions.uri}',
           );
           debugPrint('   Payload: ${response?.data}');
+
+          if (response?.statusCode == 401) {
+             sl<AuthCubit>().signOut();
+          }
 
           String message = 'An unexpected server error occurred';
           if (response?.data != null && response?.data is Map) {

@@ -22,6 +22,8 @@ import '../../../notifications/presentation/widgets/in_app_notification_banner.d
 import '../../../profile/presentation/cubits/profile_cubit.dart';
 import '../../../record/presentation/pages/record_studio_page.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/presentation/cubit/auth_state.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -310,30 +312,45 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
 
-        body: BlocListener<NotificationsCubit, NotificationsState>(
-          listener: (context, state) {
-            if (state is NotificationsLoaded &&
-                state.newestNotification != null) {
-              final notif = state.newestNotification!;
-
-              // Trigger interactive top floating banner
-              showInAppNotificationBanner(
-                context,
-                notif,
-                onTap: () {
-                  Navigator.push(
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<AuthCubit, AuthState>(
+              listener: (context, state) {
+                if (state is Unauthenticated) {
+                  Navigator.pushNamedAndRemoveUntil(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider.value(
-                        value: context.read<NotificationsCubit>(),
-                        child: const NotificationsPage(),
-                      ),
-                    ),
+                    '/onboarding',
+                    (route) => false,
                   );
-                },
-              );
-            }
-          },
+                }
+              },
+            ),
+            BlocListener<NotificationsCubit, NotificationsState>(
+              listener: (context, state) {
+                if (state is NotificationsLoaded &&
+                    state.newestNotification != null) {
+                  final notif = state.newestNotification!;
+
+                  // Trigger interactive top floating banner
+                  showInAppNotificationBanner(
+                    context,
+                    notif,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                            value: context.read<NotificationsCubit>(),
+                            child: const NotificationsPage(),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+              },
+            ),
+          ],
           child: IndexedStack(index: _currentIndex, children: _pages),
         ),
         // True Floating Action Button docked to center
