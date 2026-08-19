@@ -11,6 +11,7 @@ import '../../../../features/auth/domain/entities/user.dart';
 import '../cubits/memories_cubit.dart';
 import '../widgets/memory_card.dart';
 import 'memory_detail_page.dart';
+import 'timeline_page.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -61,7 +62,7 @@ class _FeedPageState extends State<FeedPage> {
               const SizedBox(height: 24),
               _buildActionButtons(),
               const SizedBox(height: 24),
-              _buildStatGrid(user),
+              _buildStatGrid(context, user),
               const SizedBox(height: 24),
               _buildQuotes(),
               const SizedBox(height: 40),
@@ -340,7 +341,7 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Widget _buildStatGrid(User user) {
+  Widget _buildStatGrid(BuildContext context, User user) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -348,7 +349,28 @@ class _FeedPageState extends State<FeedPage> {
           Expanded(
             child: Column(
               children: [
-                _buildStatCard('${user.memoriesCount}', 'All Memories'),
+                _buildStatCard('${user.memoriesCount}', 'All Memories', onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (newContext) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: context.read<MemoriesCubit>()),
+                          BlocProvider.value(value: context.read<AlbumsCubit>()),
+                        ],
+                        child: Scaffold(
+                          backgroundColor: const Color(0xFFFEF2F4),
+                          appBar: AppBar(
+                            elevation: 0,
+                            backgroundColor: Colors.transparent,
+                            iconTheme: const IconThemeData(color: AppColors.primary),
+                          ),
+                          body: const TimelinePage(initialTab: 0),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 16),
                 _buildStatCard('${user.familyCount}', 'Family Members'),
               ],
@@ -358,7 +380,28 @@ class _FeedPageState extends State<FeedPage> {
           Expanded(
             child: Column(
               children: [
-                _buildStatCard('${user.albumsCount}', 'Albums'),
+                _buildStatCard('${user.albumsCount}', 'Albums', onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (newContext) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: context.read<MemoriesCubit>()),
+                          BlocProvider.value(value: context.read<AlbumsCubit>()),
+                        ],
+                        child: Scaffold(
+                          backgroundColor: const Color(0xFFFEF2F4),
+                          appBar: AppBar(
+                            elevation: 0,
+                            backgroundColor: Colors.transparent,
+                            iconTheme: const IconThemeData(color: AppColors.primary),
+                          ),
+                          body: const TimelinePage(initialTab: 1),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 16),
                 _buildStatCard('${user.followersCount}', 'Followers'),
               ],
@@ -369,35 +412,42 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Widget _buildStatCard(String value, String label) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE9D8F5).withOpacity(0.5),
+  Widget _buildStatCard(String value, String label, {VoidCallback? onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE9D8F5).withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-            ),
+          child: Column(
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.outfit(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

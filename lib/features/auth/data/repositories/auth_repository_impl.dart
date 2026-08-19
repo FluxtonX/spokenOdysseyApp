@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../domain/entities/user.dart';
@@ -144,19 +145,36 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<User> googleSignIn() async {
     try {
-      final googleProvider = fb.GoogleAuthProvider();
-      final userCredential = await _firebaseAuth.signInWithProvider(googleProvider);
-      final firebaseUser = userCredential.user;
+      // 1. Trigger the native Google Sign-In bottom sheet
+      final googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      if (firebaseUser == null) {
+      if (googleUser == null) {
         throw Exception('Google Sign-In failed or was cancelled.');
       }
 
-      final idToken = await firebaseUser.getIdToken() ?? '';
+      // 2. Get auth details from request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken ?? '';
+
+      // 3. Create a new credential
+      final credential = fb.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 4. Once signed in, return the UserCredential
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      final firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        throw Exception('Firebase authentication with Google failed.');
+      }
 
       // Sync Firebase Token with Express backend POST /api/auth/google
-      final data = await remoteDataSource.googleLogin(idToken: idToken);
-      final token = data['token'] ?? data['accessToken'] ?? idToken;
+      final firebaseIdToken = await firebaseUser.getIdToken() ?? '';
+      final data = await remoteDataSource.googleLogin(idToken: firebaseIdToken);
+      final token = data['token'] ?? data['accessToken'] ?? firebaseIdToken;
       final userJson = data['user'] ?? data['data'] ?? {};
 
       final userModel = UserModel.fromJson(userJson.isNotEmpty
@@ -227,6 +245,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signOut() async {
     try {
       await _firebaseAuth.signOut();
+      await GoogleSignIn().signOut();
     } catch (_) {}
     await storageService.clearAll();
   }

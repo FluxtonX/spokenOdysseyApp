@@ -396,14 +396,14 @@ class _MainScreenState extends State<MainScreen> {
                 height: 64, // Keep it sleek
                 child: Row(
                   children: [
-                    _buildNavItem(0, Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
-                    _buildNavItem(1, Icons.auto_stories_outlined, Icons.auto_stories_rounded, 'Memories'),
+                    _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Home'),
+                    _buildNavItem(2, Icons.explore_outlined, Icons.explore_rounded, 'Discover'),
                     
                     // Empty space in the exact center for the docked FAB
                     const SizedBox(width: 60),
                     
-                    _buildNavItem(2, Icons.explore_outlined, Icons.explore_rounded, 'Discover'),
                     _buildNavItem(4, Icons.people_outline_rounded, Icons.people_rounded, 'Family'),
+                    _buildNavItem(5, Icons.settings_outlined, Icons.settings_rounded, 'Setting'),
                   ],
                 ),
               ),

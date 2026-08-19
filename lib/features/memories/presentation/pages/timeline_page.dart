@@ -12,14 +12,21 @@ import '../widgets/memory_card.dart';
 import 'memory_detail_page.dart';
 
 class TimelinePage extends StatefulWidget {
-  const TimelinePage({super.key});
+  final int initialTab;
+  const TimelinePage({super.key, this.initialTab = 0});
 
   @override
   State<TimelinePage> createState() => _TimelinePageState();
 }
 
 class _TimelinePageState extends State<TimelinePage> {
-  int _selectedTab = 0;
+  late int _selectedTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTab = widget.initialTab;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,74 +34,92 @@ class _TimelinePageState extends State<TimelinePage> {
       child: Column(
         children: [
           const SizedBox(height: 12),
-          // Top Segmented Pill Toggle (All Memories vs Albums)
+          // Top Segmented Pill Toggle (Scrollable)
           Container(
-            padding: const EdgeInsets.all(4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () => setState(() => _selectedTab = 0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _selectedTab == 0
-                          ? AppColors.primary
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'All Memories',
-                      style: GoogleFonts.outfit(
-                        color: _selectedTab == 0
-                            ? Colors.white
-                            : AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => setState(() => _selectedTab = 1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _selectedTab == 1
-                          ? AppColors.primary
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Albums',
-                      style: GoogleFonts.outfit(
-                        color: _selectedTab == 1
-                            ? Colors.white
-                            : AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              showsHorizontalScrollIndicator: false,
+              child: Row(
+                children: [
+                  _buildTabButton(0, 'All Memories'),
+                  const SizedBox(width: 8),
+                  _buildTabButton(1, 'Albums'),
+                  const SizedBox(width: 8),
+                  _buildTabButton(2, 'Milestones'),
+                  const SizedBox(width: 8),
+                  _buildTabButton(3, 'Followers'),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
 
           Expanded(
-            child: _selectedTab == 0
-                ? _buildMemoriesTab()
-                : _buildAlbumsTab(),
+            child: _getSelectedTabWidget(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _getSelectedTabWidget() {
+    switch (_selectedTab) {
+      case 0:
+        return _buildMemoriesTab();
+      case 1:
+        return _buildAlbumsTab();
+      case 2:
+        return _buildMilestonesTab();
+      case 3:
+        return _buildFollowersTab();
+      default:
+        return _buildMemoriesTab();
+    }
+  }
+
+  Widget _buildTabButton(int index, String label) {
+    final isSelected = _selectedTab == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTab = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.outfit(
+            color: isSelected ? Colors.white : AppColors.primary,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMilestonesTab() {
+    return Center(
+      child: Text(
+        'Milestones coming soon.',
+        style: GoogleFonts.outfit(
+          fontSize: 16,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFollowersTab() {
+    return Center(
+      child: Text(
+        'Followers coming soon.',
+        style: GoogleFonts.outfit(
+          fontSize: 16,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }

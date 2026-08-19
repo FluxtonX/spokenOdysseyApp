@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/di/service_locator.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../cubits/settings_cubit.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -14,167 +12,249 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _legacyEnabled = false;
-  String _inactivityPeriod = '6_months';
-  final _noteController = TextEditingController();
+  int _selectedTabIndex = 1; // 0: Profile, 1: Privacy, 2: Insights
+
+  String _defaultEntryPrivacy = 'Private - Only by you';
+  String _profileVisibility = 'Follower only';
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<SettingsCubit>(
-      create: (context) => sl<SettingsCubit>()..loadSettings(),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(
-            'Settings & Legacy Access',
-            style: GoogleFonts.outfit(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        ),
-        body: BlocConsumer<SettingsCubit, SettingsState>(
-          listener: (context, state) {
-            if (state is SettingsLoaded) {
-              setState(() {
-                _legacyEnabled = state.legacySettings.isEnabled;
-                _inactivityPeriod = state.legacySettings.inactivityPeriod;
-                _noteController.text = state.legacySettings.note ?? '';
-              });
-            }
-          },
-          builder: (context, state) {
-            if (state is SettingsLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Legacy Access Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.verified_user_rounded, color: AppColors.primary),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Digital Legacy Access',
-                                  style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            Switch(
-                              value: _legacyEnabled,
-                              activeThumbColor: AppColors.primary,
-                              onChanged: (val) {
-                                setState(() => _legacyEnabled = val);
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Automatically grant designated family members access to your voice memories after a period of account inactivity.',
-                          style: GoogleFonts.outfit(fontSize: 13, color: AppColors.textSecondary),
-                        ),
-                        if (_legacyEnabled) ...[
-                          const SizedBox(height: 16),
-                          Text('Inactivity Duration', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            initialValue: _inactivityPeriod,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: '3_months', child: Text('3 Months Inactivity')),
-                              DropdownMenuItem(value: '6_months', child: Text('6 Months Inactivity')),
-                              DropdownMenuItem(value: '1_year', child: Text('1 Year Inactivity')),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) setState(() => _inactivityPeriod = val);
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          Text('Legacy Note for Family', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _noteController,
-                            maxLines: 2,
-                            decoration: InputDecoration(
-                              hintText: 'A message for your legacy contact...',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                context.read<SettingsCubit>().updateLegacySettings(
-                                      isEnabled: _legacyEnabled,
-                                      inactivityPeriod: _inactivityPeriod,
-                                      note: _noteController.text.trim(),
-                                    );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Legacy settings updated!')),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                              child: Text('Save Legacy Settings', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Account Actions Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Account Settings', style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 12),
-                        ListTile(
-                          leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                          title: Text('Sign Out', style: GoogleFonts.outfit(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                          onTap: () {
-                            context.read<AuthCubit>().signOut();
-                            Navigator.pushNamedAndRemoveUntil(context, '/sign-in', (route) => false);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDF6F6), // Soft pinkish background
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Text(
+                'Settings',
+                style: GoogleFonts.outfit(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF3B2A2A),
+                ),
               ),
-            );
-          },
+              const SizedBox(height: 8),
+              Text(
+                'Manage your profile and see Insights',
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Custom Segmented Control
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.purple.shade200),
+                ),
+                child: Row(
+                  children: [
+                    _buildTab(0, 'Profile'),
+                    _buildTab(1, 'Privacy'),
+                    _buildTab(2, 'Insights'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Content based on selected tab
+              if (_selectedTabIndex == 1) _buildPrivacyTab(),
+              if (_selectedTabIndex == 0) _buildPlaceholder('Profile Settings coming soon.'),
+              if (_selectedTabIndex == 2) _buildPlaceholder('Insights coming soon.'),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPlaceholder(String text) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Text(
+          text,
+          style: GoogleFonts.outfit(color: Colors.grey.shade500),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTab(int index, String title) {
+    final isSelected = _selectedTabIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedTabIndex = index;
+          });
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            title,
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? Colors.white : AppColors.primary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Privacy Settings',
+          style: GoogleFonts.outfit(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF3B2A2A),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Control who can see your content',
+          style: GoogleFonts.outfit(
+            fontSize: 13,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Dropdown 1
+        _buildDropdownSetting(
+          title: 'Default Entry Privacy',
+          description: 'New memories will use this privacy setting by default',
+          value: _defaultEntryPrivacy,
+          items: const ['Private - Only by you', 'Follower only', 'Public'],
+          onChanged: (val) {
+            if (val != null) setState(() => _defaultEntryPrivacy = val);
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Dropdown 2
+        _buildDropdownSetting(
+          title: 'Profile Visibility',
+          description: 'Who can view your profile and public stories',
+          value: _profileVisibility,
+          items: const ['Follower only', 'Public', 'Private'],
+          onChanged: (val) {
+            if (val != null) setState(() => _profileVisibility = val);
+          },
+        ),
+        
+        const SizedBox(height: 32),
+        const Divider(color: Colors.purple, thickness: 0.5),
+        const SizedBox(height: 24),
+
+        // Danger Zone
+        Text(
+          'Danger Zone',
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF3B2A2A),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              context.read<AuthCubit>().signOut();
+              Navigator.pushNamedAndRemoveUntil(context, '/sign-in', (route) => false);
+            },
+            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            label: Text(
+              'Log Out',
+              style: GoogleFonts.outfit(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withOpacity(0.05),
+              side: const BorderSide(color: Colors.redAccent),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownSetting({
+    required String title,
+    required String description,
+    required String value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.outfit(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF3B2A2A),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: GoogleFonts.outfit(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.purple.shade50.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.purple.shade200),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+              style: GoogleFonts.outfit(color: const Color(0xFF3B2A2A), fontSize: 14),
+              items: items.map((item) {
+                return DropdownMenuItem(
+                  value: item,
+                  child: Text(item),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -42,7 +42,11 @@ class ApiClient {
           );
           debugPrint('   Payload: ${response?.data}');
 
-          if (response?.statusCode == 401) {
+          if (response?.statusCode == 401 ||
+              response?.statusCode == 403 ||
+              (response?.data is Map &&
+                  (response?.data['message']?.toString().toLowerCase().contains('jwt expired') == true ||
+                   response?.data['error']?.toString().toLowerCase().contains('jwt expired') == true))) {
              sl<AuthCubit>().signOut();
           }
 

@@ -48,11 +48,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is ForgotPasswordSent) {
-              Navigator.pushNamed(
-                context,
-                '/verify-otp',
-                arguments: state.email,
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Password reset link sent! Check your email.'),
+                  backgroundColor: AppColors.primary,
+                ),
               );
+              Navigator.pop(context);
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
