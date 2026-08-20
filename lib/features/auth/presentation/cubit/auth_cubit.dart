@@ -26,16 +26,6 @@ class AuthCubit extends Cubit<AuthState> {
     required this.authRepository,
   }) : super(AuthInitial());
 
-  String _extractErrorMessage(dynamic e) {
-    if (e is ServerException) return e.message;
-    if (e is Failure) return e.message;
-    final msg = e.toString();
-    if (msg.startsWith('Exception: ')) {
-      return msg.substring(11);
-    }
-    return msg;
-  }
-
   Future<void> checkAuthStatus() async {
     emit(AuthLoading());
     try {
@@ -58,7 +48,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
       emit(Authenticated(user));
     } catch (e) {
-      emit(AuthError(_extractErrorMessage(e)));
+      emit(AuthError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -70,7 +60,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
       emit(Authenticated(user));
     } catch (e) {
-      emit(AuthError(_extractErrorMessage(e)));
+      emit(AuthError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -80,7 +70,7 @@ class AuthCubit extends Cubit<AuthState> {
       await forgotPasswordUseCase(email);
       emit(ForgotPasswordSent(email));
     } catch (e) {
-      emit(AuthError(_extractErrorMessage(e)));
+      emit(AuthError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -96,7 +86,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(const AuthError('Invalid verification code. Please try again.'));
       }
     } catch (e) {
-      emit(AuthError(_extractErrorMessage(e)));
+      emit(AuthError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -116,7 +106,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
       emit(const PasswordResetSuccess('Password changed!'));
     } catch (e) {
-      emit(AuthError(_extractErrorMessage(e)));
+      emit(AuthError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -126,7 +116,7 @@ class AuthCubit extends Cubit<AuthState> {
       final user = await authRepository.googleSignIn();
       emit(Authenticated(user));
     } catch (e) {
-      emit(AuthError(_extractErrorMessage(e)));
+      emit(AuthError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -136,7 +126,7 @@ class AuthCubit extends Cubit<AuthState> {
       final user = await authRepository.appleSignIn();
       emit(Authenticated(user));
     } catch (e) {
-      emit(AuthError(_extractErrorMessage(e)));
+      emit(AuthError(ErrorParser.extractMessage(e)));
     }
   }
 

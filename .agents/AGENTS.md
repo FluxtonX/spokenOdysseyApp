@@ -2,10 +2,8 @@
 
 ## CRITICAL RULES FOR ALL AGENTS & DEVELOPERS
 
-### 1. BACKEND IMMUTABILITY
-- **DO NOT MODIFY** any code, schemas, migrations, or files in `spokenOdessie_backend/`.
-- All backend routes (`/api/auth`, `/api/albums`, `/api/memories`, `/api/users`, etc.) and data models are locked and live in production.
-- Frontend Flutter app must communicate with existing API endpoints without requesting backend code edits.
+### 1. BACKEND IMMUTABILITY (REMOVED)
+- The user has explicitly authorized backend code modifications.
 
 ### 2. WEB APPLICATION IMMUTABILITY
 - **DO NOT MODIFY** any code in `spoken-odyssey-web/` or the root `web/` configuration.

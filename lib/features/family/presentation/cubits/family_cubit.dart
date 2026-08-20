@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/error/exceptions.dart';
 import 'package:spokenodyssey/features/memories/domain/entities/memory_entity.dart';
 import '../../domain/entities/family_member_entity.dart';
 import '../../domain/repositories/family_repository.dart';
@@ -15,6 +16,7 @@ class FamilyLoaded extends FamilyState {
   final List<FamilyInvitationEntity> pendingApprovals;
   final List<FamilyInvitationEntity> myInvitations;
   final bool isAdmin;
+  final String? actionError;
 
   FamilyLoaded({
     required this.members,
@@ -22,7 +24,27 @@ class FamilyLoaded extends FamilyState {
     required this.pendingApprovals,
     required this.myInvitations,
     required this.isAdmin,
+    this.actionError,
   });
+
+  FamilyLoaded copyWith({
+    List<FamilyMemberEntity>? members,
+    List<MemoryEntity>? sharedMemories,
+    List<FamilyInvitationEntity>? pendingApprovals,
+    List<FamilyInvitationEntity>? myInvitations,
+    bool? isAdmin,
+    String? actionError,
+    bool clearError = false,
+  }) {
+    return FamilyLoaded(
+      members: members ?? this.members,
+      sharedMemories: sharedMemories ?? this.sharedMemories,
+      pendingApprovals: pendingApprovals ?? this.pendingApprovals,
+      myInvitations: myInvitations ?? this.myInvitations,
+      isAdmin: isAdmin ?? this.isAdmin,
+      actionError: clearError ? null : (actionError ?? this.actionError),
+    );
+  }
 }
 
 class FamilyError extends FamilyState {
@@ -34,6 +56,16 @@ class FamilyCubit extends Cubit<FamilyState> {
   final FamilyRepository repository;
 
   FamilyCubit({required this.repository}) : super(FamilyInitial());
+
+  void _emitError(dynamic e) {
+    if (state is FamilyLoaded) {
+      emit((state as FamilyLoaded).copyWith(
+        actionError: ErrorParser.extractMessage(e),
+      ));
+    } else {
+      emit(FamilyError(ErrorParser.extractMessage(e)));
+    }
+  }
 
   Future<void> loadFamilyCircle() async {
     try {
@@ -57,7 +89,7 @@ class FamilyCubit extends Cubit<FamilyState> {
         ),
       );
     } catch (e) {
-      emit(FamilyError(e.toString()));
+      emit(FamilyError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -65,28 +97,36 @@ class FamilyCubit extends Cubit<FamilyState> {
     try {
       await repository.approveInvitation(id);
       await loadFamilyCircle();
-    } catch (_) {}
+    } catch (e) {
+      _emitError(e);
+    }
   }
 
   Future<void> declineApproval(String id) async {
     try {
       await repository.declineApproval(id);
       await loadFamilyCircle();
-    } catch (_) {}
+    } catch (e) {
+      _emitError(e);
+    }
   }
 
   Future<void> promoteMember(String userId) async {
     try {
       await repository.promoteToAdmin(userId);
       await loadFamilyCircle();
-    } catch (_) {}
+    } catch (e) {
+      _emitError(e);
+    }
   }
 
   Future<void> removeMember(String userId) async {
     try {
       await repository.removeFamilyMember(userId);
       await loadFamilyCircle();
-    } catch (_) {}
+    } catch (e) {
+      _emitError(e);
+    }
   }
 
   Future<FamilyInvitationEntity?> sendEmailInvite(
@@ -104,7 +144,8 @@ class FamilyCubit extends Cubit<FamilyState> {
       );
       await loadFamilyCircle();
       return invite;
-    } catch (_) {
+    } catch (e) {
+      _emitError(e);
       return null;
     }
   }
@@ -117,7 +158,8 @@ class FamilyCubit extends Cubit<FamilyState> {
       final invite = await repository.sendSMSInvite(phone, relation);
       await loadFamilyCircle();
       return invite;
-    } catch (_) {
+    } catch (e) {
+      _emitError(e);
       return null;
     }
   }
@@ -126,7 +168,8 @@ class FamilyCubit extends Cubit<FamilyState> {
     try {
       final invite = await repository.createLinkInvite(relation);
       return invite;
-    } catch (_) {
+    } catch (e) {
+      _emitError(e);
       return null;
     }
   }
@@ -135,7 +178,8 @@ class FamilyCubit extends Cubit<FamilyState> {
     try {
       final invite = await repository.createQRInvite(relation);
       return invite;
-    } catch (_) {
+    } catch (e) {
+      _emitError(e);
       return null;
     }
   }

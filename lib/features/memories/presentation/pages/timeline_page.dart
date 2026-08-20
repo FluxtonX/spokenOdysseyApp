@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,11 +22,27 @@ class TimelinePage extends StatefulWidget {
 
 class _TimelinePageState extends State<TimelinePage> {
   late int _selectedTab;
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _selectedTab = widget.initialTab;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      context.read<MemoriesCubit>().searchMemories(query);
+    });
   }
 
   @override
@@ -39,7 +56,6 @@ class _TimelinePageState extends State<TimelinePage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              showsHorizontalScrollIndicator: false,
               child: Row(
                 children: [
                   _buildTabButton(0, 'All Memories'),
@@ -83,15 +99,15 @@ class _TimelinePageState extends State<TimelinePage> {
     return GestureDetector(
       onTap: () => setState(() => _selectedTab = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFF5E4EE8) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           label,
           style: GoogleFonts.outfit(
-            color: isSelected ? Colors.white : AppColors.primary,
+            color: isSelected ? Colors.white : const Color(0xFF5E4EE8),
             fontWeight: FontWeight.w600,
             fontSize: 14,
           ),
@@ -127,18 +143,47 @@ class _TimelinePageState extends State<TimelinePage> {
   Widget _buildMemoriesTab() {
     return RefreshIndicator(
       onRefresh: () => context.read<MemoriesCubit>().loadFeedMemories(),
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
+      child: BlocListener<MemoriesCubit, MemoriesState>(
+        listener: (context, state) {
+          if (state is MemoriesLoaded && state.actionError != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.actionError!),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        },
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'Community & Family Feed',
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      decoration: InputDecoration(
+                        hintText: 'Search memories...',
+                        hintStyle: GoogleFonts.outfit(color: AppColors.textSecondary),
+                        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
           ),
@@ -150,49 +195,139 @@ class _TimelinePageState extends State<TimelinePage> {
                   child: Center(child: CircularProgressIndicator()),
                 );
               } else if (state is MemoriesLoaded) {
-                if (state.memories.isEmpty) {
-                  return SliverFillRemaining(
-                    child: Center(
-                      child: Text(
-                        'No memories found in feed.\nBe the first to record a memory!',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
-                          fontSize: 15,
-                          color: AppColors.textSecondary,
+                return SliverMainAxisGroup(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${state.memories.length} memories',
+                              style: GoogleFonts.outfit(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    if (!state.isGridView) {
+                                      context.read<MemoriesCubit>().toggleViewMode();
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: state.isGridView ? const Color(0xFF5E4EE8) : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Icon(
+                                      Icons.grid_view_rounded,
+                                      size: 20,
+                                      color: state.isGridView ? Colors.white : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (state.isGridView) {
+                                      context.read<MemoriesCubit>().toggleViewMode();
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: !state.isGridView ? const Color(0xFF5E4EE8) : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Icon(
+                                      Icons.view_list_rounded,
+                                      size: 20,
+                                      color: !state.isGridView ? Colors.white : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  );
-                }
-
-                return SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final memory = state.memories[index];
-                      return MemoryCard(
-                        memory: memory,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  MemoryDetailPage(memoryId: memory.id),
+                    if (state.memories.isEmpty)
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Text(
+                            'No memories found.\nTry a different search or be the first to record a memory!',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.outfit(
+                              fontSize: 15,
+                              color: AppColors.textSecondary,
                             ),
-                          );
-                        },
-                        onReact: (type) {
-                          context.read<MemoriesCubit>().reactToMemory(
-                            memory.id,
-                            type,
-                          );
-                        },
-                        onDelete: () {
-                          context.read<MemoriesCubit>().deleteMemory(memory.id);
-                        },
-                      );
-                    }, childCount: state.memories.length),
-                  ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: state.isGridView
+                            ? SliverGrid(
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 0.55,
+                                ),
+                                delegate: SliverChildBuilderDelegate((context, index) {
+                                  final memory = state.memories[index];
+                                  return MemoryCard(
+                                    memory: memory,
+                                    isGridMode: true,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => MemoryDetailPage(memoryId: memory.id),
+                                        ),
+                                      );
+                                    },
+                                    onReact: (type) {
+                                      context.read<MemoriesCubit>().reactToMemory(memory.id, type);
+                                    },
+                                    onDelete: () {
+                                      context.read<MemoriesCubit>().deleteMemory(memory.id);
+                                    },
+                                  );
+                                }, childCount: state.memories.length),
+                              )
+                            : SliverList(
+                                delegate: SliverChildBuilderDelegate((context, index) {
+                                  final memory = state.memories[index];
+                                  return MemoryCard(
+                                    memory: memory,
+                                    isGridMode: false,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => MemoryDetailPage(memoryId: memory.id),
+                                        ),
+                                      );
+                                    },
+                                    onReact: (type) {
+                                      context.read<MemoriesCubit>().reactToMemory(memory.id, type);
+                                    },
+                                    onDelete: () {
+                                      context.read<MemoriesCubit>().deleteMemory(memory.id);
+                                    },
+                                  );
+                                }, childCount: state.memories.length),
+                              ),
+                      ),
+                  ],
                 );
               } else if (state is MemoriesError) {
                 return SliverFillRemaining(
@@ -208,6 +343,7 @@ class _TimelinePageState extends State<TimelinePage> {
             },
           ),
         ],
+      ),
       ),
     );
   }

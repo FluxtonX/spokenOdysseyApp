@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart';
 import '../error/exceptions.dart';
 import '../storage/secure_storage_service.dart';
 import '../di/service_locator.dart';
-import '../../features/auth/presentation/cubit/auth_cubit.dart';
 
 class ApiClient {
   final Dio dio;
   final SecureStorageService storageService;
+  VoidCallback? onUnauthorized;
 
   ApiClient({Dio? dioClient, required this.storageService})
     : dio =
@@ -47,7 +47,7 @@ class ApiClient {
               (response?.data is Map &&
                   (response?.data['message']?.toString().toLowerCase().contains('jwt expired') == true ||
                    response?.data['error']?.toString().toLowerCase().contains('jwt expired') == true))) {
-             sl<AuthCubit>().signOut();
+             onUnauthorized?.call();
           }
 
           String message = 'An unexpected server error occurred';

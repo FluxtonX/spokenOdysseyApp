@@ -7,6 +7,7 @@ import '../models/memory_model.dart';
 abstract class MemoriesRemoteDataSource {
   Future<List<MemoryModel>> getFeedMemories();
   Future<List<MemoryModel>> getMemories({String? userId});
+  Future<List<MemoryModel>> searchMemories(String query);
   Future<MemoryModel> getMemoryDetails(String memoryId);
   Future<MemoryModel> createMemory({
     required String title,
@@ -63,6 +64,21 @@ class MemoriesRemoteDataSourceImpl implements MemoriesRemoteDataSource {
     final data = response.data['data'] ?? response.data;
     if (data is List) {
       return data.map((json) => MemoryModel.fromJson(json)).toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<List<MemoryModel>> searchMemories(String query) async {
+    final response = await apiClient.get(
+      ApiEndpoints.search,
+      queryParameters: {'q': query, 'type': 'memories'},
+    );
+    final data = response.data['data'] ?? response.data;
+    if (data is Map && data['memories'] is List) {
+      return (data['memories'] as List)
+          .map((json) => MemoryModel.fromJson(json))
+          .toList();
     }
     return [];
   }

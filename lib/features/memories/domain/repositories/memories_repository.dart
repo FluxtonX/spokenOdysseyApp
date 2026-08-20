@@ -4,6 +4,7 @@ import '../entities/memory_entity.dart';
 abstract class MemoriesRepository {
   Future<List<MemoryEntity>> getFeedMemories();
   Future<List<MemoryEntity>> getMemories({String? userId});
+  Future<List<MemoryEntity>> searchMemories(String query);
   Future<MemoryEntity> getMemoryDetails(String memoryId);
   Future<MemoryEntity> createMemory({
     required String title,

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../memories/domain/entities/memory_entity.dart';
 import '../../domain/repositories/discover_repository.dart';
@@ -12,13 +13,32 @@ class DiscoverLoaded extends DiscoverState {
   final List<User> suggestedPeople;
   final String selectedCategory;
   final SearchResultsEntity? searchResults;
+  final String? actionError;
 
   DiscoverLoaded({
     required this.memories,
     required this.suggestedPeople,
     this.selectedCategory = 'All',
     this.searchResults,
+    this.actionError,
   });
+
+  DiscoverLoaded copyWith({
+    List<MemoryEntity>? memories,
+    List<User>? suggestedPeople,
+    String? selectedCategory,
+    SearchResultsEntity? searchResults,
+    String? actionError,
+    bool clearError = false,
+  }) {
+    return DiscoverLoaded(
+      memories: memories ?? this.memories,
+      suggestedPeople: suggestedPeople ?? this.suggestedPeople,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+      searchResults: searchResults ?? this.searchResults,
+      actionError: clearError ? null : (actionError ?? this.actionError),
+    );
+  }
 }
 class DiscoverError extends DiscoverState {
   final String message;
@@ -29,6 +49,16 @@ class DiscoverCubit extends Cubit<DiscoverState> {
   final DiscoverRepository repository;
 
   DiscoverCubit({required this.repository}) : super(DiscoverInitial());
+
+  void _emitError(dynamic e) {
+    if (state is DiscoverLoaded) {
+      emit((state as DiscoverLoaded).copyWith(
+        actionError: ErrorParser.extractMessage(e),
+      ));
+    } else {
+      emit(DiscoverError(ErrorParser.extractMessage(e)));
+    }
+  }
 
   Future<void> loadDiscovery({String category = 'All'}) async {
     try {
@@ -44,7 +74,7 @@ class DiscoverCubit extends Cubit<DiscoverState> {
         selectedCategory: category,
       ));
     } catch (e) {
-      emit(DiscoverError(e.toString()));
+      emit(DiscoverError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -65,7 +95,7 @@ class DiscoverCubit extends Cubit<DiscoverState> {
         searchResults: results,
       ));
     } catch (e) {
-      emit(DiscoverError(e.toString()));
+      emit(DiscoverError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -80,6 +110,8 @@ class DiscoverCubit extends Cubit<DiscoverState> {
         final currentState = state as DiscoverLoaded;
         await loadDiscovery(category: currentState.selectedCategory);
       }
-    } catch (_) {}
+    } catch (e) {
+      _emitError(e);
+    }
   }
 }

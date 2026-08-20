@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
+import '../../../../core/error/exceptions.dart';
 
 enum RecordStatus { idle, recording, paused, stopped }
 
@@ -29,12 +30,13 @@ class RecordState {
     Duration? duration,
     String? recordedFilePath,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return RecordState(
       status: status ?? this.status,
       duration: duration ?? this.duration,
       recordedFilePath: recordedFilePath ?? this.recordedFilePath,
-      errorMessage: errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -73,7 +75,7 @@ class RecordCubit extends Cubit<RecordState> {
         duration: Duration.zero,
       ));
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Failed to start recording: $e'));
+      emit(state.copyWith(errorMessage: 'Failed to start recording: ${ErrorParser.extractMessage(e)}'));
     }
   }
 
@@ -82,7 +84,9 @@ class RecordCubit extends Cubit<RecordState> {
       await _recorder.pause();
       _timer?.cancel();
       emit(state.copyWith(status: RecordStatus.paused));
-    } catch (_) {}
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Failed to pause recording: ${ErrorParser.extractMessage(e)}'));
+    }
   }
 
   Future<void> resumeRecording() async {
@@ -90,7 +94,9 @@ class RecordCubit extends Cubit<RecordState> {
       await _recorder.resume();
       _startTimer();
       emit(state.copyWith(status: RecordStatus.recording));
-    } catch (_) {}
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Failed to resume recording: ${ErrorParser.extractMessage(e)}'));
+    }
   }
 
   Future<String?> stopRecording() async {
@@ -103,7 +109,7 @@ class RecordCubit extends Cubit<RecordState> {
       ));
       return path;
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Failed to stop recording: $e'));
+      emit(state.copyWith(errorMessage: 'Failed to stop recording: ${ErrorParser.extractMessage(e)}'));
       return null;
     }
   }

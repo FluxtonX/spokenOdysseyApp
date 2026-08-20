@@ -16,10 +16,13 @@ import 'core/constants/asset_constants.dart';
 import 'core/services/local_notification_service.dart';
 import 'features/home/presentation/pages/main_screen.dart';
 
+import 'core/network/api_client.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initServiceLocator();
+  sl<ApiClient>().onUnauthorized = () => sl<AuthCubit>().signOut();
   await LocalNotificationService().initialize();
   runApp(const SpokenOdysseyApp());
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/album_entity.dart';
 import '../../domain/repositories/albums_repository.dart';
 
@@ -26,7 +27,7 @@ class AlbumsCubit extends Cubit<AlbumsState> {
       final albums = await repository.getAlbums();
       emit(AlbumsLoaded(albums));
     } catch (e) {
-      emit(AlbumsError(e.toString()));
+      emit(AlbumsError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -44,7 +45,7 @@ class AlbumsCubit extends Cubit<AlbumsState> {
       await loadAlbums();
       return true;
     } catch (e) {
-      emit(AlbumsError(e.toString()));
+      emit(AlbumsError(ErrorParser.extractMessage(e)));
       return false;
     }
   }
@@ -54,7 +55,7 @@ class AlbumsCubit extends Cubit<AlbumsState> {
       await repository.deleteAlbum(albumId);
       await loadAlbums();
     } catch (e) {
-      emit(AlbumsError(e.toString()));
+      emit(AlbumsError(ErrorParser.extractMessage(e)));
     }
   }
 }

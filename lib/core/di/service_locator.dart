@@ -127,7 +127,7 @@ Future<void> initServiceLocator() async {
   sl.registerLazySingleton(() => ResetPasswordUseCase(sl()));
 
   // Cubits
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => AuthCubit(
       signInUseCase: sl(),
       signUpUseCase: sl(),

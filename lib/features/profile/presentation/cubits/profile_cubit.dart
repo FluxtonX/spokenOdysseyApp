@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spokenodyssey/features/auth/domain/entities/user.dart';
 import '../../domain/repositories/profile_repository.dart';
+import '../../../../core/error/exceptions.dart';
 
 abstract class ProfileState {}
 
@@ -31,7 +32,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           : await repository.getMyProfile();
       emit(ProfileLoaded(user));
     } catch (e) {
-      emit(ProfileError(e.toString()));
+      emit(ProfileError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -53,7 +54,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(ProfileLoaded(updatedUser));
       return true;
     } catch (e) {
-      emit(ProfileError(e.toString()));
+      emit(ProfileError(ErrorParser.extractMessage(e)));
       return false;
     }
   }

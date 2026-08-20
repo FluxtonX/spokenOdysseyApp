@@ -38,4 +38,45 @@ class MemoryEntity {
     this.reactionCounts = const {},
     this.userReaction,
   });
+
+  MemoryEntity copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? mediaUrl,
+    String? mediaType,
+    String? privacy,
+    List<String>? tags,
+    String? albumId,
+    String? albumTitle,
+    User? author,
+    String? createdAt,
+    int? viewsCount,
+    int? likesCount,
+    int? commentsCount,
+    int? sharesCount,
+    Map<String, int>? reactionCounts,
+    String? userReaction,
+    bool clearUserReaction = false,
+  }) {
+    return MemoryEntity(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
+      mediaType: mediaType ?? this.mediaType,
+      privacy: privacy ?? this.privacy,
+      tags: tags ?? this.tags,
+      albumId: albumId ?? this.albumId,
+      albumTitle: albumTitle ?? this.albumTitle,
+      author: author ?? this.author,
+      createdAt: createdAt ?? this.createdAt,
+      viewsCount: viewsCount ?? this.viewsCount,
+      likesCount: likesCount ?? this.likesCount,
+      commentsCount: commentsCount ?? this.commentsCount,
+      sharesCount: sharesCount ?? this.sharesCount,
+      reactionCounts: reactionCounts ?? this.reactionCounts,
+      userReaction: clearUserReaction ? null : (userReaction ?? this.userReaction),
+    );
+  }
 }

@@ -8,19 +8,14 @@ class ApiEndpoints {
   static const String liveProductionUrl = 'http://ec2-13-206-196-136.ap-south-1.compute.amazonaws.com:5001/api';
 
   // Toggle this flag if you want to switch to local development backend
-  static const bool useLiveProductionBackend = true;
+  static const bool useLiveProductionBackend = false;
 
   static String get baseUrl {
     if (useLiveProductionBackend) {
       return liveProductionUrl;
     }
-    if (kIsWeb) {
-      return 'http://localhost:5001/api';
-    }
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5001/api';
-    }
-    return 'http://localhost:5001/api';
+    // Using specific local network IP so physical devices on Wi-Fi can connect
+    return 'http://192.168.1.18:5000/api';
   }
 
   // Auth & User Profile Endpoints

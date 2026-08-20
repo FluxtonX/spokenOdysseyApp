@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/comment_entity.dart';
 import '../../domain/entities/memory_entity.dart';
 import '../../domain/repositories/memories_repository.dart';
@@ -29,7 +30,7 @@ class MemoryDetailCubit extends Cubit<MemoryDetailState> {
       final comments = await repository.getComments(memoryId);
       emit(MemoryDetailLoaded(memory: memory, comments: comments));
     } catch (e) {
-      emit(MemoryDetailError(e.toString()));
+      emit(MemoryDetailError(ErrorParser.extractMessage(e)));
     }
   }
 
@@ -42,18 +43,44 @@ class MemoryDetailCubit extends Cubit<MemoryDetailState> {
         emit(MemoryDetailLoaded(memory: currentMemory, comments: comments));
       }
     } catch (e) {
-      emit(MemoryDetailError(e.toString()));
+      emit(MemoryDetailError(ErrorParser.extractMessage(e)));
     }
   }
 
   Future<void> reactToMemory(String memoryId, String reactionType) async {
+    MemoryEntity? backupMemory;
+    if (state is MemoryDetailLoaded) {
+      final currentLoaded = state as MemoryDetailLoaded;
+      backupMemory = currentLoaded.memory;
+      final isUnreacting = backupMemory.userReaction == reactionType;
+      final newReaction = isUnreacting ? null : reactionType;
+      final countDiff = isUnreacting ? -1 : (backupMemory.userReaction == null ? 1 : 0);
+      
+      final updatedMemory = backupMemory.copyWith(
+        userReaction: newReaction,
+        clearUserReaction: isUnreacting,
+        likesCount: (backupMemory.likesCount + countDiff).clamp(0, 999999),
+      );
+      
+      emit(MemoryDetailLoaded(
+        memory: updatedMemory,
+        comments: currentLoaded.comments,
+      ));
+    }
+
     try {
       await repository.reactToMemory(memoryId, reactionType);
-      final updatedMemory = await repository.getMemoryDetails(memoryId);
-      if (state is MemoryDetailLoaded) {
-        final comments = (state as MemoryDetailLoaded).comments;
-        emit(MemoryDetailLoaded(memory: updatedMemory, comments: comments));
+      // No need to fetch memory details since optimistic update succeeded
+    } catch (e) {
+      if (state is MemoryDetailLoaded && backupMemory != null) {
+        final currentLoaded = state as MemoryDetailLoaded;
+        emit(MemoryDetailLoaded(
+          memory: backupMemory,
+          comments: currentLoaded.comments,
+        ));
+      } else if (state is! MemoryDetailLoaded) {
+        emit(MemoryDetailError(ErrorParser.extractMessage(e)));
       }
-    } catch (_) {}
+    }
   }
 }

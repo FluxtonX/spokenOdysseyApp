@@ -19,6 +19,11 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
   }
 
   @override
+  Future<List<MemoryEntity>> searchMemories(String query) async {
+    return await remoteDataSource.searchMemories(query);
+  }
+
+  @override
   Future<MemoryEntity> getMemoryDetails(String memoryId) async {
     return await remoteDataSource.getMemoryDetails(memoryId);
   }
