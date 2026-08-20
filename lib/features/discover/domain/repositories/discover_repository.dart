@@ -23,6 +23,7 @@ abstract class DiscoverRepository {
   Future<SearchResultsEntity> search(String query, {String type = 'all'});
   Future<List<User>> getSuggestedPeople();
   Future<List<User>> getFeaturedPeople({String? category, String? query});
+  Future<List<User>> getFollowers();
   Future<void> followUser(String targetUid);
   Future<void> unfollowUser(String targetUid);
 }

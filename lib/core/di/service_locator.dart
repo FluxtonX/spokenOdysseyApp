@@ -19,6 +19,7 @@ import '../../features/profile/data/datasources/profile_remote_datasource.dart';
 import '../../features/profile/data/repositories/profile_repository_impl.dart';
 import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/presentation/cubits/profile_cubit.dart';
+import '../../features/profile/presentation/cubits/followers_cubit.dart';
 
 // Memories
 import '../../features/memories/data/datasources/memories_remote_datasource.dart';
@@ -138,6 +139,7 @@ Future<void> initServiceLocator() async {
     ),
   );
   sl.registerFactory(() => ProfileCubit(repository: sl()));
+  sl.registerFactory(() => FollowersCubit(discoverRepository: sl()));
   sl.registerFactory(() => MemoriesCubit(repository: sl()));
   sl.registerFactory(() => MemoryDetailCubit(repository: sl()));
   sl.registerFactory(() => RecordCubit());

@@ -17,6 +17,7 @@ abstract class DiscoverRemoteDataSource {
   Future<SearchResultsEntity> search(String query, {String type = 'all'});
   Future<List<UserModel>> getSuggestedPeople();
   Future<List<UserModel>> getFeaturedPeople({String? category, String? query});
+  Future<List<UserModel>> getFollowers();
   Future<void> followUser(String targetUid);
   Future<void> unfollowUser(String targetUid);
 }
@@ -92,6 +93,16 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
         if (query != null) 'q': query,
       },
     );
+    final data = response.data['data'] ?? response.data;
+    if (data is List) {
+      return data.map((json) => UserModel.fromJson(json)).toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<List<UserModel>> getFollowers() async {
+    final response = await apiClient.get(ApiEndpoints.followers);
     final data = response.data['data'] ?? response.data;
     if (data is List) {
       return data.map((json) => UserModel.fromJson(json)).toList();

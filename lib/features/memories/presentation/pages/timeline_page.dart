@@ -11,6 +11,9 @@ import '../../../albums/presentation/widgets/create_album_modal.dart';
 import '../cubits/memories_cubit.dart';
 import '../widgets/memory_card.dart';
 import 'memory_detail_page.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../../profile/presentation/cubits/followers_cubit.dart';
+import '../../../profile/presentation/cubits/followers_state.dart';
 
 class TimelinePage extends StatefulWidget {
   final int initialTab;
@@ -129,14 +132,201 @@ class _TimelinePageState extends State<TimelinePage> {
   }
 
   Widget _buildFollowersTab() {
-    return Center(
-      child: Text(
-        'Followers coming soon.',
-        style: GoogleFonts.outfit(
-          fontSize: 16,
-          color: AppColors.textSecondary,
-        ),
+    return BlocProvider(
+      create: (_) => sl<FollowersCubit>()..loadFollowers(),
+      child: BlocBuilder<FollowersCubit, FollowersState>(
+        builder: (context, state) {
+          if (state is FollowersLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is FollowersLoaded) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: TextField(
+                      onChanged: (val) {
+                        context.read<FollowersCubit>().searchFollowers(val);
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search followers...',
+                        hintStyle: GoogleFonts.outfit(color: AppColors.textSecondary),
+                        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${state.searchResults.length} followers',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: state.searchResults.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final user = state.searchResults[index];
+                        final badgeText = user.relationship ?? 'Follower';
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F1FE), // Very light purple
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF5E4EE8).withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                                    ? Image.network(
+                                        user.avatarUrl!,
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(),
+                                      )
+                                    : _buildAvatarPlaceholder(),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          user.name ?? 'Unknown',
+                                          style: GoogleFonts.outfit(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF5E4EE8).withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            badgeText,
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF5E4EE8),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      user.bio ?? 'No bio provided.',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Align(
+                                alignment: Alignment.topRight,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    context.read<FollowersCubit>().toggleFollow(user);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: user.isFollowing ? Colors.transparent : const Color(0xFF5E4EE8),
+                                      border: Border.all(color: const Color(0xFF5E4EE8)),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (user.isFollowing)
+                                          const Icon(Icons.check, size: 12, color: Color(0xFF5E4EE8))
+                                        else
+                                          const Icon(Icons.add, size: 12, color: Colors.white),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          user.isFollowing ? 'Following' : 'Follow Back',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: user.isFollowing ? const Color(0xFF5E4EE8) : Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (state.followers.isNotEmpty)
+                    Center(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          // Load more functionality (pagination placeholder)
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF5E4EE8)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          'Load More Followers',
+                          style: GoogleFonts.outfit(
+                            color: const Color(0xFF5E4EE8),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          } else if (state is FollowersError) {
+            return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+          }
+          return const SizedBox();
+        },
       ),
+    );
+  }
+
+  Widget _buildAvatarPlaceholder() {
+    return Container(
+      width: 50,
+      height: 50,
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.person, color: Colors.grey),
     );
   }
 

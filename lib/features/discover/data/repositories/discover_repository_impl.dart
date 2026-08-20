@@ -37,6 +37,11 @@ class DiscoverRepositoryImpl implements DiscoverRepository {
   }
 
   @override
+  Future<List<User>> getFollowers() async {
+    return await remoteDataSource.getFollowers();
+  }
+
+  @override
   Future<void> followUser(String targetUid) async {
     await remoteDataSource.followUser(targetUid);
   }
