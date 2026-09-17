@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/exceptions.dart';
-import '../../../../core/error/failures.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/forgot_password_usecase.dart';
 import '../../domain/usecases/reset_password_usecase.dart';
@@ -29,7 +28,10 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> checkAuthStatus() async {
     emit(AuthLoading());
     try {
-      final user = await authRepository.getSavedUser();
+      final user = await authRepository.getSavedUser().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => null,
+      );
       if (user != null) {
         emit(Authenticated(user));
       } else {
@@ -47,6 +49,13 @@ class AuthCubit extends Cubit<AuthState> {
         SignInParams(email: email, password: password),
       );
       emit(Authenticated(user));
+    } on MfaRequiredException catch (e) {
+      emit(
+        AuthMfaRequired(
+          mfaToken: e.mfaToken,
+          availableMethods: e.availableMethods,
+        ),
+      );
     } catch (e) {
       emit(AuthError(ErrorParser.extractMessage(e)));
     }
@@ -116,7 +125,12 @@ class AuthCubit extends Cubit<AuthState> {
       final user = await authRepository.googleSignIn();
       emit(Authenticated(user));
     } catch (e) {
-      emit(AuthError(ErrorParser.extractMessage(e)));
+      final msg = ErrorParser.extractMessage(e);
+      if (msg.toLowerCase().contains('cancel')) {
+        emit(Unauthenticated());
+      } else {
+        emit(AuthError(msg));
+      }
     }
   }
 
@@ -126,12 +140,52 @@ class AuthCubit extends Cubit<AuthState> {
       final user = await authRepository.appleSignIn();
       emit(Authenticated(user));
     } catch (e) {
-      emit(AuthError(ErrorParser.extractMessage(e)));
+      final msg = ErrorParser.extractMessage(e);
+      if (msg.toLowerCase().contains('cancel')) {
+        emit(Unauthenticated());
+      } else {
+        emit(AuthError(msg));
+      }
     }
   }
 
   Future<void> signOut() async {
     await authRepository.signOut();
     emit(Unauthenticated());
+  }
+
+  Future<void> verifyTotpMfa({
+    required String mfaToken,
+    required String code,
+  }) async {
+    emit(AuthLoading());
+    try {
+      final user = await authRepository.verifyTotpMfa(
+        mfaToken: mfaToken,
+        code: code,
+      );
+      emit(Authenticated(user));
+    } catch (e) {
+      emit(AuthError(ErrorParser.extractMessage(e)));
+      // Re-emit MfaRequired to allow user to try again if needed, or UI can handle
+      // For a better UX, maybe we should not fallback to AuthError if we want to keep them on the MFA screen.
+      // But standard approach is to let UI listen for Error, show toast, and stay on MFA.
+    }
+  }
+
+  Future<void> verifyRecoveryMfa({
+    required String mfaToken,
+    required String code,
+  }) async {
+    emit(AuthLoading());
+    try {
+      final user = await authRepository.verifyRecoveryMfa(
+        mfaToken: mfaToken,
+        code: code,
+      );
+      emit(Authenticated(user));
+    } catch (e) {
+      emit(AuthError(ErrorParser.extractMessage(e)));
+    }
   }
 }

@@ -35,3 +35,13 @@ class PasswordResetSuccess extends AuthState {
   final String message;
   const PasswordResetSuccess([this.message = 'Password changed!']);
 }
+
+class AuthMfaRequired extends AuthState {
+  final String mfaToken;
+  final List<String> availableMethods;
+
+  const AuthMfaRequired({
+    required this.mfaToken,
+    required this.availableMethods,
+  });
+}

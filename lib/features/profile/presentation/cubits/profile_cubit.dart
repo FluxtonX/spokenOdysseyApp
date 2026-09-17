@@ -24,32 +24,46 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   ProfileCubit({required this.repository}) : super(ProfileInitial());
 
-  Future<void> loadProfile({String? userId}) async {
+  Future<void> loadProfile({String? userId, bool forceRefresh = false}) async {
     try {
-      emit(ProfileLoading());
+      if (state is! ProfileLoaded || forceRefresh) {
+        if (state is! ProfileLoaded) emit(ProfileLoading());
+      }
       final user = userId != null
           ? await repository.getUserProfile(userId)
           : await repository.getMyProfile();
       emit(ProfileLoaded(user));
     } catch (e) {
-      emit(ProfileError(ErrorParser.extractMessage(e)));
+      if (state is! ProfileLoaded) {
+        emit(ProfileError(ErrorParser.extractMessage(e)));
+      }
     }
   }
 
   Future<bool> updateProfile({
     String? displayName,
     String? bio,
+    String? profession,
     String? location,
+    String? birthDate,
+    String? lifeMotto,
+    List<String>? expertise,
     String? relationship,
     String? avatarPath,
+    String? coverPath,
   }) async {
     try {
       final updatedUser = await repository.updateProfile(
         displayName: displayName,
         bio: bio,
+        profession: profession,
         location: location,
+        birthDate: birthDate,
+        lifeMotto: lifeMotto,
+        expertise: expertise,
         relationship: relationship,
         avatarPath: avatarPath,
+        coverPath: coverPath,
       );
       emit(ProfileLoaded(updatedUser));
       return true;

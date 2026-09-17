@@ -1,3 +1,4 @@
+import '../../../../core/network/cache_manager.dart';
 import '../../domain/entities/album_entity.dart';
 import '../../domain/repositories/albums_repository.dart';
 import '../datasources/albums_remote_datasource.dart';
@@ -9,7 +10,13 @@ class AlbumsRepositoryImpl implements AlbumsRepository {
 
   @override
   Future<List<AlbumEntity>> getAlbums() async {
-    return await remoteDataSource.getAlbums();
+    const key = 'albums_list';
+    final cached = CacheManager().get<List<AlbumEntity>>(key, ttl: const Duration(minutes: 5));
+    if (cached != null) return cached;
+
+    final albums = await remoteDataSource.getAlbums();
+    CacheManager().set(key, albums);
+    return albums;
   }
 
   @override

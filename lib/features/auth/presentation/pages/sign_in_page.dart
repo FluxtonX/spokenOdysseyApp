@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_constants.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import '../widgets/mfa_verification_dialog.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -45,6 +46,22 @@ class _SignInPageState extends State<SignInPage> {
           listener: (context, state) {
             if (state is Authenticated) {
               Navigator.pushReplacementNamed(context, '/home');
+            } else if (state is AuthMfaRequired) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => BlocProvider.value(
+                  value: context.read<AuthCubit>(),
+                  child: MfaVerificationDialog(
+                    mfaToken: state.mfaToken,
+                    availableMethods: state.availableMethods,
+                  ),
+                ),
+              ).then((success) {
+                if (success == true && context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/home');
+                }
+              });
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
-import '../../../memories/presentation/widgets/create_memory_modal.dart';
+import '../../../memories/presentation/widgets/publish_wizard_modal.dart';
 import '../cubit/record_cubit.dart';
 import '../widgets/waveform_visualizer.dart';
 
@@ -38,7 +38,10 @@ class _RecordStudioView extends StatelessWidget {
           listener: (context, state) {
             if (state.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!), backgroundColor: Colors.red),
+                SnackBar(
+                  content: Text(state.errorMessage!),
+                  backgroundColor: Colors.red,
+                ),
               );
             }
           },
@@ -81,7 +84,9 @@ class _RecordStudioView extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 54,
                           fontWeight: FontWeight.bold,
-                          color: isRecording ? AppColors.primary : AppColors.textPrimary,
+                          color: isRecording
+                              ? AppColors.primary
+                              : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -108,7 +113,9 @@ class _RecordStudioView extends StatelessWidget {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.4),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.4,
+                                  ),
                                   blurRadius: 24,
                                   spreadRadius: 6,
                                 ),
@@ -138,7 +145,9 @@ class _RecordStudioView extends StatelessWidget {
                             IconButton(
                               iconSize: 48,
                               icon: Icon(
-                                isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                                isPaused
+                                    ? Icons.play_arrow_rounded
+                                    : Icons.pause_rounded,
                                 color: AppColors.primary,
                               ),
                               onPressed: () {
@@ -160,7 +169,9 @@ class _RecordStudioView extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.redAccent.withOpacity(0.4),
+                                    color: Colors.redAccent.withValues(
+                                      alpha: 0.4,
+                                    ),
                                     blurRadius: 20,
                                     spreadRadius: 4,
                                   ),
@@ -182,18 +193,24 @@ class _RecordStudioView extends StatelessWidget {
                                 color: Colors.redAccent,
                               ),
                               onPressed: () async {
-                                final path = await context.read<RecordCubit>().stopRecording();
+                                final path = await context
+                                    .read<RecordCubit>()
+                                    .stopRecording();
                                 if (path != null && context.mounted) {
                                   showModalBottomSheet(
                                     context: context,
                                     isScrollControlled: true,
                                     backgroundColor: Colors.white,
                                     shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(24),
+                                      ),
                                     ),
-                                    builder: (_) => BlocProvider.value(
-                                      value: sl<MemoriesCubit>(),
-                                      child: CreateMemoryModal(initialAudioPath: path),
+                                    builder: (_) => BlocProvider(
+                                      create: (_) => sl<MemoriesCubit>(),
+                                      child: PublishWizardModal(
+                                        initialAudioPath: path,
+                                      ),
                                     ),
                                   );
                                 }
@@ -211,7 +228,9 @@ class _RecordStudioView extends StatelessWidget {
                               },
                               child: Text(
                                 'Reset Recording',
-                                style: GoogleFonts.outfit(color: Colors.redAccent),
+                                style: GoogleFonts.outfit(
+                                  color: Colors.redAccent,
+                                ),
                               ),
                             ),
                           ],

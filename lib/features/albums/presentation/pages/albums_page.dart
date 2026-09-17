@@ -28,7 +28,10 @@ class _AlbumsPageState extends State<AlbumsPage> {
       appBar: AppBar(
         title: Text(
           'Memory Albums',
-          style: GoogleFonts.outfit(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: GoogleFonts.outfit(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -64,17 +67,28 @@ class _AlbumsPageState extends State<AlbumsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.photo_album_outlined, size: 64, color: AppColors.textLight),
+                      Icon(
+                        Icons.photo_album_outlined,
+                        size: 64,
+                        color: AppColors.textLight,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'No Albums Created Yet',
-                        style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        style: GoogleFonts.outfit(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Organize your voice stories into themed albums.',
-                        style: GoogleFonts.outfit(fontSize: 14, color: AppColors.textSecondary),
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -85,7 +99,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
                             isScrollControlled: true,
                             backgroundColor: Colors.white,
                             shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24),
+                              ),
                             ),
                             builder: (_) => BlocProvider.value(
                               value: context.read<AlbumsCubit>(),
@@ -93,8 +109,13 @@ class _AlbumsPageState extends State<AlbumsPage> {
                             ),
                           );
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                        child: Text('Create First Album', style: GoogleFonts.outfit(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                        ),
+                        child: Text(
+                          'Create First Album',
+                          style: GoogleFonts.outfit(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
@@ -119,7 +140,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => AlbumDetailPage(albumId: album.id)),
+                      MaterialPageRoute(
+                        builder: (_) => AlbumDetailPage(albumId: album.id),
+                      ),
                     );
                   },
                   child: Container(
@@ -129,7 +152,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                       border: Border.all(color: AppColors.borderLight),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -140,13 +163,16 @@ class _AlbumsPageState extends State<AlbumsPage> {
                       children: [
                         Expanded(
                           child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
                             child: cover != null
                                 ? Image.network(
                                     cover,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => _placeholderCover(),
+                                    errorBuilder: (_, __, ___) =>
+                                        _placeholderCover(),
                                   )
                                 : _placeholderCover(),
                           ),
@@ -158,14 +184,20 @@ class _AlbumsPageState extends State<AlbumsPage> {
                             children: [
                               Text(
                                 album.title,
-                                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14),
+                                style: GoogleFonts.outfit(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${album.memoriesCount} memories',
-                                style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ],
                           ),
@@ -177,7 +209,12 @@ class _AlbumsPageState extends State<AlbumsPage> {
               },
             );
           } else if (state is AlbumsError) {
-            return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
           }
           return const SizedBox();
         },
@@ -187,9 +224,13 @@ class _AlbumsPageState extends State<AlbumsPage> {
 
   Widget _placeholderCover() {
     return Container(
-      color: AppColors.primary.withOpacity(0.1),
+      color: AppColors.primary.withValues(alpha: 0.1),
       child: const Center(
-        child: Icon(Icons.folder_special_rounded, size: 44, color: AppColors.primary),
+        child: Icon(
+          Icons.folder_special_rounded,
+          size: 44,
+          color: AppColors.primary,
+        ),
       ),
     );
   }

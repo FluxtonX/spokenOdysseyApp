@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/di/service_locator.dart';
+import '../../../../core/constants/asset_constants.dart';
 import '../../../../core/utils/media_url_formatter.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
-import '../../../albums/presentation/pages/albums_page.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
-import '../../../memories/presentation/pages/memory_detail_page.dart';
-import '../../../memories/presentation/widgets/memory_card.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
+import '../cubits/followers_cubit.dart';
+import '../cubits/followers_state.dart';
 import '../cubits/profile_cubit.dart';
-import '../widgets/edit_profile_dialog.dart';
+import '../widgets/share_profile_modal.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -20,45 +19,19 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ProfilePageState extends State<ProfilePage>
+    with AutomaticKeepAliveClientMixin {
+  static const String _defaultCover =
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80';
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    context.read<ProfileCubit>().loadProfile();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Text(
-          'My Profile',
-          style: GoogleFonts.outfit(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_rounded, color: AppColors.textPrimary),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              );
-            },
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFFAF9FD),
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           if (state is ProfileLoading) {
@@ -66,156 +39,623 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           } else if (state is ProfileLoaded) {
             final user = state.user;
             final avatar = MediaUrlFormatter.format(user.avatarUrl);
+            final cover =
+                MediaUrlFormatter.format(user.coverUrl) ?? _defaultCover;
 
-            return NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 44,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
-                          backgroundImage: avatar != null ? NetworkImage(avatar) : null,
-                          child: avatar == null
-                              ? Text(
-                                  user.name?.isNotEmpty == true ? user.name![0] : 'U',
-                                  style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          user.name ?? 'Odyssey Storyteller',
-                          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user.email,
-                          style: GoogleFonts.outfit(fontSize: 13, color: AppColors.textSecondary),
-                        ),
-                        if (user.bio != null && user.bio!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            user.bio!,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.outfit(fontSize: 14, color: AppColors.textSecondary),
+            final profession = user.profession?.isNotEmpty == true
+                ? user.profession!
+                : 'Entrepreneur';
+            final location = user.location?.isNotEmpty == true
+                ? user.location!
+                : 'Portland, OR';
+            final birthDate = user.birthDate?.isNotEmpty == true
+                ? 'Born ${user.birthDate!}'
+                : (user.dateOfBirth?.isNotEmpty == true
+                      ? 'Born ${user.dateOfBirth!}'
+                      : 'Born March 1985');
+            final bio = user.bio?.isNotEmpty == true
+                ? user.bio!
+                : 'Documenting my journey from small-town dreamer to business owner, mother, and lifelong learner.';
+            final expertiseList =
+                (user.expertise != null && user.expertise!.isNotEmpty)
+                ? user.expertise!
+                : const [
+                    'Entrepreneurship',
+                    'Parenting',
+                    'Wellness',
+                    'Writing',
+                  ];
+            final lifeMotto = user.lifeMotto?.isNotEmpty == true
+                ? user.lifeMotto!
+                : 'Live intentionally, love deeply, leave a legacy of kindness.';
+
+            return Stack(
+              children: [
+                // Organic background wave graphic
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.45,
+                    child: Image.asset(AssetConstants.bgPic, fit: BoxFit.cover),
+                  ),
+                ),
+
+                SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Top Section: Cover Banner + Floating Settings + Overlapping Avatar
+                      Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.topCenter,
+                        children: [
+                          // Cover Banner Image
+                          Container(
+                            height: 200,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: NetworkImage(cover),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.3),
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.1),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Log Out Button on Top-Left of Cover Banner
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            left: 16,
+                            child: GestureDetector(
+                              onTap: () =>
+                                  _showLogoutConfirmationDialog(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.logout_rounded,
+                                  color: Colors.redAccent,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Settings Button on Top-Right of Cover
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            right: 16,
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BlocProvider.value(
+                                      value: context.read<ProfileCubit>(),
+                                      child: const SettingsPage(initialTab: 0),
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.settings_rounded,
+                                  color: Color(0xFF5E4EE8),
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Overlapping Centered Rounded-Square Avatar
+                          Positioned(
+                            top: 140,
+                            child: Container(
+                              width: 115,
+                              height: 115,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: avatar != null
+                                    ? Image.network(
+                                        avatar,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            _buildAvatarFallback(user.name),
+                                      )
+                                    : _buildAvatarFallback(user.name),
+                              ),
+                            ),
                           ),
                         ],
-                        const SizedBox(height: 16),
+                      ),
 
-                        // Stats Bar
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _statItem('Memories', '${user.memoriesCount}'),
-                            _statItem('Albums', '${user.albumsCount}'),
-                            _statItem('Followers', '${user.followersCount}'),
-                            _statItem('Family', '${user.familyCount}'),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+                      // Space for avatar overlap
+                      const SizedBox(height: 68),
 
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.white,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                              ),
-                              builder: (_) => BlocProvider.value(
-                                value: context.read<ProfileCubit>(),
-                                child: EditProfileDialog(user: user),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.edit_rounded, size: 18, color: AppColors.primary),
-                          label: Text('Edit Profile', style: GoogleFonts.outfit(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 42),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      // User Name
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          user.name ?? 'Sarah Mitchell',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.outfit(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1F2937),
+                            letterSpacing: -0.3,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: TabBar(
-                    controller: _tabController,
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    indicatorColor: AppColors.primary,
-                    labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-                    tabs: const [
-                      Tab(text: 'My Memories'),
-                      Tab(text: 'My Albums'),
-                    ],
-                  ),
-                ),
-              ],
-              body: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Tab 1: My Memories
-                  BlocProvider.value(
-                    value: sl<MemoriesCubit>()..loadUserMemories(user.id),
-                    child: BlocBuilder<MemoriesCubit, MemoriesState>(
-                      builder: (context, memState) {
-                        if (memState is MemoriesLoading) {
-                          return const Center(child: CircularProgressIndicator());
-                        } else if (memState is MemoriesLoaded) {
-                          if (memState.memories.isEmpty) {
-                            return Center(child: Text('No memories recorded yet.', style: GoogleFonts.outfit(color: AppColors.textSecondary)));
-                          }
-                          return ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: memState.memories.length,
-                            itemBuilder: (context, index) {
-                              return MemoryCard(
-                                memory: memState.memories[index],
-                                onTap: () {
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // 3-Column Info Row: Profession, Location, Birth Date
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildInfoColumn(
+                                icon: Icons.business_center_outlined,
+                                text: profession,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildInfoColumn(
+                                icon: Icons.location_on_outlined,
+                                text: location,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildInfoColumn(
+                                icon: Icons.calendar_today_outlined,
+                                text: birthDate,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Bio / Statement Box with purple border
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(0xFF6366F1),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF6366F1,
+                                ).withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            bio,
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1F2937),
+                              height: 1.45,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Areas of Expertise Header & Chips
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Areas of Expertise',
+                              style: GoogleFonts.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF4B5563),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: expertiseList
+                                  .map((exp) => _buildExpertiseChip(exp))
+                                  .toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Action Buttons: Edit Profile & Share Legacy
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            // Edit Profile Button
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => MemoryDetailPage(
-                                        memoryId: memState.memories[index].id,
+                                      builder: (_) => BlocProvider.value(
+                                        value: context.read<ProfileCubit>(),
+                                        child: const SettingsPage(
+                                          initialTab: 0,
+                                        ),
                                       ),
                                     ),
                                   );
                                 },
-                                onReact: (type) {
-                                  context
-                                      .read<MemoriesCubit>()
-                                      .reactToMemory(memState.memories[index].id, type);
-                                },
-                                onDelete: () {
-                                  context
-                                      .read<MemoriesCubit>()
-                                      .deleteMemory(memState.memories[index].id);
-                                },
-                              );
-                            },
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(0, 46),
+                                  side: const BorderSide(
+                                    color: Color(0xFF5E4EE8),
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  backgroundColor: Colors.white,
+                                ),
+                                child: Text(
+                                  'Edit Profile',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFF5E4EE8),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
 
-                  // Tab 2: My Albums
-                  BlocProvider.value(
-                    value: sl<AlbumsCubit>(),
-                    child: const AlbumsPage(),
+                            // Share Legacy Button
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  ShareProfileModal.show(context, user);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(0, 46),
+                                  backgroundColor: const Color(0xFF5E4EE8),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Share Legacy',
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      // 2x2 Stats Grid: All Memories, Albums, Milestones, Followers
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                // 1. All Memories
+                                Expanded(
+                                  child:
+                                      BlocBuilder<MemoriesCubit, MemoriesState>(
+                                        builder: (context, memState) {
+                                          final count =
+                                              memState is MemoriesLoaded
+                                              ? '${memState.memories.length}'
+                                              : '${user.memoriesCount}';
+                                          return _buildStatCard(
+                                            value: count,
+                                            title: 'All Memories',
+                                          );
+                                        },
+                                      ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // 2. Albums
+                                Expanded(
+                                  child: BlocBuilder<AlbumsCubit, AlbumsState>(
+                                    builder: (context, albumState) {
+                                      final count = albumState is AlbumsLoaded
+                                          ? '${albumState.albums.length}'
+                                          : '${user.albumsCount}';
+                                      return _buildStatCard(
+                                        value: count,
+                                        title: 'Albums',
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                // 3. Milestones
+                                Expanded(
+                                  child:
+                                      BlocBuilder<MemoriesCubit, MemoriesState>(
+                                        builder: (context, memState) {
+                                          int count = 0;
+                                          if (memState is MemoriesLoaded) {
+                                            count = memState.memories.where((
+                                              m,
+                                            ) {
+                                              final tags = m.tags
+                                                  .map((t) => t.toLowerCase())
+                                                  .toList();
+                                              final title = m.title
+                                                  .toLowerCase();
+                                              return tags.contains(
+                                                    'milestone',
+                                                  ) ||
+                                                  tags.contains(
+                                                    'career & growth',
+                                                  ) ||
+                                                  tags.contains(
+                                                    'turning point',
+                                                  ) ||
+                                                  tags.contains('proud') ||
+                                                  title.contains('milestone');
+                                            }).length;
+                                          }
+                                          return _buildStatCard(
+                                            value: count > 0 ? '$count' : '0',
+                                            title: 'Milestones',
+                                          );
+                                        },
+                                      ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // 4. Followers
+                                Expanded(
+                                  child:
+                                      BlocBuilder<
+                                        FollowersCubit,
+                                        FollowersState
+                                      >(
+                                        builder: (context, followerState) {
+                                          final count =
+                                              followerState is FollowersLoaded
+                                              ? '${followerState.followers.length}'
+                                              : '${user.followersCount}';
+                                          return _buildStatCard(
+                                            value: count,
+                                            title: 'Followers',
+                                          );
+                                        },
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      // Quote / Life Motto Card
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDDE5FE),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF6366F1,
+                              ).withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              // Decorative Watermark Quote
+                              Positioned(
+                                top: -14,
+                                left: -6,
+                                child: Text(
+                                  '“',
+                                  style: GoogleFonts.playfairDisplay(
+                                    fontSize: 60,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(
+                                      0xFF5E4EE8,
+                                    ).withValues(alpha: 0.25),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '"$lifeMotto"',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1E1B4B),
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Bottom Brand Tagline Banner
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F3FF),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF6366F1,
+                              ).withValues(alpha: 0.5),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '"Changing The Way We Preserve Our Legacy"',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.outfit(
+                                fontStyle: FontStyle.italic,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF5E4EE8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Log Out Button
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                _showLogoutConfirmationDialog(context),
+                            icon: const Icon(
+                              Icons.logout_rounded,
+                              color: Colors.redAccent,
+                              size: 20,
+                            ),
+                            label: Text(
+                              'Log Out',
+                              style: GoogleFonts.outfit(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.redAccent.withValues(
+                                alpha: 0.05,
+                              ),
+                              side: BorderSide(
+                                color: Colors.redAccent.withValues(alpha: 0.4),
+                                width: 1.2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           } else if (state is ProfileError) {
-            return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
           }
           return const SizedBox();
         },
@@ -223,13 +663,220 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
-  Widget _statItem(String label, String value) {
+  // Info Column Helper (Icon inside light purple square + Text below)
+  Widget _buildInfoColumn({required IconData icon, required String text}) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(value, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
-        const SizedBox(height: 2),
-        Text(label, style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary)),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEDE9FE),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: const Color(0xFF5E4EE8), size: 18),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          text,
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.outfit(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
       ],
+    );
+  }
+
+  // Expertise Tag Chip
+  Widget _buildExpertiseChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDE9FE),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.outfit(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF5E4EE8),
+        ),
+      ),
+    );
+  }
+
+  // Stat Card (2x2 Grid)
+  Widget _buildStatCard({required String value, required String title}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDE9FE),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.outfit(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF1E1E2D),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            title,
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF4B5563),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarFallback(String? name) {
+    return Container(
+      color: const Color(0xFFEDE9FE),
+      child: Center(
+        child: Text(
+          name?.isNotEmpty == true ? name![0].toUpperCase() : 'S',
+          style: GoogleFonts.outfit(
+            fontSize: 40,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF5E4EE8),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 8,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.logout_rounded,
+                      color: Colors.redAccent,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Log Out',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Are you sure you want to log out of Spoken Odyssey?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    color: const Color(0xFF6B7280),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 46),
+                          side: const BorderSide(
+                            color: Color(0xFFD1D5DB),
+                            width: 1.2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.outfit(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF4B5563),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                          context.read<AuthCubit>().signOut();
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/sign-in',
+                            (route) => false,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(0, 46),
+                          backgroundColor: Colors.redAccent,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Log Out',
+                          style: GoogleFonts.outfit(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

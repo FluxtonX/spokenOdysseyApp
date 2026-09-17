@@ -18,6 +18,8 @@ import 'features/home/presentation/pages/main_screen.dart';
 
 import 'core/network/api_client.dart';
 
+import 'features/smart_glasses/presentation/cubit/glasses_cubit.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -32,8 +34,11 @@ class SpokenOdysseyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AuthCubit>(
-      create: (context) => sl<AuthCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(create: (context) => sl<AuthCubit>()),
+        BlocProvider<GlassesCubit>(create: (context) => sl<GlassesCubit>()),
+      ],
       child: MaterialApp(
         title: 'Spoken Odyssey',
         debugShowCheckedModeBanner: false,

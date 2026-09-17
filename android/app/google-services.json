@@ -7,36 +7,12 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:884058304379:android:5ddba5860564786ece97de",
+        "mobilesdk_app_id": "1:884058304379:android:5d20ae6b33e82716ce97de",
         "android_client_info": {
-          "package_name": "com.fluxtonx.spokenodyssey"
+          "package_name": "com.spokenodyssey.app"
         }
       },
       "oauth_client": [
-        {
-          "client_id": "884058304379-cl69k71p3i8dp7pnm40d0fgv27jvt9b5.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.fluxtonx.spokenodyssey",
-            "certificate_hash": "3f15e10255b47fb93eaede0744c7cc1b3cb33f14"
-          }
-        },
-        {
-          "client_id": "884058304379-k3eq0dgoqj1lr1qd9ti7g70rul0vp4n2.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.fluxtonx.spokenodyssey",
-            "certificate_hash": "0ed061f9c03d179ebfe3ee70b48344aa702f032b"
-          }
-        },
-        {
-          "client_id": "884058304379-knq11ct042i235cv5e8kujlepohaq1q2.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.fluxtonx.spokenodyssey",
-            "certificate_hash": "e43d59821ed66d4baa295423b06797ee6ef4cb32"
-          }
-        },
         {
           "client_id": "884058304379-tj4lmmt8qjhjebqhlshs0rdsj2cv6b80.apps.googleusercontent.com",
           "client_type": 3

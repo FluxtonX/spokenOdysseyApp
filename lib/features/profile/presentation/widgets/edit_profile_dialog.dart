@@ -96,7 +96,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       child: const Icon(Icons.person_rounded, size: 40, color: AppColors.primary),
                     ),
                     Positioned(
@@ -104,7 +104,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       right: 0,
                       child: Container(
                         padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
                         child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
                       ),
                     ),

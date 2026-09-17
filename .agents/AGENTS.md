@@ -2,8 +2,8 @@
 
 ## CRITICAL RULES FOR ALL AGENTS & DEVELOPERS
 
-### 1. BACKEND IMMUTABILITY (REMOVED)
-- The user has explicitly authorized backend code modifications.
+### 1. BACKEND IMMUTABILITY
+- **DO NOT MODIFY** any backend code under `spokenOdessie_backend/`. All fixes must be implemented strictly on the Flutter / frontend client side.
 
 ### 2. WEB APPLICATION IMMUTABILITY
 - **DO NOT MODIFY** any code in `spoken-odyssey-web/` or the root `web/` configuration.

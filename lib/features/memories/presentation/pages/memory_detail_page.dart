@@ -7,6 +7,7 @@ import '../../../../core/utils/media_url_formatter.dart';
 import '../../domain/entities/comment_entity.dart';
 import '../cubits/memory_detail_cubit.dart';
 import '../widgets/memory_card.dart';
+import '../widgets/story_layers_section.dart';
 
 class MemoryDetailPage extends StatefulWidget {
   final String memoryId;
@@ -30,7 +31,8 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MemoryDetailCubit>(
-      create: (context) => sl<MemoryDetailCubit>()..loadMemoryDetails(widget.memoryId),
+      create: (context) =>
+          sl<MemoryDetailCubit>()..loadMemoryDetails(widget.memoryId),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
@@ -62,10 +64,15 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                             memory: state.memory,
                             onTap: () {},
                             onReact: (type) {
-                              context.read<MemoryDetailCubit>().reactToMemory(state.memory.id, type);
+                              context.read<MemoryDetailCubit>().reactToMemory(
+                                state.memory.id,
+                                type,
+                              );
                             },
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
+                          StoryLayersSection(memoryId: state.memory.id),
+                          const SizedBox(height: 20),
                           Text(
                             'Comments (${state.comments.length})',
                             style: GoogleFonts.outfit(
@@ -89,7 +96,9 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                               ),
                             )
                           else
-                            ...state.comments.map((c) => _buildCommentItem(context, c)),
+                            ...state.comments.map(
+                              (c) => _buildCommentItem(context, c),
+                            ),
                         ],
                       ),
                     ),
@@ -97,12 +106,15 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
 
                   // Comment Input Bar
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
+                          color: Colors.black.withValues(alpha: 0.06),
                           blurRadius: 10,
                           offset: const Offset(0, -4),
                         ),
@@ -117,14 +129,21 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                             children: [
                               Text(
                                 'Replying to ${_replyToAuthorName ?? "comment"}',
-                                style: GoogleFonts.outfit(fontSize: 12, color: AppColors.primary),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () => setState(() {
                                   _replyToCommentId = null;
                                   _replyToAuthorName = null;
                                 }),
-                                child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textSecondary),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  size: 16,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ],
                           ),
@@ -137,26 +156,36 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                                 controller: _commentController,
                                 decoration: InputDecoration(
                                   hintText: 'Add a comment...',
-                                  hintStyle: GoogleFonts.outfit(color: AppColors.textLight),
+                                  hintStyle: GoogleFonts.outfit(
+                                    color: AppColors.textLight,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(24),
-                                    borderSide: const BorderSide(color: AppColors.borderLight),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.borderLight,
+                                    ),
                                   ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             IconButton(
-                              icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                              icon: const Icon(
+                                Icons.send_rounded,
+                                color: AppColors.primary,
+                              ),
                               onPressed: () {
                                 final text = _commentController.text.trim();
                                 if (text.isNotEmpty) {
                                   context.read<MemoryDetailCubit>().addComment(
-                                        widget.memoryId,
-                                        text,
-                                        parentCommentId: _replyToCommentId,
-                                      );
+                                    widget.memoryId,
+                                    text,
+                                    parentCommentId: _replyToCommentId,
+                                  );
                                   _commentController.clear();
                                   setState(() {
                                     _replyToCommentId = null;
@@ -173,7 +202,12 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                 ],
               );
             } else if (state is MemoryDetailError) {
-              return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+              return Center(
+                child: Text(
+                  state.message,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
             }
             return const SizedBox();
           },
@@ -182,7 +216,11 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
     );
   }
 
-  Widget _buildCommentItem(BuildContext context, CommentEntity comment, {bool isReply = false}) {
+  Widget _buildCommentItem(
+    BuildContext context,
+    CommentEntity comment, {
+    bool isReply = false,
+  }) {
     final avatar = MediaUrlFormatter.format(comment.author?.avatarUrl);
 
     return Container(
@@ -200,12 +238,17 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
             children: [
               CircleAvatar(
                 radius: 14,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 backgroundImage: avatar != null ? NetworkImage(avatar) : null,
                 child: avatar == null
                     ? Text(
-                        comment.author?.name?.isNotEmpty == true ? comment.author!.name![0] : 'U',
-                        style: GoogleFonts.outfit(fontSize: 10, color: AppColors.primary),
+                        comment.author?.name?.isNotEmpty == true
+                            ? comment.author!.name![0]
+                            : 'U',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10,
+                          color: AppColors.primary,
+                        ),
                       )
                     : null,
               ),
@@ -213,7 +256,10 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
               Expanded(
                 child: Text(
                   comment.author?.name ?? 'User',
-                  style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               GestureDetector(
@@ -225,7 +271,11 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                 },
                 child: Text(
                   'Reply',
-                  style: GoogleFonts.outfit(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -233,11 +283,16 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
           const SizedBox(height: 6),
           Text(
             comment.text,
-            style: GoogleFonts.outfit(fontSize: 14, color: AppColors.textPrimary),
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+            ),
           ),
           if (comment.replies.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ...comment.replies.map((r) => _buildCommentItem(context, r, isReply: true)),
+            ...comment.replies.map(
+              (r) => _buildCommentItem(context, r, isReply: true),
+            ),
           ],
         ],
       ),

@@ -26,4 +26,68 @@ class SettingsRepositoryImpl implements SettingsRepository {
       note: note,
     );
   }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await remoteDataSource.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getNotificationPreferences() async {
+    return await remoteDataSource.getNotificationPreferences();
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateNotificationPreferences(
+    Map<String, dynamic> preferences,
+  ) async {
+    return await remoteDataSource.updateNotificationPreferences(preferences);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveSessions() async {
+    return await remoteDataSource.getActiveSessions();
+  }
+
+  @override
+  Future<void> revokeSession(String sessionId) async {
+    await remoteDataSource.revokeSession(sessionId);
+  }
+
+  @override
+  Future<void> updatePrivacySettings({
+    String? defaultEntryPrivacy,
+    String? profileVisibility,
+  }) async {
+    await remoteDataSource.updatePrivacySettings(
+      defaultEntryPrivacy: defaultEntryPrivacy,
+      profileVisibility: profileVisibility,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getMfaStatus() async {
+    return await remoteDataSource.getMfaStatus();
+  }
+
+  @override
+  Future<Map<String, dynamic>> setupMfa() async {
+    return await remoteDataSource.setupMfa();
+  }
+
+  @override
+  Future<void> verifyMfaSetup(String code) async {
+    await remoteDataSource.verifyMfaSetup(code);
+  }
+
+  @override
+  Future<void> disableMfa() async {
+    await remoteDataSource.disableMfa();
+  }
 }

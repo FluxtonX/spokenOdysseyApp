@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../cubits/family_cubit.dart';
 
@@ -76,7 +77,6 @@ const List<CategorizedRelationship> categorizedRelationships = [
       'Grandfather (Dada / Nana)',
       'Grandson',
       'Granddaughter',
-      'Cousin',
       'Nephew',
       'Niece',
     ],
@@ -132,9 +132,45 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
   String? _qrCodeUrl;
   bool _isSubmitting = false;
   String _sentRecipient = '';
+  Map<String, dynamic>? _foundUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_onEmailChanged);
+  }
+
+  void _onEmailChanged() async {
+    final query = _emailController.text.trim();
+    if (!query.contains('@') || query.length < 5) {
+      if (_foundUser != null) setState(() => _foundUser = null);
+      return;
+    }
+
+    try {
+      final cubit = context.read<FamilyCubit>();
+      final matches = await cubit.searchTaggableUsers(query);
+      if (!mounted) return;
+      final exact = matches.firstWhere(
+        (m) => m['email']?.toString().toLowerCase() == query.toLowerCase(),
+        orElse: () => <String, dynamic>{},
+      );
+      if (exact.isNotEmpty && exact['id'] != null) {
+        setState(() {
+          _foundUser = exact;
+          if (_nameController.text.isEmpty && exact['displayName'] != null) {
+            _nameController.text = exact['displayName'].toString();
+          }
+        });
+      } else {
+        if (_foundUser != null) setState(() => _foundUser = null);
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
+    _emailController.removeListener(_onEmailChanged);
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -314,7 +350,7 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
           border: Border.all(color: AppColors.borderLight),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -409,6 +445,38 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
         ),
         const SizedBox(height: 14),
 
+        if (_foundUser != null) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF86EFAC)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF16A34A),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Registered member: ${_foundUser!['displayName'] ?? _foundUser!['name'] ?? _foundUser!['email']}',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: const Color(0xFF15803D),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+
         Text(
           'Relationship',
           style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 13),
@@ -436,7 +504,7 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
                   ),
                 )
               : Text(
-                  'Send Invitation',
+                  'Send Family Invitation',
                   style: GoogleFonts.outfit(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -455,18 +523,67 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
 
     setState(() => _isSubmitting = true);
     final cubit = context.read<FamilyCubit>();
+
+    String? targetUid = _foundUser?['id']?.toString();
+    String? resolvedName = name.isNotEmpty
+        ? name
+        : _foundUser?['displayName']?.toString();
+
+    if (targetUid == null) {
+      try {
+        final matches = await cubit.searchTaggableUsers(email);
+        final exactMatch = matches.firstWhere(
+          (m) => m['email']?.toString().toLowerCase() == email.toLowerCase(),
+          orElse: () => <String, dynamic>{},
+        );
+        if (exactMatch.isNotEmpty && exactMatch['id'] != null) {
+          targetUid = exactMatch['id'].toString();
+          resolvedName ??= exactMatch['displayName']?.toString();
+        }
+      } catch (_) {}
+    }
+
     await cubit.sendEmailInvite(
       email,
       _relationship,
-      name: name.isNotEmpty ? name : null,
+      name: resolvedName,
+      targetUid: targetUid,
     );
 
     if (mounted) {
       setState(() {
         _isSubmitting = false;
-        _sentRecipient = name.isNotEmpty ? name : email;
+        _sentRecipient = resolvedName ?? email;
         _step = 5;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '✓ Family invitation sent to ${resolvedName ?? email}!',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
   }
 
@@ -767,22 +884,34 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
         if (_qrCodeUrl != null) ...[
           Center(
             child: Container(
-              width: 180,
-              height: 180,
-              padding: const EdgeInsets.all(12),
+              width: 210,
+              height: 210,
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
                   ),
                 ],
-                border: Border.all(color: AppColors.borderLight),
+                border: Border.all(color: const Color(0xFFC7D2FE), width: 2),
               ),
-              child: Image.network(_qrCodeUrl!, fit: BoxFit.contain),
+              child: QrImageView(
+                data: _qrCodeUrl!,
+                version: QrVersions.auto,
+                eyeStyle: const QrEyeStyle(
+                  eyeShape: QrEyeShape.square,
+                  color: Color(0xFF4A3AFF),
+                ),
+                dataModuleStyle: const QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: Color(0xFF1A0FAA),
+                ),
+                backgroundColor: Colors.white,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -817,14 +946,13 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
       _relationship,
     );
     if (mounted) {
+      // Encode the invite URL/token — qr_flutter renders it on-device
       final link =
           invite?.inviteUrl ??
           'https://spokenodyssey.app/invite/${invite?.invitationToken ?? "qr"}';
-      final qrApi =
-          'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${Uri.encodeComponent(link)}';
       setState(() {
         _isSubmitting = false;
-        _qrCodeUrl = qrApi;
+        _qrCodeUrl = link; // QrImageView takes raw data, not a URL
       });
     }
   }
@@ -887,11 +1015,11 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildStepRow('1', 'They receive your invitation'),
+              _buildStepRow('1', 'They receive your invitation in-app'),
               const SizedBox(height: 8),
-              _buildStepRow('2', 'They create or sign in to their account'),
+              _buildStepRow('2', 'They accept the invitation'),
               const SizedBox(height: 8),
-              _buildStepRow('3', 'They confirm the relationship'),
+              _buildStepRow('3', 'You approve their request'),
               const SizedBox(height: 8),
               _buildStepRow('4', 'They join your Family Circle'),
             ],
@@ -963,42 +1091,58 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
   // Relationship dropdown with categorized choices
   Widget _buildRelationshipDropdown() {
     final List<DropdownMenuItem<String>> items = [];
+    final Set<String> seenValues = {};
 
     for (final cat in categorizedRelationships) {
-      items.add(
-        DropdownMenuItem<String>(
-          enabled: false,
-          value: 'cat_${cat.category}',
-          child: Text(
-            cat.category.toUpperCase(),
-            style: GoogleFonts.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: const Color(0xFF4A3AFF),
-              letterSpacing: 0.8,
-            ),
-          ),
-        ),
-      );
-
-      for (final option in cat.options) {
+      final categoryValue = 'cat_${cat.category}';
+      if (!seenValues.contains(categoryValue)) {
+        seenValues.add(categoryValue);
         items.add(
           DropdownMenuItem<String>(
-            value: option,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Text(
-                option,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                ),
+            enabled: false,
+            value: categoryValue,
+            child: Text(
+              cat.category.toUpperCase(),
+              style: GoogleFonts.outfit(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF4A3AFF),
+                letterSpacing: 0.8,
               ),
             ),
           ),
         );
       }
+
+      for (final option in cat.options) {
+        if (!seenValues.contains(option)) {
+          seenValues.add(option);
+          items.add(
+            DropdownMenuItem<String>(
+              value: option,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  option,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+      }
     }
+
+    final bool valueExists = items.any((item) => item.value == _relationship);
+    final String currentValue = valueExists
+        ? _relationship
+        : (items
+                  .firstWhere((i) => i.enabled, orElse: () => items.first)
+                  .value ??
+              'Parent');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -1009,7 +1153,7 @@ class _InviteMemberModalState extends State<InviteMemberModal> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           isExpanded: true,
-          value: _relationship,
+          value: currentValue,
           items: items,
           onChanged: (val) {
             if (val != null && !val.startsWith('cat_')) {

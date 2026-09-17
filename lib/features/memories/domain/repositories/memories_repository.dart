@@ -1,5 +1,6 @@
 import '../entities/comment_entity.dart';
 import '../entities/memory_entity.dart';
+import '../entities/story_layer_entity.dart';
 
 abstract class MemoriesRepository {
   Future<List<MemoryEntity>> getFeedMemories();
@@ -9,13 +10,16 @@ abstract class MemoriesRepository {
   Future<MemoryEntity> createMemory({
     required String title,
     String? description,
-    String? mediaPath,
-    String? mediaType,
+    List<String>? mediaPaths, // Changed to support multiple files
     String? privacy,
     List<String>? tags,
+    List<String>? taggedUserIds,
     String? albumId,
     String? type,
     String? mood,
+    String? occurredAt,
+    bool? isVaultLocked,
+    String? unlockDate,
   });
   Future<MemoryEntity> updateMemory({
     required String memoryId,
@@ -35,4 +39,10 @@ abstract class MemoriesRepository {
     String? parentCommentId,
   });
   Future<void> reactToComment(String memoryId, String commentId, String type);
+  Future<List<StoryLayerEntity>> getStoryLayers(String memoryId);
+  Future<StoryLayerEntity> addStoryLayer(
+    String memoryId, {
+    required String text,
+    String? audioPath,
+  });
 }

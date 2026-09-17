@@ -24,6 +24,19 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.884058304379-t5jeu8j0sjk4ptv43q5fbk7lid58pii0</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>884058304379-t5jeu8j0sjk4ptv43q5fbk7lid58pii0.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -76,5 +89,16 @@
 	<string>Spoken Odyssey saves and updates selected profile and memory media when you choose to keep them on your device.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Spoken Odyssey uses the microphone so you can record voice memories.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Spoken Odyssey requires Bluetooth to discover, connect, and stream audio with your Smart Glasses.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Spoken Odyssey requires Bluetooth peripheral access to connect with Smart Glasses.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Spoken Odyssey requires local network access to download high-definition videos from Smart Glasses over Wi-Fi.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>

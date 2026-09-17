@@ -4,13 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/media_url_formatter.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
-import '../../../albums/presentation/pages/album_detail_page.dart';
-import '../../../albums/presentation/widgets/create_album_modal.dart';
 import '../../../profile/presentation/cubits/profile_cubit.dart';
 import '../../../../features/auth/domain/entities/user.dart';
 import '../cubits/memories_cubit.dart';
-import '../widgets/memory_card.dart';
-import 'memory_detail_page.dart';
 import 'timeline_page.dart';
 
 class FeedPage extends StatefulWidget {
@@ -32,13 +28,20 @@ class _FeedPageState extends State<FeedPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFEF2F4), // Soft pinkish background from screenshot
+      backgroundColor: const Color(
+        0xFFFEF2F4,
+      ), // Soft pinkish background from screenshot
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           if (state is ProfileLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is ProfileError) {
-            return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
           } else if (state is ProfileLoaded) {
             return _buildDashboardUI(context, state.user);
           }
@@ -99,7 +102,8 @@ class _FeedPageState extends State<FeedPage> {
               child: Image.asset(
                 'assets/images/profile_cover.png',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
+                errorBuilder: (_, __, ___) =>
+                    Container(color: Colors.grey[300]),
               ),
             ),
           ),
@@ -110,11 +114,11 @@ class _FeedPageState extends State<FeedPage> {
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -129,7 +133,9 @@ class _FeedPageState extends State<FeedPage> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => FullScreenImageViewer(
-                          imagePath: MediaUrlFormatter.format(user.avatarUrl) ?? 'assets/images/profile_avatar.png',
+                          imagePath:
+                              MediaUrlFormatter.format(user.avatarUrl) ??
+                              'assets/images/profile_avatar.png',
                           heroTag: 'profile_avatar_hero',
                           isNetwork: true,
                         ),
@@ -139,29 +145,29 @@ class _FeedPageState extends State<FeedPage> {
                 },
                 child: Hero(
                   tag: 'profile_avatar_hero',
-                  child: user.avatarUrl != null 
-                    ? Image.network(
-                        MediaUrlFormatter.format(user.avatarUrl)!,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                  child: user.avatarUrl != null
+                      ? Image.network(
+                          MediaUrlFormatter.format(user.avatarUrl)!,
                           width: 100,
                           height: 100,
-                          color: Colors.grey[400],
-                        ),
-                      )
-                    : Image.asset(
-                        'assets/images/profile_avatar.png',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 100,
+                            height: 100,
+                            color: Colors.grey[400],
+                          ),
+                        )
+                      : Image.asset(
+                          'assets/images/profile_avatar.png',
                           width: 100,
                           height: 100,
-                          color: Colors.grey[400],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 100,
+                            height: 100,
+                            color: Colors.grey[400],
+                          ),
                         ),
-                      ),
                 ),
               ),
             ),
@@ -208,7 +214,7 @@ class _FeedPageState extends State<FeedPage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 20, color: const Color(0xFF8B5CF6)),
@@ -232,7 +238,9 @@ class _FeedPageState extends State<FeedPage> {
       decoration: BoxDecoration(
         color: const Color(0xFFF5EEFF), // Light purple bg
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+        ),
       ),
       child: Text(
         user.bio ?? '',
@@ -268,7 +276,10 @@ class _FeedPageState extends State<FeedPage> {
             runSpacing: 8,
             children: tags.map((tag) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE0D4F5),
                   borderRadius: BorderRadius.circular(8),
@@ -349,28 +360,38 @@ class _FeedPageState extends State<FeedPage> {
           Expanded(
             child: Column(
               children: [
-                _buildStatCard('${user.memoriesCount}', 'All Memories', onTap: () {
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (newContext) => MultiBlocProvider(
-                        providers: [
-                          BlocProvider.value(value: context.read<MemoriesCubit>()),
-                          BlocProvider.value(value: context.read<AlbumsCubit>()),
-                        ],
-                        child: Scaffold(
-                          backgroundColor: const Color(0xFFFEF2F4),
-                          appBar: AppBar(
-                            elevation: 0,
-                            backgroundColor: Colors.transparent,
-                            iconTheme: const IconThemeData(color: AppColors.primary),
+                _buildStatCard(
+                  '${user.memoriesCount}',
+                  'All Memories',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (newContext) => MultiBlocProvider(
+                          providers: [
+                            BlocProvider.value(
+                              value: context.read<MemoriesCubit>(),
+                            ),
+                            BlocProvider.value(
+                              value: context.read<AlbumsCubit>(),
+                            ),
+                          ],
+                          child: Scaffold(
+                            backgroundColor: const Color(0xFFFEF2F4),
+                            appBar: AppBar(
+                              elevation: 0,
+                              backgroundColor: Colors.transparent,
+                              iconTheme: const IconThemeData(
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            body: const TimelinePage(initialTab: 0),
                           ),
-                          body: const TimelinePage(initialTab: 0),
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
                 _buildStatCard('${user.familyCount}', 'Family Members'),
               ],
@@ -380,28 +401,38 @@ class _FeedPageState extends State<FeedPage> {
           Expanded(
             child: Column(
               children: [
-                _buildStatCard('${user.albumsCount}', 'Albums', onTap: () {
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (newContext) => MultiBlocProvider(
-                        providers: [
-                          BlocProvider.value(value: context.read<MemoriesCubit>()),
-                          BlocProvider.value(value: context.read<AlbumsCubit>()),
-                        ],
-                        child: Scaffold(
-                          backgroundColor: const Color(0xFFFEF2F4),
-                          appBar: AppBar(
-                            elevation: 0,
-                            backgroundColor: Colors.transparent,
-                            iconTheme: const IconThemeData(color: AppColors.primary),
+                _buildStatCard(
+                  '${user.albumsCount}',
+                  'Albums',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (newContext) => MultiBlocProvider(
+                          providers: [
+                            BlocProvider.value(
+                              value: context.read<MemoriesCubit>(),
+                            ),
+                            BlocProvider.value(
+                              value: context.read<AlbumsCubit>(),
+                            ),
+                          ],
+                          child: Scaffold(
+                            backgroundColor: const Color(0xFFFEF2F4),
+                            appBar: AppBar(
+                              elevation: 0,
+                              backgroundColor: Colors.transparent,
+                              iconTheme: const IconThemeData(
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            body: const TimelinePage(initialTab: 1),
                           ),
-                          body: const TimelinePage(initialTab: 1),
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
                 _buildStatCard('${user.followersCount}', 'Followers'),
               ],
@@ -422,9 +453,11 @@ class _FeedPageState extends State<FeedPage> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: const Color(0xFFE9D8F5).withOpacity(0.5),
+            color: const Color(0xFFE9D8F5).withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
+            border: Border.all(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+            ),
           ),
           child: Column(
             children: [
@@ -468,7 +501,9 @@ class _FeedPageState extends State<FeedPage> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.4)),
+              border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+              ),
             ),
             child: Stack(
               clipBehavior: Clip.none,
@@ -481,7 +516,7 @@ class _FeedPageState extends State<FeedPage> {
                     style: GoogleFonts.outfit(
                       fontSize: 120,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                       height: 1,
                     ),
                   ),
@@ -505,9 +540,11 @@ class _FeedPageState extends State<FeedPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3E8FF).withOpacity(0.5),
+              color: const Color(0xFFF3E8FF).withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.5)),
+              border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.5),
+              ),
             ),
             child: Text(
               '"Changing The Way We Preserve Our Legacy"',
@@ -537,157 +574,176 @@ class _FeedPageState extends State<FeedPage> {
         return SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + MediaQuery.of(sheetContext).padding.bottom,
+              bottom:
+                  MediaQuery.of(sheetContext).viewInsets.bottom +
+                  MediaQuery.of(sheetContext).padding.bottom,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Share Profile',
-                          style: GoogleFonts.outfit(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Share Profile',
+                        style: GoogleFonts.outfit(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: AppColors.textPrimary),
-                          onPressed: () => Navigator.pop(sheetContext),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textPrimary,
                         ),
-                      ],
-                    ),
+                        onPressed: () => Navigator.pop(sheetContext),
+                      ),
+                    ],
                   ),
-                  const Divider(height: 1, color: Colors.black12),
-                  
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Share "The Day I Started My Own Business" with the world or someone special.',
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
+                ),
+                const Divider(height: 1, color: Colors.black12),
+
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Share "The Day I Started My Own Business" with the world or someone special.',
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Grid of buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildShareButton(
+                              icon: Icons.share,
+                              label: 'Twitter / X',
+                              color: Colors.black,
+                              textColor: Colors.white,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Grid of buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildShareButton(
-                                icon: Icons.share,
-                                label: 'Twitter / X',
-                                color: Colors.black,
-                                textColor: Colors.white,
-                              ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildShareButton(
+                              icon: Icons.facebook,
+                              label: 'Facebook',
+                              color: const Color(0xFF3B82F6),
+                              textColor: Colors.white,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildShareButton(
-                                icon: Icons.facebook,
-                                label: 'Facebook',
-                                color: const Color(0xFF3B82F6),
-                                textColor: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildShareButton(
-                                icon: Icons.email_outlined,
-                                label: 'Email',
-                                color: const Color(0xFFEF4444),
-                                textColor: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildShareButton(
-                                icon: Icons.link_rounded,
-                                label: 'Copy Link',
-                                color: const Color(0xFFE9D8F5),
-                                textColor: const Color(0xFF6D28D9),
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        // Link copy field
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3E8FF),
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.link, color: AppColors.textSecondary, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'spokenodyssey.com/',
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildShareButton(
+                              icon: Icons.email_outlined,
+                              label: 'Email',
+                              color: const Color(0xFFEF4444),
+                              textColor: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildShareButton(
+                              icon: Icons.link_rounded,
+                              label: 'Copy Link',
+                              color: const Color(0xFFE9D8F5),
+                              textColor: const Color(0xFF6D28D9),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+                      // Link copy field
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3E8FF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.link,
+                              color: AppColors.textSecondary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'spokenodyssey.com/',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF6D28D9),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6D28D9),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {},
                                   borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {},
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.copy, size: 16, color: Colors.white),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Copy',
-                                            style: GoogleFonts.outfit(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.copy,
+                                          size: 16,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Copy',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
         );
       },
     );
@@ -732,19 +788,6 @@ class _FeedPageState extends State<FeedPage> {
       ),
     );
   }
-
-  Widget _albumPlaceholderCover() {
-    return Container(
-      color: AppColors.primary.withOpacity(0.1),
-      child: const Center(
-        child: Icon(
-          Icons.folder_special_rounded,
-          size: 40,
-          color: AppColors.primary,
-        ),
-      ),
-    );
-  }
 }
 
 class FullScreenImageViewer extends StatelessWidget {
@@ -775,15 +818,9 @@ class FullScreenImageViewer extends StatelessWidget {
           maxScale: 4,
           child: Hero(
             tag: heroTag,
-            child: isNetwork 
-              ? Image.network(
-                  imagePath,
-                  fit: BoxFit.contain,
-                )
-              : Image.asset(
-                  imagePath,
-                  fit: BoxFit.contain,
-                ),
+            child: isNetwork
+                ? Image.network(imagePath, fit: BoxFit.contain)
+                : Image.asset(imagePath, fit: BoxFit.contain),
           ),
         ),
       ),

@@ -1,15 +1,23 @@
 class LegacySettingsEntity {
-  final bool isEnabled;
-  final String? legacyContactId;
-  final String? legacyContactName;
-  final String inactivityPeriod; // '3_months', '6_months', '1_year'
-  final String? note;
+  final String id;
+  final String userId;
+  final String? administratorId;
+  final String administratorName;
+  final String releaseCondition;
+  final String familyCircleAccess;
+  final String publicProfile;
+  final bool isReleased;
+  final DateTime? releasedAt;
 
   const LegacySettingsEntity({
-    this.isEnabled = false,
-    this.legacyContactId,
-    this.legacyContactName,
-    this.inactivityPeriod = '6_months',
-    this.note,
+    required this.id,
+    required this.userId,
+    this.administratorId,
+    required this.administratorName,
+    required this.releaseCondition,
+    required this.familyCircleAccess,
+    required this.publicProfile,
+    required this.isReleased,
+    this.releasedAt,
   });
 }

@@ -7,6 +7,7 @@ import '../../../../core/utils/media_url_formatter.dart';
 import '../../domain/entities/memory_entity.dart';
 import 'comments_bottom_sheet.dart';
 import 'reaction_bar.dart';
+import 'video_player_widget.dart';
 
 class MemoryCard extends StatefulWidget {
   final MemoryEntity memory;
@@ -67,7 +68,24 @@ class _MemoryCardState extends State<MemoryCard> {
   }
 
   void _handleLikeTap() {
-    final nextReaction = _userReaction != null ? null : 'heart';
+    final isUnreacting = _userReaction != null;
+    final nextReaction = isUnreacting ? null : 'heart';
+    final targetType = _userReaction ?? 'heart';
+    setState(() {
+      if (!isUnreacting) {
+        _likesCount += 1;
+      } else {
+        _likesCount = (_likesCount - 1).clamp(0, 999999);
+      }
+      _userReaction = nextReaction;
+      _showReactions = false;
+    });
+    widget.onReact(targetType);
+  }
+
+  void _handleSelectReaction(String type) {
+    final isUnreacting = _userReaction == type;
+    final nextReaction = isUnreacting ? null : type;
     setState(() {
       if (_userReaction == null && nextReaction != null) {
         _likesCount += 1;
@@ -75,8 +93,38 @@ class _MemoryCardState extends State<MemoryCard> {
         _likesCount = (_likesCount - 1).clamp(0, 999999);
       }
       _userReaction = nextReaction;
+      _showReactions = false;
     });
-    widget.onReact(nextReaction ?? 'heart');
+    widget.onReact(type);
+  }
+
+  Widget _buildReactionWidget() {
+    if (_userReaction == null) {
+      return const Icon(
+        Icons.favorite_border_rounded,
+        color: AppColors.textSecondary,
+        size: 18,
+      );
+    }
+    switch (_userReaction) {
+      case 'like':
+        return const Text('👍', style: TextStyle(fontSize: 16));
+      case 'care':
+        return const Text('🤗', style: TextStyle(fontSize: 16));
+      case 'haha':
+        return const Text('😂', style: TextStyle(fontSize: 16));
+      case 'wow':
+        return const Text('😮', style: TextStyle(fontSize: 16));
+      case 'angry':
+        return const Text('😡', style: TextStyle(fontSize: 16));
+      case 'heart':
+      default:
+        return const Icon(
+          Icons.favorite_rounded,
+          color: Colors.red,
+          size: 18,
+        );
+    }
   }
 
   void _handleCommentTap() {
@@ -131,9 +179,7 @@ class _MemoryCardState extends State<MemoryCard> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedAvatar = MediaUrlFormatter.format(
-      widget.memory.author?.avatarUrl,
-    );
+    MediaUrlFormatter.format(widget.memory.author?.avatarUrl);
     final formattedMedia = MediaUrlFormatter.format(widget.memory.mediaUrl);
 
     return Stack(
@@ -144,12 +190,14 @@ class _MemoryCardState extends State<MemoryCard> {
             margin: const EdgeInsets.only(bottom: 16),
             padding: EdgeInsets.all(widget.isGridMode ? 12 : 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFCE9EA), // Match pinkish color from screenshot
+              color: const Color(
+                0xFFFCE9EA,
+              ), // Match pinkish color from screenshot
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFFE2C9E4), width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -165,7 +213,10 @@ class _MemoryCardState extends State<MemoryCard> {
                     children: [
                       if (widget.memory.tags.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF5E4EE8),
                             borderRadius: BorderRadius.circular(6),
@@ -185,7 +236,11 @@ class _MemoryCardState extends State<MemoryCard> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 12,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 widget.memory.createdAt != null
@@ -207,7 +262,11 @@ class _MemoryCardState extends State<MemoryCard> {
                                   if (val == 'delete') widget.onDelete!();
                                 },
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.more_vert, size: 16, color: AppColors.textSecondary),
+                                icon: const Icon(
+                                  Icons.more_vert,
+                                  size: 16,
+                                  color: AppColors.textSecondary,
+                                ),
                                 itemBuilder: (context) => [
                                   const PopupMenuItem(
                                     value: 'delete',
@@ -229,7 +288,10 @@ class _MemoryCardState extends State<MemoryCard> {
                     children: [
                       if (widget.memory.tags.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF5E4EE8),
                             borderRadius: BorderRadius.circular(6),
@@ -247,7 +309,11 @@ class _MemoryCardState extends State<MemoryCard> {
                         const SizedBox(),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
+                          const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             widget.memory.createdAt != null
@@ -264,7 +330,11 @@ class _MemoryCardState extends State<MemoryCard> {
                                 if (val == 'delete') widget.onDelete!();
                               },
                               padding: EdgeInsets.zero,
-                              icon: const Icon(Icons.more_vert, size: 18, color: AppColors.textSecondary),
+                              icon: const Icon(
+                                Icons.more_vert,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
                               itemBuilder: (context) => [
                                 const PopupMenuItem(
                                   value: 'delete',
@@ -357,7 +427,7 @@ class _MemoryCardState extends State<MemoryCard> {
                                     ),
                                     activeTrackColor: AppColors.primary,
                                     inactiveTrackColor: AppColors.primary
-                                        .withOpacity(0.2),
+                                        .withValues(alpha: 0.2),
                                     thumbColor: AppColors.primary,
                                   ),
                                   child: Slider(
@@ -415,10 +485,21 @@ class _MemoryCardState extends State<MemoryCard> {
                     ),
                   ),
                 ] else if (formattedMedia != null &&
+                    (widget.memory.mediaType == 'video' ||
+                        formattedMedia.endsWith('.mp4') ||
+                        formattedMedia.endsWith('.mov') ||
+                        formattedMedia.endsWith('.webm'))) ...[
+                  VideoPlayerWidget(
+                    videoUrl: formattedMedia,
+                    height: widget.isGridMode ? 100 : 200,
+                  ),
+                ] else if (formattedMedia != null &&
                     (widget.memory.mediaType == 'image' ||
                         formattedMedia.endsWith('.png') ||
                         formattedMedia.endsWith('.jpg') ||
-                        formattedMedia.endsWith('.jpeg'))) ...[
+                        formattedMedia.endsWith('.jpeg') ||
+                        formattedMedia.endsWith('.webp') ||
+                        formattedMedia.endsWith('.gif'))) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: Image.network(
@@ -438,9 +519,14 @@ class _MemoryCardState extends State<MemoryCard> {
                     spacing: 6,
                     children: widget.memory.tags.skip(1).map((t) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE9DEF6), // Light purple tag background
+                          color: const Color(
+                            0xFFE9DEF6,
+                          ), // Light purple tag background
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -474,16 +560,11 @@ class _MemoryCardState extends State<MemoryCard> {
                             children: [
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 200),
-                                transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
-                                child: Icon(
-                                  _userReaction != null
-                                      ? Icons.favorite_rounded
-                                      : Icons.favorite_border_rounded,
-                                  key: ValueKey<bool>(_userReaction != null),
-                                  color: _userReaction != null
-                                      ? Colors.red
-                                      : AppColors.textSecondary,
-                                  size: 18,
+                                transitionBuilder: (child, anim) =>
+                                    ScaleTransition(scale: anim, child: child),
+                                child: KeyedSubtree(
+                                  key: ValueKey<String?>(_userReaction),
+                                  child: _buildReactionWidget(),
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -491,8 +572,14 @@ class _MemoryCardState extends State<MemoryCard> {
                                 '$_likesCount',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                                  color: _userReaction != null
+                                      ? (_userReaction == 'heart'
+                                          ? Colors.red
+                                          : const Color(0xFF4A3AFF))
+                                      : AppColors.textSecondary,
+                                  fontWeight: _userReaction != null
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -523,7 +610,9 @@ class _MemoryCardState extends State<MemoryCard> {
                       ],
                     ),
                     Icon(
-                      widget.memory.privacy == 'family' ? Icons.people_alt_outlined : Icons.public,
+                      widget.memory.privacy == 'family'
+                          ? Icons.people_alt_outlined
+                          : Icons.public,
                       color: const Color(0xFF5E4EE8),
                       size: 18,
                     ),
@@ -538,11 +627,8 @@ class _MemoryCardState extends State<MemoryCard> {
             left: 20,
             bottom: 60,
             child: ReactionBar(
-              currentReaction: widget.memory.userReaction,
-              onReact: (type) {
-                widget.onReact(type);
-                setState(() => _showReactions = false);
-              },
+              currentReaction: _userReaction,
+              onReact: _handleSelectReaction,
             ),
           ),
       ],

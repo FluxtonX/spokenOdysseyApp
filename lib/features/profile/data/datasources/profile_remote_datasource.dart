@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:spokenodyssey/features/auth/data/models/user_model.dart';
 import '../../../../core/constants/api_endpoints.dart';
@@ -9,9 +10,14 @@ abstract class ProfileRemoteDataSource {
   Future<UserModel> updateProfile({
     String? displayName,
     String? bio,
+    String? profession,
     String? location,
+    String? birthDate,
+    String? lifeMotto,
+    List<String>? expertise,
     String? relationship,
     String? avatarPath,
+    String? coverPath,
   });
 }
 
@@ -38,21 +44,38 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<UserModel> updateProfile({
     String? displayName,
     String? bio,
+    String? profession,
     String? location,
+    String? birthDate,
+    String? lifeMotto,
+    List<String>? expertise,
     String? relationship,
     String? avatarPath,
+    String? coverPath,
   }) async {
     final formDataMap = <String, dynamic>{
       if (displayName != null) 'displayName': displayName,
       if (bio != null) 'bio': bio,
+      if (profession != null) 'profession': profession,
       if (location != null) 'location': location,
+      if (birthDate != null) 'birthDate': birthDate,
+      if (lifeMotto != null) 'lifeMotto': lifeMotto,
+      if (expertise != null) 'expertise': jsonEncode(expertise),
       if (relationship != null) 'relationship': relationship,
     };
 
     if (avatarPath != null && avatarPath.isNotEmpty) {
       final fileName = avatarPath.split('/').last;
-      formDataMap['avatar'] = await MultipartFile.fromFile(
+      formDataMap['profileImage'] = await MultipartFile.fromFile(
         avatarPath,
+        filename: fileName,
+      );
+    }
+
+    if (coverPath != null && coverPath.isNotEmpty) {
+      final fileName = coverPath.split('/').last;
+      formDataMap['coverImage'] = await MultipartFile.fromFile(
+        coverPath,
         filename: fileName,
       );
     }

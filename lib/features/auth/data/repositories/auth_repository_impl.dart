@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
@@ -49,7 +50,9 @@ class AuthRepositoryImpl implements AuthRepository {
         password: password,
       );
     } on fb.FirebaseAuthException catch (e) {
-      debugPrint("Firebase Auth Sign-In Warning/Error: ${e.code} - ${e.message}");
+      debugPrint(
+        "Firebase Auth Sign-In Warning/Error: ${e.code} - ${e.message}",
+      );
       // If user exists in backend but not in Firebase Auth, allow backend fallback
     } catch (e) {
       debugPrint("Firebase Auth Sign-In general error: $e");
@@ -60,6 +63,21 @@ class AuthRepositoryImpl implements AuthRepository {
       email: email,
       password: password,
     );
+
+    if (data['mfaRequired'] == true) {
+      final mfaToken = data['mfaToken'] as String;
+      final availableMethods =
+          (data['availableMethods'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          ['totp'];
+      throw MfaRequiredException(
+        mfaToken: mfaToken,
+        availableMethods: availableMethods,
+        message: 'Two-factor authentication is required.',
+      );
+    }
+
     final token = data['token'] ?? data['accessToken'] ?? '';
     final userJson = data['user'] ?? data['data'] ?? {};
 
@@ -80,11 +98,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       debugPrint("Firebase Auth User created: ${credential.user?.uid}");
     } on fb.FirebaseAuthException catch (e) {
-      debugPrint("Firebase Auth Sign-Up Error: ${e.code} - ${e.message}");
-      if (e.code == 'email-already-in-use') {
-        throw Exception(_handleFirebaseAuthError(e));
-      }
-      // If user already exists in Firebase Auth, attempt signing in
+      debugPrint("Firebase Auth Sign-Up Warning: ${e.code} - ${e.message}");
       if (e.code == 'email-already-in-use') {
         try {
           await _firebaseAuth.signInWithEmailAndPassword(
@@ -92,6 +106,8 @@ class AuthRepositoryImpl implements AuthRepository {
             password: password,
           );
         } catch (_) {}
+      } else if (e.code == 'weak-password' || e.code == 'invalid-email') {
+        throw Exception(_handleFirebaseAuthError(e));
       }
     } catch (e) {
       debugPrint("Firebase Auth Sign-Up General Warning: $e");
@@ -146,7 +162,11 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<User> googleSignIn() async {
     try {
       // 1. Trigger the native Google Sign-In bottom sheet
-      final googleSignIn = GoogleSignIn();
+      final googleSignIn = GoogleSignIn(
+        clientId: !kIsWeb && Platform.isIOS
+            ? '884058304379-t5jeu8j0sjk4ptv43q5fbk7lid58pii0.apps.googleusercontent.com'
+            : null,
+      );
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
@@ -154,8 +174,8 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       // 2. Get auth details from request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken ?? '';
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // 3. Create a new credential
       final credential = fb.GoogleAuthProvider.credential(
@@ -164,7 +184,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       // 4. Once signed in, return the UserCredential
-      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
       final firebaseUser = userCredential.user;
 
       if (firebaseUser == null) {
@@ -177,14 +199,16 @@ class AuthRepositoryImpl implements AuthRepository {
       final token = data['token'] ?? data['accessToken'] ?? firebaseIdToken;
       final userJson = data['user'] ?? data['data'] ?? {};
 
-      final userModel = UserModel.fromJson(userJson.isNotEmpty
-          ? userJson
-          : {
-              'id': firebaseUser.uid,
-              'email': firebaseUser.email ?? '',
-              'displayName': firebaseUser.displayName ?? '',
-              'photoURL': firebaseUser.photoURL ?? '',
-            });
+      final userModel = UserModel.fromJson(
+        userJson.isNotEmpty
+            ? userJson
+            : {
+                'id': firebaseUser.uid,
+                'email': firebaseUser.email ?? '',
+                'displayName': firebaseUser.displayName ?? '',
+                'photoURL': firebaseUser.photoURL ?? '',
+              },
+      );
 
       if (token.isNotEmpty) {
         await storageService.saveToken(token);
@@ -204,28 +228,69 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<User> appleSignIn() async {
     try {
       final appleProvider = fb.AppleAuthProvider();
-      final userCredential = await _firebaseAuth.signInWithProvider(appleProvider);
+      appleProvider.addScope('email');
+      appleProvider.addScope('name');
+
+      final userCredential = await _firebaseAuth.signInWithProvider(
+        appleProvider,
+      );
       final firebaseUser = userCredential.user;
 
       if (firebaseUser == null) {
-        throw Exception('Apple Sign-In failed or was cancelled.');
+        throw Exception('Apple Sign-In was cancelled.');
       }
 
       final idToken = await firebaseUser.getIdToken() ?? '';
 
-      // Sync Firebase Token with Express backend POST /api/auth/google
-      final data = await remoteDataSource.googleLogin(idToken: idToken);
+      // Extract user's name (Apple provides name only on the FIRST authentication)
+      String displayName = firebaseUser.displayName ?? '';
+      if (displayName.isEmpty) {
+        final profile = userCredential.additionalUserInfo?.profile;
+        if (profile != null && profile['name'] != null) {
+          final n = profile['name'];
+          if (n is Map) {
+            final first = n['firstName']?.toString() ?? '';
+            final last = n['lastName']?.toString() ?? '';
+            displayName = '$first $last'.trim();
+          } else if (n is String) {
+            displayName = n;
+          }
+        }
+      }
+
+      // Sync Firebase Token with backend POST /api/auth/google
+      Map<String, dynamic> data = {};
+      try {
+        data = await remoteDataSource.googleLogin(idToken: idToken);
+      } catch (err) {
+        debugPrint("Backend token sync warning: $err");
+      }
+
       final token = data['token'] ?? data['accessToken'] ?? idToken;
       final userJson = data['user'] ?? data['data'] ?? {};
 
-      final userModel = UserModel.fromJson(userJson.isNotEmpty
-          ? userJson
-          : {
-              'id': firebaseUser.uid,
-              'email': firebaseUser.email ?? '',
-              'displayName': firebaseUser.displayName ?? 'Apple User',
-              'photoURL': firebaseUser.photoURL ?? '',
-            });
+      if (displayName.isEmpty && userJson['displayName'] != null) {
+        displayName = userJson['displayName'];
+      }
+      if (displayName.isEmpty &&
+          firebaseUser.email != null &&
+          firebaseUser.email!.isNotEmpty) {
+        displayName = firebaseUser.email!.split('@').first;
+      }
+      if (displayName.isEmpty) {
+        displayName = 'Apple User';
+      }
+
+      final userModel = UserModel.fromJson(
+        userJson.isNotEmpty
+            ? userJson
+            : {
+                'id': firebaseUser.uid,
+                'email': firebaseUser.email ?? '',
+                'displayName': displayName,
+                'photoURL': firebaseUser.photoURL ?? '',
+              },
+      );
 
       if (token.isNotEmpty) {
         await storageService.saveToken(token);
@@ -234,9 +299,19 @@ class AuthRepositoryImpl implements AuthRepository {
       return userModel;
     } on fb.FirebaseAuthException catch (e) {
       debugPrint("Firebase Apple Sign-In Error: ${e.code} - ${e.message}");
+      if (e.code == 'canceled' ||
+          e.code == 'popup-closed-by-user' ||
+          e.code == 'web-context-cancelled' ||
+          e.code == 'user-cancelled') {
+        throw Exception('Apple Sign-In was cancelled.');
+      }
       throw Exception(_handleFirebaseAuthError(e));
     } catch (e) {
       debugPrint("Apple Sign-In Error: $e");
+      final errStr = e.toString();
+      if (errStr.contains('cancelled') || errStr.contains('canceled')) {
+        throw Exception('Apple Sign-In was cancelled.');
+      }
       throw Exception('Apple Sign-In failed: $e');
     }
   }
@@ -262,5 +337,45 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     }
     return null;
+  }
+
+  @override
+  Future<User> verifyTotpMfa({
+    required String mfaToken,
+    required String code,
+  }) async {
+    final data = await remoteDataSource.verifyTotpMfa(
+      mfaToken: mfaToken,
+      code: code,
+    );
+
+    final token = data['token'] ?? data['accessToken'] ?? '';
+    final userJson = data['user'] ?? data['data'] ?? {};
+
+    final userModel = UserModel.fromJson(userJson);
+    await storageService.saveToken(token);
+    await storageService.saveUserData(jsonEncode(userModel.toJson()));
+
+    return userModel;
+  }
+
+  @override
+  Future<User> verifyRecoveryMfa({
+    required String mfaToken,
+    required String code,
+  }) async {
+    final data = await remoteDataSource.verifyRecoveryMfa(
+      mfaToken: mfaToken,
+      code: code,
+    );
+
+    final token = data['token'] ?? data['accessToken'] ?? '';
+    final userJson = data['user'] ?? data['data'] ?? {};
+
+    final userModel = UserModel.fromJson(userJson);
+    await storageService.saveToken(token);
+    await storageService.saveUserData(jsonEncode(userModel.toJson()));
+
+    return userModel;
   }
 }

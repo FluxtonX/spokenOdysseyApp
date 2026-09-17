@@ -81,12 +81,62 @@ class MemoryModel extends MemoryEntity {
       });
     }
 
+    // Resolve mediaUrl
+    String? resolvedMediaUrl = json['audioUrl']?.toString() ??
+        json['mediaUrl']?.toString() ??
+        json['fileUrl']?.toString() ??
+        json['media']?.toString();
+
+    if (resolvedMediaUrl == null && json['mediaList'] is List && (json['mediaList'] as List).isNotEmpty) {
+      final first = (json['mediaList'] as List).first;
+      if (first is Map) {
+        resolvedMediaUrl = first['mediaUrl']?.toString() ?? first['url']?.toString();
+      }
+    }
+
+    // Resolve mediaType
+    String resolvedMediaType = 'text';
+    final rawType = (json['mediaType'] ?? json['type'] ?? '').toString().toLowerCase();
+    final rawMime = (json['mediaMimeType'] ?? '').toString().toLowerCase();
+    final rawTitle = (json['title'] ?? '').toString().toLowerCase();
+    final rawDesc = (json['description'] ?? '').toString().toLowerCase();
+    final urlLower = (resolvedMediaUrl ?? '').toLowerCase();
+
+    if (rawType.contains('audio') ||
+        rawType.contains('voice') ||
+        rawMime.contains('audio') ||
+        urlLower.contains('.mp3') ||
+        urlLower.contains('.m4a') ||
+        urlLower.contains('.wav') ||
+        urlLower.contains('.aac') ||
+        rawTitle.contains('voice recording') ||
+        rawTitle.contains('audio') ||
+        rawDesc.contains('audio story')) {
+      resolvedMediaType = 'audio';
+    } else if (rawType.contains('video') ||
+        rawMime.contains('video') ||
+        urlLower.contains('.mp4') ||
+        urlLower.contains('.mov') ||
+        urlLower.contains('.webm')) {
+      resolvedMediaType = 'video';
+    } else if (rawType.contains('image') ||
+        rawType.contains('photo') ||
+        rawMime.contains('image') ||
+        urlLower.contains('.jpg') ||
+        urlLower.contains('.jpeg') ||
+        urlLower.contains('.png') ||
+        urlLower.contains('.webp') ||
+        urlLower.contains('.gif') ||
+        (resolvedMediaUrl != null && resolvedMediaUrl.isNotEmpty)) {
+      resolvedMediaType = 'image';
+    }
+
     return MemoryModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       title: json['title'] ?? 'Untitled Memory',
       description: json['description'],
-      mediaUrl: json['audioUrl'] ?? json['mediaUrl'] ?? json['fileUrl'] ?? json['media'],
-      mediaType: json['mediaType'] ?? (json['audioUrl'] != null ? 'audio' : 'image'),
+      mediaUrl: resolvedMediaUrl,
+      mediaType: resolvedMediaType,
       privacy: json['privacy'] ?? json['visibility'] ?? 'public',
       tags: json['tags'] != null ? List<String>.from(json['tags']) : const [],
       albumId: json['albumId']?.toString() ?? json['album']?['_id']?.toString(),

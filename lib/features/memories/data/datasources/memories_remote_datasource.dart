@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/comment_model.dart';
 import '../models/memory_model.dart';
+import '../models/story_layer_model.dart';
 
 abstract class MemoriesRemoteDataSource {
   Future<List<MemoryModel>> getFeedMemories();
@@ -12,13 +14,16 @@ abstract class MemoriesRemoteDataSource {
   Future<MemoryModel> createMemory({
     required String title,
     String? description,
-    String? mediaPath,
-    String? mediaType,
+    List<String>? mediaPaths,
     String? privacy,
     List<String>? tags,
+    List<String>? taggedUserIds,
     String? albumId,
     String? type,
     String? mood,
+    String? occurredAt,
+    bool? isVaultLocked,
+    String? unlockDate,
   });
   Future<MemoryModel> updateMemory({
     required String memoryId,
@@ -38,6 +43,12 @@ abstract class MemoriesRemoteDataSource {
     String? parentCommentId,
   });
   Future<void> reactToComment(String memoryId, String commentId, String type);
+  Future<List<StoryLayerModel>> getStoryLayers(String memoryId);
+  Future<StoryLayerModel> addStoryLayer(
+    String memoryId, {
+    required String text,
+    String? audioPath,
+  });
 }
 
 class MemoriesRemoteDataSourceImpl implements MemoriesRemoteDataSource {
@@ -94,21 +105,18 @@ class MemoriesRemoteDataSourceImpl implements MemoriesRemoteDataSource {
   Future<MemoryModel> createMemory({
     required String title,
     String? description,
-    String? mediaPath,
-    String? mediaType,
+    List<String>? mediaPaths,
     String? privacy,
     List<String>? tags,
+    List<String>? taggedUserIds,
     String? albumId,
     String? type,
     String? mood,
+    String? occurredAt,
+    bool? isVaultLocked,
+    String? unlockDate,
   }) async {
-    final chosenType =
-        type ??
-        (mediaType == 'audio'
-            ? 'voice'
-            : mediaType == 'image'
-            ? 'visual'
-            : 'written');
+    final chosenType = type ?? 'written';
 
     final formDataMap = <String, dynamic>{
       'title': title,
@@ -123,17 +131,20 @@ class MemoriesRemoteDataSourceImpl implements MemoriesRemoteDataSource {
       if (mood != null && mood.isNotEmpty) 'mood': mood,
       if (albumId != null && albumId.isNotEmpty) 'albumId': albumId,
       if (tags != null && tags.isNotEmpty) 'tags': tags.join(','),
+      if (taggedUserIds != null && taggedUserIds.isNotEmpty)
+        'taggedUserIds': taggedUserIds.join(','),
+      if (occurredAt != null) 'occurredAt': occurredAt,
+      if (isVaultLocked != null) 'isVaultLocked': isVaultLocked,
+      if (unlockDate != null) 'unlockDate': unlockDate,
     };
 
-    if (mediaPath != null && mediaPath.isNotEmpty) {
-      final fileName = mediaPath.split('/').last;
-      formDataMap['media'] = await MultipartFile.fromFile(
-        mediaPath,
-        filename: fileName,
-      );
-      if (mediaType != null) {
-        formDataMap['mediaType'] = mediaType;
+    if (mediaPaths != null && mediaPaths.isNotEmpty) {
+      final List<MultipartFile> files = [];
+      for (final path in mediaPaths) {
+        final fileName = path.split('/').last;
+        files.add(await MultipartFile.fromFile(path, filename: fileName));
       }
+      formDataMap['media'] = files;
     }
 
     final formData = FormData.fromMap(formDataMap);
@@ -170,7 +181,19 @@ class MemoriesRemoteDataSourceImpl implements MemoriesRemoteDataSource {
 
   @override
   Future<void> deleteMemory(String memoryId) async {
-    await apiClient.delete(ApiEndpoints.memoryById(memoryId));
+    try {
+      await apiClient.delete(ApiEndpoints.memoryById(memoryId));
+    } on ServerException catch (e) {
+      // If the memory is already deleted or not found on the server (404), treat as success
+      if (e.statusCode == 404 ||
+          e.message.toLowerCase().contains('could not be found') ||
+          e.message.toLowerCase().contains('not found')) {
+        return;
+      }
+      rethrow;
+    } catch (_) {
+      rethrow;
+    }
   }
 
   @override
@@ -231,5 +254,30 @@ class MemoriesRemoteDataSourceImpl implements MemoriesRemoteDataSource {
       ApiEndpoints.commentReact(memoryId, commentId),
       data: {'type': type},
     );
+  }
+
+  @override
+  Future<List<StoryLayerModel>> getStoryLayers(String memoryId) async {
+    final response = await apiClient.get(ApiEndpoints.storyLayers(memoryId));
+    final data = response.data['data'] ?? response.data;
+    if (data is List) {
+      return data.map((json) => StoryLayerModel.fromJson(json)).toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<StoryLayerModel> addStoryLayer(
+    String memoryId, {
+    required String text,
+    String? audioPath,
+  }) async {
+    final body = <String, dynamic>{'text': text};
+    final response = await apiClient.post(
+      ApiEndpoints.storyLayers(memoryId),
+      data: body,
+    );
+    final data = response.data['data'] ?? response.data;
+    return StoryLayerModel.fromJson(data);
   }
 }

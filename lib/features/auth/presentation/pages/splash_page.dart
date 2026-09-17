@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_constants.dart';
 import '../cubit/auth_cubit.dart';
@@ -30,7 +31,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     );
 
     _controller.forward();
-    
+
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         context.read<AuthCubit>().checkAuthStatus();
@@ -44,14 +45,28 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  /// Returns true only on the very first app install (never seen onboarding).
+  Future<bool> _isFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    return !(prefs.getBool('has_seen_onboarding') ?? false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is Authenticated) {
           Navigator.pushReplacementNamed(context, '/home');
-        } else if (state is Unauthenticated) {
-          Navigator.pushReplacementNamed(context, '/onboarding');
+        } else if (state is Unauthenticated || state is AuthError) {
+          final firstLaunch = await _isFirstLaunch();
+          if (!context.mounted) return;
+          if (firstLaunch) {
+            // Brand-new install: show onboarding slides
+            Navigator.pushReplacementNamed(context, '/onboarding');
+          } else {
+            // Returning user who logged out: go straight to sign-in
+            Navigator.pushReplacementNamed(context, '/sign-in');
+          }
         }
       },
       child: Scaffold(
@@ -92,7 +107,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
                 const Spacer(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_constants.dart';
 
@@ -25,6 +26,12 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
+
+  /// Marks that this user has seen onboarding. Never shows again after this.
+  Future<void> _markOnboardingSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_onboarding', true);
+  }
 
   final List<OnboardingItem> _items = const [
     OnboardingItem(
@@ -65,7 +72,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   Image.asset(
                     item.imagePath,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: AppColors.surface),
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: AppColors.surface),
                   ),
                   // Gradient overlay to make text readable and blend seamlessly
                   Container(
@@ -75,8 +83,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.white.withOpacity(0.1),
-                          Colors.white.withOpacity(0.85),
+                          Colors.white.withValues(alpha: 0.1),
+                          Colors.white.withValues(alpha: 0.85),
                           Colors.white,
                         ],
                         stops: const [0.0, 0.4, 0.75, 1.0],
@@ -92,7 +100,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         children: [
                           // Animated slide-up and fade-in effect
                           AnimatedSlide(
-                            offset: _currentIndex == index ? Offset.zero : const Offset(0, 0.2),
+                            offset: _currentIndex == index
+                                ? Offset.zero
+                                : const Offset(0, 0.2),
                             duration: const Duration(milliseconds: 500),
                             curve: Curves.easeOutCubic,
                             child: AnimatedOpacity(
@@ -125,7 +135,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 160), // Space for bottom fixed controls
+                          const SizedBox(
+                            height: 160,
+                          ), // Space for bottom fixed controls
                         ],
                       ),
                     ),
@@ -134,7 +146,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               );
             },
           ),
-          // Top Skip Button
+          // Skip Button Top Right
           SafeArea(
             child: Align(
               alignment: Alignment.topRight,
@@ -142,10 +154,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 padding: const EdgeInsets.only(top: 8, right: 16),
                 child: TextButton(
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    backgroundColor: Colors.white.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
+                    await _markOnboardingSeen();
+                    if (!context.mounted) return;
                     Navigator.pushReplacementNamed(context, '/sign-in');
                   },
                   child: Text(
@@ -178,7 +194,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.white.withOpacity(0.0), Colors.white, Colors.white],
+                  colors: [
+                    Colors.white.withValues(alpha: 0.0),
+                    Colors.white,
+                    Colors.white,
+                  ],
                 ),
               ),
               child: Column(
@@ -198,7 +218,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         decoration: BoxDecoration(
                           color: _currentIndex == dotIndex
                               ? AppColors.primary
-                              : AppColors.primary.withOpacity(0.2),
+                              : AppColors.primary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -213,25 +233,29 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         elevation: 4,
-                        shadowColor: AppColors.primary.withOpacity(0.5),
+                        shadowColor: AppColors.primary.withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         if (_currentIndex < _items.length - 1) {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 400),
                             curve: Curves.easeOutCubic,
                           );
                         } else {
+                          await _markOnboardingSeen();
+                          if (!context.mounted) return;
                           Navigator.pushReplacementNamed(context, '/sign-in');
                         }
                       },
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: Text(
-                          _currentIndex == _items.length - 1 ? 'Get Started' : 'Next',
+                          _currentIndex == _items.length - 1
+                              ? 'Get Started'
+                              : 'Next',
                           key: ValueKey(_currentIndex == _items.length - 1),
                           style: GoogleFonts.outfit(
                             fontSize: 18,

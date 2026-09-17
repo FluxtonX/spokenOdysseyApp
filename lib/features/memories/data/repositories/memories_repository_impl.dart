@@ -1,5 +1,7 @@
+import '../../../../core/network/cache_manager.dart';
 import '../../domain/entities/comment_entity.dart';
 import '../../domain/entities/memory_entity.dart';
+import '../../domain/entities/story_layer_entity.dart';
 import '../../domain/repositories/memories_repository.dart';
 import '../datasources/memories_remote_datasource.dart';
 
@@ -10,12 +12,30 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
 
   @override
   Future<List<MemoryEntity>> getFeedMemories() async {
-    return await remoteDataSource.getFeedMemories();
+    const key = 'memories_feed';
+    final cached = CacheManager().get<List<MemoryEntity>>(
+      key,
+      ttl: const Duration(minutes: 3),
+    );
+    if (cached != null) return cached;
+
+    final memories = await remoteDataSource.getFeedMemories();
+    CacheManager().set(key, memories);
+    return memories;
   }
 
   @override
   Future<List<MemoryEntity>> getMemories({String? userId}) async {
-    return await remoteDataSource.getMemories(userId: userId);
+    final key = 'memories_list_${userId ?? "all"}';
+    final cached = CacheManager().get<List<MemoryEntity>>(
+      key,
+      ttl: const Duration(minutes: 3),
+    );
+    if (cached != null) return cached;
+
+    final memories = await remoteDataSource.getMemories(userId: userId);
+    CacheManager().set(key, memories);
+    return memories;
   }
 
   @override
@@ -32,25 +52,33 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
   Future<MemoryEntity> createMemory({
     required String title,
     String? description,
-    String? mediaPath,
-    String? mediaType,
+    List<String>? mediaPaths,
     String? privacy,
     List<String>? tags,
+    List<String>? taggedUserIds,
     String? albumId,
     String? type,
     String? mood,
+    String? occurredAt,
+    bool? isVaultLocked,
+    String? unlockDate,
   }) async {
-    return await remoteDataSource.createMemory(
+    final result = await remoteDataSource.createMemory(
       title: title,
       description: description,
-      mediaPath: mediaPath,
-      mediaType: mediaType,
+      mediaPaths: mediaPaths,
       privacy: privacy,
       tags: tags,
+      taggedUserIds: taggedUserIds,
       albumId: albumId,
       type: type,
       mood: mood,
+      occurredAt: occurredAt,
+      isVaultLocked: isVaultLocked,
+      unlockDate: unlockDate,
     );
+    CacheManager().invalidate('memories_');
+    return result;
   }
 
   @override
@@ -61,18 +89,21 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
     String? privacy,
     List<String>? tags,
   }) async {
-    return await remoteDataSource.updateMemory(
+    final result = await remoteDataSource.updateMemory(
       memoryId: memoryId,
       title: title,
       description: description,
       privacy: privacy,
       tags: tags,
     );
+    CacheManager().invalidate('memories_');
+    return result;
   }
 
   @override
   Future<void> deleteMemory(String memoryId) async {
     await remoteDataSource.deleteMemory(memoryId);
+    CacheManager().invalidate('memories_');
   }
 
   @override
@@ -115,5 +146,23 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
     String type,
   ) async {
     await remoteDataSource.reactToComment(memoryId, commentId, type);
+  }
+
+  @override
+  Future<List<StoryLayerEntity>> getStoryLayers(String memoryId) async {
+    return await remoteDataSource.getStoryLayers(memoryId);
+  }
+
+  @override
+  Future<StoryLayerEntity> addStoryLayer(
+    String memoryId, {
+    required String text,
+    String? audioPath,
+  }) async {
+    return await remoteDataSource.addStoryLayer(
+      memoryId,
+      text: text,
+      audioPath: audioPath,
+    );
   }
 }

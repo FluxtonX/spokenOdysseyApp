@@ -8,8 +8,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+@Suppress("DEPRECATION")
 android {
-    namespace = "com.fluxtonx.spokenodyssey"
+    namespace = "com.spokenodyssey.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -19,13 +20,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
-
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.fluxtonx.spokenodyssey"
+        applicationId = "com.spokenodyssey.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = maxOf(flutter.minSdkVersion, 23)
@@ -43,10 +40,22 @@ android {
     }
 }
 
+// Replaces deprecated kotlinOptions DSL (DeprecationLevel.ERROR in AGP 9.0).
+// BaseAppModuleExtension does not expose compilerOptions, so this is set at task level.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation(files("libs/LIB_GLASSES_SDK-release_4.aar"))
+    implementation("org.greenrobot:eventbus:3.3.1")
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 }
 
 flutter {
     source = "../.."
 }
+

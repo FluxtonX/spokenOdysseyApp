@@ -4,7 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/entities/notification_entity.dart';
 
-void showInAppNotificationBanner(BuildContext context, NotificationEntity notification, {VoidCallback? onTap}) {
+void showInAppNotificationBanner(
+  BuildContext context,
+  NotificationEntity notification, {
+  VoidCallback? onTap,
+}) {
   final overlayState = Overlay.of(context);
   late OverlayEntry overlayEntry;
 
@@ -42,10 +46,12 @@ class _NotificationBannerWidget extends StatefulWidget {
   });
 
   @override
-  State<_NotificationBannerWidget> createState() => _NotificationBannerWidgetState();
+  State<_NotificationBannerWidget> createState() =>
+      _NotificationBannerWidgetState();
 }
 
-class _NotificationBannerWidgetState extends State<_NotificationBannerWidget> with SingleTickerProviderStateMixin {
+class _NotificationBannerWidgetState extends State<_NotificationBannerWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
   Timer? _dismissTimer;
@@ -61,10 +67,7 @@ class _NotificationBannerWidgetState extends State<_NotificationBannerWidget> wi
     _offsetAnimation = Tween<Offset>(
       begin: const Offset(0, -1.2),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
 
@@ -100,7 +103,8 @@ class _NotificationBannerWidgetState extends State<_NotificationBannerWidget> wi
           child: GestureDetector(
             onTap: widget.onTap,
             onVerticalDragEnd: (details) {
-              if (details.primaryVelocity != null && details.primaryVelocity! < 0) {
+              if (details.primaryVelocity != null &&
+                  details.primaryVelocity! < 0) {
                 _close();
               }
             },
@@ -111,13 +115,13 @@ class _NotificationBannerWidgetState extends State<_NotificationBannerWidget> wi
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
+                    color: Colors.black.withValues(alpha: 0.25),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
                 ],
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.4),
+                  color: AppColors.primary.withValues(alpha: 0.4),
                   width: 1.5,
                 ),
               ),
@@ -158,7 +162,7 @@ class _NotificationBannerWidgetState extends State<_NotificationBannerWidget> wi
                         Text(
                           widget.notification.message,
                           style: GoogleFonts.outfit(
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 12,
                           ),
                           maxLines: 2,
@@ -172,7 +176,7 @@ class _NotificationBannerWidgetState extends State<_NotificationBannerWidget> wi
                     onTap: _close,
                     child: Icon(
                       Icons.close_rounded,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       size: 20,
                     ),
                   ),

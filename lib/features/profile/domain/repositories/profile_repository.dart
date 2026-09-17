@@ -6,8 +6,13 @@ abstract class ProfileRepository {
   Future<User> updateProfile({
     String? displayName,
     String? bio,
+    String? profession,
     String? location,
+    String? birthDate,
+    String? lifeMotto,
+    List<String>? expertise,
     String? relationship,
     String? avatarPath,
+    String? coverPath,
   });
 }

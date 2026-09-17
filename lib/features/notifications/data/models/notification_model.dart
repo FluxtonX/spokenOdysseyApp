@@ -10,21 +10,27 @@ class NotificationModel extends NotificationEntity {
     super.isRead = false,
     super.sender,
     super.targetId,
+    super.actionUrl,
+    super.metadata,
     super.createdAt,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     UserModel? parsedSender;
+    Map<String, dynamic>? metaMap;
+    if (json['metadata'] != null && json['metadata'] is Map) {
+      metaMap = Map<String, dynamic>.from(json['metadata']);
+    }
+
     if (json['sender'] != null && json['sender'] is Map) {
       parsedSender = UserModel.fromJson(Map<String, dynamic>.from(json['sender']));
-    } else if (json['metadata'] != null && json['metadata'] is Map) {
-      final meta = json['metadata'] as Map;
-      if (meta['senderName'] != null || meta['senderAvatarUrl'] != null || meta['senderId'] != null) {
+    } else if (metaMap != null) {
+      if (metaMap['senderName'] != null || metaMap['senderAvatarUrl'] != null || metaMap['senderId'] != null) {
         parsedSender = UserModel(
-          id: meta['senderId']?.toString() ?? '',
-          email: meta['senderEmail']?.toString() ?? '',
-          name: meta['senderName']?.toString() ?? 'Spoken Odyssey User',
-          avatarUrl: meta['senderAvatarUrl']?.toString(),
+          id: metaMap['senderId']?.toString() ?? '',
+          email: metaMap['senderEmail']?.toString() ?? '',
+          name: metaMap['senderName']?.toString() ?? 'Spoken Odyssey User',
+          avatarUrl: metaMap['senderAvatarUrl']?.toString(),
         );
       }
     }
@@ -38,8 +44,11 @@ class NotificationModel extends NotificationEntity {
       sender: parsedSender,
       targetId: json['targetId']?.toString() ??
           json['memoryId']?.toString() ??
-          json['metadata']?['memoryId']?.toString() ??
+          metaMap?['memoryId']?.toString() ??
+          metaMap?['invitationId']?.toString() ??
           json['actionUrl']?.toString(),
+      actionUrl: json['actionUrl']?.toString(),
+      metadata: metaMap,
       createdAt: json['createdAt']?.toString() ?? json['date']?.toString(),
     );
   }

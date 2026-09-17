@@ -10,15 +10,21 @@ abstract class AuthRemoteDataSource {
     required String email,
     required String password,
   });
-  Future<Map<String, dynamic>> googleLogin({
-    required String idToken,
-  });
+  Future<Map<String, dynamic>> googleLogin({required String idToken});
   Future<void> forgotPassword({required String email});
   Future<bool> verifyOtp({required String email, required String otp});
   Future<void> resetPassword({
     required String email,
     required String newPassword,
     required String token,
+  });
+  Future<Map<String, dynamic>> verifyTotpMfa({
+    required String mfaToken,
+    required String code,
+  });
+  Future<Map<String, dynamic>> verifyRecoveryMfa({
+    required String mfaToken,
+    required String code,
   });
 }
 
@@ -52,9 +58,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> googleLogin({
-    required String idToken,
-  }) async {
+  Future<Map<String, dynamic>> googleLogin({required String idToken}) async {
     final response = await apiClient.post(
       '${ApiEndpoints.baseUrl}/auth/google',
       data: {'idToken': idToken, 'googleToken': idToken},
@@ -86,5 +90,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       ApiEndpoints.resetPassword,
       data: {'email': email, 'newPassword': newPassword, 'token': token},
     );
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyTotpMfa({
+    required String mfaToken,
+    required String code,
+  }) async {
+    final response = await apiClient.post(
+      '${ApiEndpoints.baseUrl}/auth/mfa/totp/verify',
+      data: {'mfaToken': mfaToken, 'code': code},
+    );
+    return response.data;
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyRecoveryMfa({
+    required String mfaToken,
+    required String code,
+  }) async {
+    final response = await apiClient.post(
+      '${ApiEndpoints.baseUrl}/auth/mfa/recovery/verify',
+      data: {'mfaToken': mfaToken, 'code': code},
+    );
+    return response.data;
   }
 }

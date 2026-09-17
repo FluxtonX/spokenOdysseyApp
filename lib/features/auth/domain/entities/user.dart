@@ -3,10 +3,15 @@ class User {
   final String email;
   final String? name;
   final String? avatarUrl;
+  final String? coverUrl;
   final String? bio;
+  final String? profession;
   final String? location;
   final String? relationship;
   final String? dateOfBirth;
+  final String? birthDate;
+  final List<String>? expertise;
+  final String? lifeMotto;
   final String? firebaseUid;
   final int memoriesCount;
   final int albumsCount;
@@ -20,10 +25,15 @@ class User {
     required this.email,
     this.name,
     this.avatarUrl,
+    this.coverUrl,
     this.bio,
+    this.profession,
     this.location,
     this.relationship,
     this.dateOfBirth,
+    this.birthDate,
+    this.expertise,
+    this.lifeMotto,
     this.firebaseUid,
     this.memoriesCount = 0,
     this.albumsCount = 0,

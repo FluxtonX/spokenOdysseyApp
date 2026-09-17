@@ -61,14 +61,47 @@ import '../../features/settings/data/repositories/settings_repository_impl.dart'
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/presentation/cubits/settings_cubit.dart';
 
+import '../../features/memories/data/datasources/ai_historian_remote_datasource.dart';
+import '../../features/memories/data/repositories/ai_historian_repository_impl.dart';
+import '../../features/memories/domain/repositories/ai_historian_repository.dart';
+import '../../features/memories/presentation/cubits/ai_historian_cubit.dart';
+
+import '../../features/settings/data/datasources/legacy_remote_datasource.dart';
+import '../../features/settings/data/repositories/legacy_repository_impl.dart';
+import '../../features/settings/domain/repositories/legacy_repository.dart';
+import '../../features/settings/presentation/cubits/legacy_cubit.dart';
+
+import '../../features/store/data/datasources/store_remote_datasource.dart';
+import '../../features/store/data/repositories/store_repository_impl.dart';
+import '../../features/store/domain/repositories/store_repository.dart';
+import '../../features/store/presentation/cubits/store_cubit.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+// Smart Glasses
+import '../../features/smart_glasses/data/datasources/glasses_local_datasource.dart';
+import '../../features/smart_glasses/data/datasources/glasses_remote_datasource.dart';
+import '../../features/smart_glasses/data/repositories/glasses_repository_impl.dart';
+import '../../features/smart_glasses/domain/repositories/glasses_repository.dart';
+import '../../features/smart_glasses/presentation/cubit/glasses_cubit.dart';
+
 final sl = GetIt.instance;
 
 Future<void> initServiceLocator() async {
+  final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
+
   // Storage & Network Services
   sl.registerLazySingleton<SecureStorageService>(() => SecureStorageService());
   sl.registerLazySingleton<ApiClient>(() => ApiClient(storageService: sl()));
 
   // Data Sources
+  sl.registerLazySingleton<GlassesRemoteDataSource>(
+    () => GlassesRemoteDataSourceImpl(),
+  );
+  sl.registerLazySingleton<GlassesLocalDataSource>(
+    () => GlassesLocalDataSourceImpl(sharedPreferences: sl()),
+  );
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(apiClient: sl()),
   );
@@ -77,6 +110,9 @@ Future<void> initServiceLocator() async {
   );
   sl.registerLazySingleton<MemoriesRemoteDataSource>(
     () => MemoriesRemoteDataSourceImpl(apiClient: sl()),
+  );
+  sl.registerLazySingleton<AiHistorianRemoteDataSource>(
+    () => AiHistorianRemoteDataSourceImpl(apiClient: sl()),
   );
   sl.registerLazySingleton<AlbumsRemoteDataSource>(
     () => AlbumsRemoteDataSourceImpl(apiClient: sl()),
@@ -93,8 +129,17 @@ Future<void> initServiceLocator() async {
   sl.registerLazySingleton<SettingsRemoteDataSource>(
     () => SettingsRemoteDataSourceImpl(apiClient: sl()),
   );
+  sl.registerLazySingleton<LegacyRemoteDataSource>(
+    () => LegacyRemoteDataSourceImpl(apiClient: sl()),
+  );
+  sl.registerLazySingleton<StoreRemoteDataSource>(
+    () => StoreRemoteDataSourceImpl(apiClient: sl()),
+  );
 
   // Repositories
+  sl.registerLazySingleton<GlassesRepository>(
+    () => GlassesRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
+  );
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(remoteDataSource: sl(), storageService: sl()),
   );
@@ -103,6 +148,9 @@ Future<void> initServiceLocator() async {
   );
   sl.registerLazySingleton<MemoriesRepository>(
     () => MemoriesRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<AiHistorianRepository>(
+    () => AiHistorianRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton<AlbumsRepository>(
     () => AlbumsRepositoryImpl(remoteDataSource: sl()),
@@ -119,6 +167,12 @@ Future<void> initServiceLocator() async {
   sl.registerLazySingleton<SettingsRepository>(
     () => SettingsRepositoryImpl(remoteDataSource: sl()),
   );
+  sl.registerLazySingleton<LegacyRepository>(
+    () => LegacyRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<StoreRepository>(
+    () => StoreRepositoryImpl(remoteDataSource: sl()),
+  );
 
   // Use Cases
   sl.registerLazySingleton(() => SignInUseCase(sl()));
@@ -128,6 +182,7 @@ Future<void> initServiceLocator() async {
   sl.registerLazySingleton(() => ResetPasswordUseCase(sl()));
 
   // Cubits
+  sl.registerLazySingleton(() => GlassesCubit(repository: sl()));
   sl.registerLazySingleton(
     () => AuthCubit(
       signInUseCase: sl(),
@@ -142,10 +197,13 @@ Future<void> initServiceLocator() async {
   sl.registerFactory(() => FollowersCubit(discoverRepository: sl()));
   sl.registerFactory(() => MemoriesCubit(repository: sl()));
   sl.registerFactory(() => MemoryDetailCubit(repository: sl()));
+  sl.registerFactory(() => AiHistorianCubit(repository: sl()));
   sl.registerFactory(() => RecordCubit());
   sl.registerFactory(() => AlbumsCubit(repository: sl()));
   sl.registerFactory(() => FamilyCubit(repository: sl()));
   sl.registerFactory(() => DiscoverCubit(repository: sl()));
   sl.registerFactory(() => NotificationsCubit(repository: sl()));
   sl.registerFactory(() => SettingsCubit(repository: sl()));
+  sl.registerFactory(() => LegacyCubit(repository: sl()));
+  sl.registerFactory(() => StoreCubit(repository: sl()));
 }

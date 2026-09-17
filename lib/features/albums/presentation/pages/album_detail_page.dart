@@ -7,8 +7,8 @@ import '../../../../core/utils/media_url_formatter.dart';
 import '../../../memories/domain/entities/memory_entity.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
 import '../../../memories/presentation/pages/memory_detail_page.dart';
-import '../../../memories/presentation/widgets/create_memory_modal.dart';
 import '../../../memories/presentation/widgets/memory_card.dart';
+import '../../../memories/presentation/widgets/publish_wizard_modal.dart';
 import '../../domain/entities/album_entity.dart';
 import '../../domain/repositories/albums_repository.dart';
 
@@ -57,9 +57,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => BlocProvider.value(
-        value: sl<MemoriesCubit>(),
-        child: CreateMemoryModal(initialAlbumId: widget.albumId),
+      builder: (_) => BlocProvider(
+        create: (_) => sl<MemoriesCubit>(),
+        child: PublishWizardModal(initialAlbumId: widget.albumId),
       ),
     ).then((res) {
       if (res == true) {

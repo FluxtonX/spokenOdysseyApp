@@ -1,5 +1,5 @@
 import 'package:spokenodyssey/features/memories/domain/entities/memory_entity.dart';
-
+import '../../../../core/network/cache_manager.dart';
 import '../../domain/entities/family_member_entity.dart';
 import '../../domain/repositories/family_repository.dart';
 import '../datasources/family_remote_datasource.dart';
@@ -11,12 +11,36 @@ class FamilyRepositoryImpl implements FamilyRepository {
 
   @override
   Future<List<FamilyMemberEntity>> getFamilyMembers() async {
-    return await remoteDataSource.getFamilyMembers();
+    const key = 'family_members';
+    final cached = CacheManager().get<List<FamilyMemberEntity>>(
+      key,
+      ttl: const Duration(minutes: 5),
+    );
+    if (cached != null) return cached;
+
+    final members = await remoteDataSource.getFamilyMembers();
+    CacheManager().set(key, members);
+    return members;
   }
 
   @override
-  Future<List<MemoryEntity>> getFamilySharedMemories() async {
-    return await remoteDataSource.getFamilySharedMemories();
+  Future<List<MemoryEntity>> getFamilySharedMemories({
+    bool forceRefresh = false,
+  }) async {
+    const key = 'family_shared_memories';
+    if (!forceRefresh) {
+      final cached = CacheManager().get<List<MemoryEntity>>(
+        key,
+        ttl: const Duration(minutes: 3),
+      );
+      if (cached != null) return cached;
+    }
+
+    final memories = await remoteDataSource.getFamilySharedMemories(
+      forceRefresh: forceRefresh,
+    );
+    CacheManager().set(key, memories);
+    return memories;
   }
 
   @override
@@ -100,5 +124,25 @@ class FamilyRepositoryImpl implements FamilyRepository {
   @override
   Future<void> declineFamilyInvite(String invitationId) async {
     await remoteDataSource.declineFamilyInvite(invitationId);
+  }
+
+  @override
+  Future<String> validateInvitationToken(String token) async {
+    return await remoteDataSource.validateInvitationToken(token);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchTaggableUsers(String query) async {
+    return await remoteDataSource.searchTaggableUsers(query);
+  }
+
+  @override
+  Future<void> addDirectMember(String targetUserId, String relationship) async {
+    await remoteDataSource.addDirectMember(targetUserId, relationship);
+  }
+
+  @override
+  Future<void> reactToMemory(String memoryId, String reactionType) async {
+    await remoteDataSource.reactToMemory(memoryId, reactionType);
   }
 }

@@ -51,18 +51,19 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDBHsX-5YzkyQ9DBNJgpTfL8tZUdl4Q0C4',
-    appId: '1:884058304379:android:5ddba5860564786ece97de',
+    appId: '1:884058304379:android:5d20ae6b33e82716ce97de',
     messagingSenderId: '884058304379',
     projectId: 'spoken-odesey',
     storageBucket: 'spoken-odesey.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDBHsX-5YzkyQ9DBNJgpTfL8tZUdl4Q0C4',
-    appId: '1:884058304379:ios:19dea3751108f429ce97de',
+    apiKey: 'AIzaSyDcOOwB2Prrr34u6RqDpUUwMKz50eXZcJ0',
+    appId: '1:884058304379:ios:2f262781a5d51f75ce97de',
     messagingSenderId: '884058304379',
     projectId: 'spoken-odesey',
     storageBucket: 'spoken-odesey.firebasestorage.app',
-    iosBundleId: 'com.fluxtonx.spokenodyssey',
+    androidClientId: '884058304379-cl69k71p3i8dp7pnm40d0fgv27jvt9b5.apps.googleusercontent.com',
+    iosClientId: '884058304379-t5jeu8j0sjk4ptv43q5fbk7lid58pii0.apps.googleusercontent.com',
+    iosBundleId: 'com.spokenodyssey.app',
   );
 }

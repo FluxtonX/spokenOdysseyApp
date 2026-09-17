@@ -23,22 +23,34 @@ class FamilyInvitationEntity {
   final String id;
   final String? inviterName;
   final String? inviterEmail;
+  final String? inviterAvatar;
+  final String? receiverName;
+  final String? receiverAvatar;
+  final String? email;
   final String relationship;
   final String? invitationToken;
   final String? inviteUrl;
   final String? qrCodeUrl;
+  final String? method;
   final String status;
   final String? createdAt;
+  final String? acceptedAt;
 
   const FamilyInvitationEntity({
     required this.id,
     this.inviterName,
     this.inviterEmail,
+    this.inviterAvatar,
+    this.receiverName,
+    this.receiverAvatar,
+    this.email,
     required this.relationship,
     this.invitationToken,
     this.inviteUrl,
     this.qrCodeUrl,
+    this.method,
     this.status = 'pending',
     this.createdAt,
+    this.acceptedAt,
   });
 }

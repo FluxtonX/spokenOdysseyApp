@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../error/exceptions.dart';
 import '../storage/secure_storage_service.dart';
-import '../di/service_locator.dart';
 
 class ApiClient {
   final Dio dio;
@@ -42,12 +41,22 @@ class ApiClient {
           );
           debugPrint('   Payload: ${response?.data}');
 
+          // Only trigger sign-out on true authentication failures (401).
+          // 403 = business logic "forbidden" (e.g. QR invite not targeted at you)
+          // — it must NOT log the user out.
           if (response?.statusCode == 401 ||
-              response?.statusCode == 403 ||
               (response?.data is Map &&
-                  (response?.data['message']?.toString().toLowerCase().contains('jwt expired') == true ||
-                   response?.data['error']?.toString().toLowerCase().contains('jwt expired') == true))) {
-             onUnauthorized?.call();
+                  (response?.data['message']
+                              ?.toString()
+                              .toLowerCase()
+                              .contains('jwt expired') ==
+                          true ||
+                      response?.data['error']
+                              ?.toString()
+                              .toLowerCase()
+                              .contains('jwt expired') ==
+                          true))) {
+            onUnauthorized?.call();
           }
 
           String message = 'An unexpected server error occurred';

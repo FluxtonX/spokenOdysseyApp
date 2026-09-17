@@ -4,7 +4,7 @@ import '../entities/family_member_entity.dart';
 
 abstract class FamilyRepository {
   Future<List<FamilyMemberEntity>> getFamilyMembers();
-  Future<List<MemoryEntity>> getFamilySharedMemories();
+  Future<List<MemoryEntity>> getFamilySharedMemories({bool forceRefresh = false});
   Future<bool> isFamilyAdmin();
   Future<List<FamilyInvitationEntity>> getPendingApprovals();
   Future<void> approveInvitation(String invitationId);
@@ -27,4 +27,9 @@ abstract class FamilyRepository {
   Future<List<FamilyInvitationEntity>> getFamilyInvitations();
   Future<void> acceptFamilyInvite(String invitationId);
   Future<void> declineFamilyInvite(String invitationId);
+  /// Resolves a raw QR/link token to the DB invitation ID, then the cubit calls acceptFamilyInvite.
+  Future<String> validateInvitationToken(String token);
+  Future<List<Map<String, dynamic>>> searchTaggableUsers(String query);
+  Future<void> addDirectMember(String targetUserId, String relationship);
+  Future<void> reactToMemory(String memoryId, String reactionType);
 }
