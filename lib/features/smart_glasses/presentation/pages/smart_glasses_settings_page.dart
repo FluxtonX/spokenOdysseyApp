@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spokenodyssey/features/smart_glasses/presentation/widgets/smart_glasses_gallery_sheet.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/glasses_cubit.dart';
 import '../cubit/glasses_state.dart';
 import '../widgets/smart_glasses_permission_dialog.dart';
@@ -17,6 +19,9 @@ class SmartGlassesSettingsPage extends StatelessWidget {
     final content = BlocBuilder<GlassesCubit, GlassesState>(
       builder: (context, state) {
         final isConnected = state.status == GlassesConnectionStatus.connected;
+        final isBusy =
+            state.status == GlassesConnectionStatus.scanning ||
+            state.status == GlassesConnectionStatus.connecting;
         final device = state.connectedDevice;
 
         return Padding(
@@ -31,8 +36,8 @@ class SmartGlassesSettingsPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isConnected
-                        ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
-                        : [const Color(0xFF1F2937), const Color(0xFF111827)],
+                        ? [AppColors.primaryDark, AppColors.primary]
+                        : [AppColors.textPrimary, const Color(0xFF374151)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -69,7 +74,7 @@ class SmartGlassesSettingsPage extends StatelessWidget {
                               Text(
                                 isConnected
                                     ? (device?.name ?? 'Smart Glasses')
-                                    : 'No Glasses Connected',
+                                    : _statusTitle(state.status),
                                 style: GoogleFonts.outfit(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -91,7 +96,7 @@ class SmartGlassesSettingsPage extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    isConnected ? 'Connected' : 'Disconnected',
+                                    _statusLabel(state.status),
                                     style: GoogleFonts.outfit(
                                       color: Colors.white70,
                                       fontSize: 13,
@@ -157,31 +162,69 @@ class SmartGlassesSettingsPage extends StatelessWidget {
                         ),
                         label: Text(
                           isConnected
-                              ? 'Disconnect Glasses'
+                              ? 'Disconnect Smart Glasses'
+                              : isBusy
+                              ? _statusLabel(state.status)
                               : 'Scan & Pair Smart Glasses',
                           style: GoogleFonts.outfit(
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
                           ),
                         ),
-                        onPressed: () {
-                          if (isConnected) {
-                            context.read<GlassesCubit>().disconnectDevice();
-                          } else {
-                            SmartGlassesPermissionDialog.checkAndPrompt(
-                              context: context,
-                              onGranted: () {
-                                context.read<GlassesCubit>().startScan();
-                                SmartGlassesScanSheet.show(context);
+                        onPressed: isBusy
+                            ? null
+                            : () {
+                                if (isConnected) {
+                                  context
+                                      .read<GlassesCubit>()
+                                      .disconnectDevice();
+                                } else {
+                                  SmartGlassesPermissionDialog.checkAndPrompt(
+                                    context: context,
+                                    onGranted: () {
+                                      context.read<GlassesCubit>().startScan();
+                                      SmartGlassesScanSheet.show(context);
+                                    },
+                                  );
+                                }
                               },
-                            );
-                          }
-                        },
                       ),
                     ),
                   ],
                 ),
               ),
+
+              if (state.status == GlassesConnectionStatus.permissionRequired ||
+                  state.status == GlassesConnectionStatus.bluetoothOff ||
+                  state.errorMessage.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.warning.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, color: AppColors.warning),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          state.errorMessage.isNotEmpty
+                              ? state.errorMessage
+                              : _statusDescription(state.status),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 24),
               Text(
@@ -229,19 +272,11 @@ class SmartGlassesSettingsPage extends StatelessWidget {
                         onTap: () {
                           final wasRecording = state.isRecordingVideo;
                           context.read<GlassesCubit>().toggleVideoRecording();
-                          ScaffoldMessenger.of(context).clearSnackBars();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                wasRecording
-                                    ? '⏹️ Video Recording Stopped! Tap "Import & Play Videos" to sync.'
-                                    : '🔴 Video Recording Started on Glasses! Tap again when finished.',
-                              ),
-                              backgroundColor: wasRecording
-                                  ? const Color(0xFF4F46E5)
-                                  : Colors.redAccent,
-                              duration: const Duration(seconds: 3),
-                            ),
+                          AppFeedback.showSnackBar(
+                            context,
+                            wasRecording
+                                ? 'Video recording stopped. Sync and import to use it.'
+                                : 'Video recording started on Smart Glasses.',
                           );
                         },
                       ),
@@ -259,19 +294,11 @@ class SmartGlassesSettingsPage extends StatelessWidget {
                         onTap: () {
                           final wasRecording = state.isRecordingVoice;
                           context.read<GlassesCubit>().toggleVoiceRecording();
-                          ScaffoldMessenger.of(context).clearSnackBars();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                wasRecording
-                                    ? '⏹️ Voice Note Stopped!'
-                                    : '🎙️ Voice Note Recording Started on Glasses!',
-                              ),
-                              backgroundColor: wasRecording
-                                  ? const Color(0xFF4F46E5)
-                                  : Colors.redAccent,
-                              duration: const Duration(seconds: 3),
-                            ),
+                          AppFeedback.showSnackBar(
+                            context,
+                            wasRecording
+                                ? 'Voice recording stopped on Smart Glasses.'
+                                : 'Voice recording started on Smart Glasses.',
                           );
                         },
                       ),
@@ -458,12 +485,10 @@ class SmartGlassesSettingsPage extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF1F2937),
-              size: 20,
-            ),
+          leading: AppIconButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            label: 'Back',
+            color: AppColors.textPrimary,
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
@@ -493,33 +518,87 @@ class SmartGlassesSettingsPage extends StatelessWidget {
     Color? iconColor,
   }) {
     final activeColor = iconColor ?? const Color(0xFF4F46E5);
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Opacity(
-        opacity: enabled ? 1.0 : 0.4,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: activeColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.4,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: activeColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: activeColor, size: 24),
               ),
-              child: Icon(icon, color: activeColor, size: 24),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF374151),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF374151),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  String _statusTitle(GlassesConnectionStatus status) {
+    switch (status) {
+      case GlassesConnectionStatus.scanning:
+        return 'Finding Smart Glasses';
+      case GlassesConnectionStatus.connecting:
+        return 'Connecting Smart Glasses';
+      case GlassesConnectionStatus.permissionRequired:
+        return 'Permission Required';
+      case GlassesConnectionStatus.bluetoothOff:
+        return 'Bluetooth Is Off';
+      case GlassesConnectionStatus.error:
+        return 'Smart Glasses Unavailable';
+      case GlassesConnectionStatus.disconnected:
+        return 'No Smart Glasses Connected';
+      case GlassesConnectionStatus.connected:
+        return 'Smart Glasses';
+    }
+  }
+
+  String _statusLabel(GlassesConnectionStatus status) {
+    switch (status) {
+      case GlassesConnectionStatus.scanning:
+        return 'Scanning';
+      case GlassesConnectionStatus.connecting:
+        return 'Connecting';
+      case GlassesConnectionStatus.permissionRequired:
+        return 'Permission required';
+      case GlassesConnectionStatus.bluetoothOff:
+        return 'Bluetooth is off';
+      case GlassesConnectionStatus.error:
+        return 'Unavailable';
+      case GlassesConnectionStatus.disconnected:
+        return 'Disconnected';
+      case GlassesConnectionStatus.connected:
+        return 'Connected';
+    }
+  }
+
+  String _statusDescription(GlassesConnectionStatus status) {
+    switch (status) {
+      case GlassesConnectionStatus.permissionRequired:
+        return 'Allow Bluetooth and nearby-device access to find Smart Glasses.';
+      case GlassesConnectionStatus.bluetoothOff:
+        return 'Turn on Bluetooth to find and connect to Smart Glasses.';
+      default:
+        return 'Check the device and try again.';
+    }
   }
 }

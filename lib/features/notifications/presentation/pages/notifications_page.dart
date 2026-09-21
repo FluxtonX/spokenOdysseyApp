@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/media_url_formatter.dart';
 import '../../../family/domain/entities/family_member_entity.dart';
@@ -499,23 +500,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         style: GoogleFonts.outfit(color: AppColors.error),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      AppButton(
+                        label: 'Retry',
+                        expand: false,
                         onPressed: () {
                           context
                               .read<NotificationsCubit>()
                               .loadNotifications();
                           _loadPendingApprovals();
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Retry',
-                          style: GoogleFonts.outfit(color: Colors.white),
-                        ),
                       ),
                     ],
                   ),

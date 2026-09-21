@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -48,13 +49,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is ForgotPasswordSent) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password reset link sent! Check your email.'),
-                  backgroundColor: AppColors.primary,
-                ),
+              AppFeedback.showSnackBar(
+                context,
+                'Verification code sent. Check your email.',
               );
-              Navigator.pop(context);
+              Navigator.pushReplacementNamed(
+                context,
+                '/verify-otp',
+                arguments: state.email,
+              );
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -91,13 +94,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    TextFormField(
+                    AppTextField(
                       controller: _emailController,
+                      label: 'Email',
+                      hintText: 'Enter your email',
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'Enter your email',
-                      ),
+                      autofillHints: const [AutofillHints.username],
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Please enter your email';
@@ -109,18 +111,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       },
                     ),
                     const SizedBox(height: 32),
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Continue',
                       onPressed: isLoading ? null : _onContinuePressed,
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text('Continue'),
+                      isLoading: isLoading,
                     ),
                   ],
                 ),

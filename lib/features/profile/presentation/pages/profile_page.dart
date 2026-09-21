@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_constants.dart';
 import '../../../../core/utils/media_url_formatter.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
@@ -44,30 +46,25 @@ class _ProfilePageState extends State<ProfilePage>
 
             final profession = user.profession?.isNotEmpty == true
                 ? user.profession!
-                : 'Entrepreneur';
+                : 'Not provided';
             final location = user.location?.isNotEmpty == true
                 ? user.location!
-                : 'Portland, OR';
+                : 'Not provided';
             final birthDate = user.birthDate?.isNotEmpty == true
                 ? 'Born ${user.birthDate!}'
                 : (user.dateOfBirth?.isNotEmpty == true
                       ? 'Born ${user.dateOfBirth!}'
-                      : 'Born March 1985');
+                      : 'Birth date not provided');
             final bio = user.bio?.isNotEmpty == true
                 ? user.bio!
-                : 'Documenting my journey from small-town dreamer to business owner, mother, and lifelong learner.';
+                : 'Add a bio to help family members understand your story.';
             final expertiseList =
                 (user.expertise != null && user.expertise!.isNotEmpty)
                 ? user.expertise!
-                : const [
-                    'Entrepreneurship',
-                    'Parenting',
-                    'Wellness',
-                    'Writing',
-                  ];
+                : const <String>[];
             final lifeMotto = user.lifeMotto?.isNotEmpty == true
                 ? user.lifeMotto!
-                : 'Live intentionally, love deeply, leave a legacy of kindness.';
+                : 'Add a life motto to your profile.';
 
             return Stack(
               children: [
@@ -118,28 +115,37 @@ class _ProfilePageState extends State<ProfilePage>
                           Positioned(
                             top: MediaQuery.of(context).padding.top + 8,
                             left: 16,
-                            child: GestureDetector(
-                              onTap: () =>
-                                  _showLogoutConfirmationDialog(context),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.15,
+                            child: Semantics(
+                              button: true,
+                              label: 'Sign out',
+                              child: InkWell(
+                                onTap: () =>
+                                    _showLogoutConfirmationDialog(context),
+                                customBorder: const CircleBorder(),
+                                child: Container(
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 48,
+                                    height: 48,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
                                       ),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.logout_rounded,
-                                  color: Colors.redAccent,
-                                  size: 22,
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.logout_rounded,
+                                    color: Colors.redAccent,
+                                    size: 22,
+                                  ),
                                 ),
                               ),
                             ),
@@ -149,37 +155,48 @@ class _ProfilePageState extends State<ProfilePage>
                           Positioned(
                             top: MediaQuery.of(context).padding.top + 8,
                             right: 16,
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => BlocProvider.value(
-                                      value: context.read<ProfileCubit>(),
-                                      child: const SettingsPage(initialTab: 0),
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.15,
+                            child: Semantics(
+                              button: true,
+                              label: 'Open settings',
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BlocProvider.value(
+                                        value: context.read<ProfileCubit>(),
+                                        child: const SettingsPage(
+                                          initialTab: 0,
+                                        ),
                                       ),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
                                     ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.settings_rounded,
-                                  color: Color(0xFF5E4EE8),
-                                  size: 22,
+                                  );
+                                },
+                                customBorder: const CircleBorder(),
+                                child: Container(
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 48,
+                                    height: 48,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.settings_rounded,
+                                    color: Color(0xFF5E4EE8),
+                                    size: 22,
+                                  ),
                                 ),
                               ),
                             ),
@@ -228,7 +245,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
-                          user.name ?? 'Sarah Mitchell',
+                          user.name ?? 'Unnamed member',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.outfit(
                             fontSize: 24,
@@ -326,13 +343,19 @@ class _ProfilePageState extends State<ProfilePage>
                               ),
                             ),
                             const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: expertiseList
-                                  .map((exp) => _buildExpertiseChip(exp))
-                                  .toList(),
-                            ),
+                            if (expertiseList.isEmpty)
+                              Text(
+                                'Add areas of expertise in Settings.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              )
+                            else
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: expertiseList
+                                    .map((exp) => _buildExpertiseChip(exp))
+                                    .toList(),
+                              ),
                           ],
                         ),
                       ),
@@ -651,9 +674,31 @@ class _ProfilePageState extends State<ProfilePage>
             );
           } else if (state is ProfileError) {
             return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: AppColors.error,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      state.message,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    AppButton(
+                      label: 'Retry',
+                      expand: false,
+                      onPressed: () =>
+                          context.read<ProfileCubit>().loadProfile(),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -753,7 +798,7 @@ class _ProfilePageState extends State<ProfilePage>
       color: const Color(0xFFEDE9FE),
       child: Center(
         child: Text(
-          name?.isNotEmpty == true ? name![0].toUpperCase() : 'S',
+          name?.isNotEmpty == true ? name![0].toUpperCase() : '?',
           style: GoogleFonts.outfit(
             fontSize: 40,
             fontWeight: FontWeight.w800,

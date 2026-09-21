@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -38,50 +39,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     }
   }
 
-  void _showPasswordChangedToast(BuildContext context) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (context) => Positioned(
-        bottom: 80,
-        left: 24,
-        right: 24,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2E),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Password changed!',
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  void _handlePasswordResetSuccess(BuildContext context) {
+    AppFeedback.showSnackBar(
+      context,
+      'Password reset successful. Please sign in.',
     );
-
-    overlay.insert(entry);
-    Future.delayed(const Duration(seconds: 2), () {
-      entry.remove();
+    Future.delayed(const Duration(milliseconds: 1200), () {
       if (context.mounted) {
         Navigator.pushNamedAndRemoveUntil(
           context,
@@ -112,7 +75,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is PasswordResetSuccess) {
-              _showPasswordChangedToast(context);
+              _handlePasswordResetSuccess(context);
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -149,25 +112,25 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    TextFormField(
+                    AppTextField(
                       controller: _passwordController,
+                      label: 'Password',
+                      hintText: 'Enter new password',
                       obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter new password',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
+                      autofillHints: const [AutofillHints.newPassword],
+                      suffixIcon: AppIconButton(
+                        icon: _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        label: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                        color: AppColors.textSecondary,
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
                       validator: (value) {
                         if (value == null || value.length < 8) {
@@ -177,13 +140,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
                       controller: _confirmPasswordController,
+                      label: 'Confirm password',
+                      hintText: 'Confirm new password',
                       obscureText: _obscurePassword,
-                      decoration: const InputDecoration(
-                        labelText: 'Confirm password',
-                        hintText: 'Confirm new password',
-                      ),
                       validator: (value) {
                         if (value != _passwordController.text) {
                           return 'Passwords do not match';
@@ -192,18 +153,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       },
                     ),
                     const SizedBox(height: 32),
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Set password',
                       onPressed: isLoading ? null : _onResetPressed,
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text('Continue'),
+                      isLoading: isLoading,
                     ),
                   ],
                 ),

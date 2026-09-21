@@ -9,6 +9,7 @@ import 'package:spokenodyssey/features/memories/presentation/widgets/ai_historia
 import 'package:spokenodyssey/features/profile/presentation/pages/profile_page.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
 import '../../../discover/presentation/cubits/discover_cubit.dart';
 import '../../../discover/presentation/pages/discover_page.dart';
@@ -105,7 +106,7 @@ class _MainScreenState extends State<MainScreen> {
       case 0:
         return 'Spoken Odyssey';
       case 1:
-        return 'Discover Odysseys';
+        return 'Discover';
       case 2:
         return 'Voice Studio';
       case 3:
@@ -192,29 +193,24 @@ class _MainScreenState extends State<MainScreen> {
                               color: AppColors.primary,
                               fontWeight: FontWeight.w800,
                               fontSize: 22,
-                              letterSpacing: -0.3,
                             ),
                           ),
                         ),
                         actions: [
                           const SmartGlassesStatusBar(),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.auto_awesome_rounded,
-                              color: AppColors.primary,
-                            ),
-                            tooltip: 'AI Family Historian',
+                          AppIconButton(
+                            icon: Icons.auto_awesome_rounded,
+                            label: 'AI Family Historian',
+                            color: AppColors.primary,
                             onPressed: () => AiHistorianSheet.show(context),
                           ),
                           if (_currentIndex == 3)
                             Builder(
                               builder: (ctx) {
-                                return IconButton(
-                                  icon: const Icon(
-                                    Icons.person_add_alt_1_rounded,
-                                    color: AppColors.primary,
-                                  ),
-                                  tooltip: 'Invite Member',
+                                return AppIconButton(
+                                  icon: Icons.person_add_alt_1_rounded,
+                                  label: 'Invite family member',
+                                  color: AppColors.primary,
                                   onPressed: () {
                                     showModalBottomSheet(
                                       context: context,
@@ -248,11 +244,12 @@ class _MainScreenState extends State<MainScreen> {
                                   return Stack(
                                     alignment: Alignment.center,
                                     children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.notifications_none_rounded,
-                                          color: AppColors.textPrimary,
-                                        ),
+                                      AppIconButton(
+                                        icon: Icons.notifications_none_rounded,
+                                        label: unreadCount > 0
+                                            ? 'Notifications, $unreadCount unread'
+                                            : 'Notifications',
+                                        color: AppColors.textPrimary,
                                         onPressed: () {
                                           Navigator.push(
                                             context,

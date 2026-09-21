@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/media_url_formatter.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -194,22 +195,12 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              ElevatedButton(
+                              AppButton(
+                                label: 'Retry',
+                                expand: false,
                                 onPressed: () => context
                                     .read<FamilyCubit>()
                                     .loadFamilyCircle(),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Retry',
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white,
-                                  ),
-                                ),
                               ),
                             ],
                           ),
@@ -444,7 +435,8 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
             )
           else
             ...displayedMembers.map(
-              (member) => _buildMemberCard(context, member, state.isAdmin, state),
+              (member) =>
+                  _buildMemberCard(context, member, state.isAdmin, state),
             ),
 
           // Bottom CTAs
@@ -523,12 +515,13 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
     final joinedDate = _formatJoinDate(member.joinedAt);
 
     final memCount = state.sharedMemories.where((mem) {
-      final matchesId = member.user?.id != null &&
+      final matchesId =
+          member.user?.id != null &&
           (mem.author?.id == member.user!.id ||
               mem.author?.firebaseUid == member.user!.id);
-      final matchesEmail = member.user?.email != null &&
-          mem.author?.email.toLowerCase() ==
-              member.user!.email.toLowerCase();
+      final matchesEmail =
+          member.user?.email != null &&
+          mem.author?.email.toLowerCase() == member.user!.email.toLowerCase();
       return matchesId || matchesEmail;
     }).length;
 
@@ -971,13 +964,15 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
     final filteredMemories = state.sharedMemories.where((m) {
       // 1. Member filter
       if (_selectedMemberFilterId != 'ALL') {
-        final matchesId = m.author?.id == _selectedMemberFilterId ||
+        final matchesId =
+            m.author?.id == _selectedMemberFilterId ||
             m.author?.firebaseUid == _selectedMemberFilterId;
         final selectedMember = state.members.firstWhere(
           (mb) => mb.user?.id == _selectedMemberFilterId,
           orElse: () => state.members.first,
         );
-        final matchesEmail = selectedMember.user?.email != null &&
+        final matchesEmail =
+            selectedMember.user?.email != null &&
             m.author?.email.toLowerCase() ==
                 selectedMember.user!.email.toLowerCase();
         if (!matchesId && !matchesEmail) return false;
@@ -1159,7 +1154,8 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                       label: '$name (${m.relationship})',
                       isSelected: isSelected,
                       initial: name.isNotEmpty ? name[0].toUpperCase() : 'M',
-                      onTap: () => setState(() => _selectedMemberFilterId = uid),
+                      onTap: () =>
+                          setState(() => _selectedMemberFilterId = uid),
                     ),
                   );
                 }),
@@ -1269,22 +1265,26 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                     child: MemoryCard(
                       memory: m,
                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => MemoryDetailPage(memoryId: m.id),
-                          ),
-                        ).then((_) {
-                          if (context.mounted) {
-                            context
-                                .read<FamilyCubit>()
-                                .loadFamilyCircle(forceRefresh: true);
-                          }
-                        });
+                        Navigator.of(context)
+                            .push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    MemoryDetailPage(memoryId: m.id),
+                              ),
+                            )
+                            .then((_) {
+                              if (context.mounted) {
+                                context.read<FamilyCubit>().loadFamilyCircle(
+                                  forceRefresh: true,
+                                );
+                              }
+                            });
                       },
                       onReact: (type) {
-                        context
-                            .read<FamilyCubit>()
-                            .reactToSharedMemory(m.id, type);
+                        context.read<FamilyCubit>().reactToSharedMemory(
+                          m.id,
+                          type,
+                        );
                       },
                     ),
                   );

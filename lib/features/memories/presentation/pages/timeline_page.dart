@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../../core/utils/media_url_formatter.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
 import '../../../albums/presentation/pages/album_detail_page.dart';
@@ -74,22 +75,17 @@ class _TimelinePageState extends State<TimelinePage>
       child: Column(
         children: [
           const SizedBox(height: 12),
-          // Top Segmented Pill Toggle (Scrollable)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildTabButton(0, 'All Memories'),
-                  const SizedBox(width: 8),
-                  _buildTabButton(1, 'Albums'),
-                  const SizedBox(width: 8),
-                  _buildTabButton(2, 'Milestones'),
-                  const SizedBox(width: 8),
-                  _buildTabButton(3, 'Followers'),
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: AppSegmentedControl(
+              selectedIndex: _selectedTab,
+              labels: const [
+                'All Memories',
+                'Albums',
+                'Milestones',
+                'Followers',
+              ],
+              onChanged: (index) => setState(() => _selectedTab = index),
             ),
           ),
           const SizedBox(height: 12),
@@ -113,28 +109,6 @@ class _TimelinePageState extends State<TimelinePage>
       default:
         return _buildMemoriesTab();
     }
-  }
-
-  Widget _buildTabButton(int index, String label) {
-    final isSelected = _selectedTab == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedTab = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5E4EE8) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.outfit(
-            color: isSelected ? Colors.white : const Color(0xFF5E4EE8),
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildMilestonesTab() {
@@ -195,9 +169,7 @@ class _TimelinePageState extends State<TimelinePage>
                       title.contains('milestone');
                 }).toList();
 
-                final displayList = milestones.isNotEmpty
-                    ? milestones
-                    : state.memories;
+                final displayList = milestones;
 
                 return SliverMainAxisGroup(
                   slivers: [

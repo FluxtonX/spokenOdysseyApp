@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/glasses_cubit.dart';
 import '../cubit/glasses_state.dart';
 
@@ -92,8 +93,9 @@ class SmartGlassesScanSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close_rounded),
+              AppIconButton(
+                icon: Icons.close_rounded,
+                label: 'Close pairing',
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -186,21 +188,16 @@ class SmartGlassesScanSheet extends StatelessWidget {
                         color: const Color(0xFF9CA3AF),
                       ),
                     ),
-                    trailing: TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFF4F46E5),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+                    trailing: AppButton(
+                      expand: false,
+                      label: 'Connect',
+                      variant: AppButtonVariant.primary,
                       onPressed: () {
                         context.read<GlassesCubit>().connectDevice(
                           device.address,
                         );
                         Navigator.pop(context);
                       },
-                      child: const Text('Connect'),
                     ),
                   );
                 },

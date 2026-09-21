@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_constants.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -112,13 +113,12 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    TextFormField(
+                    AppTextField(
                       controller: _emailController,
+                      label: 'Email',
+                      hintText: 'Enter your email',
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'Enter your email',
-                      ),
+                      autofillHints: const [AutofillHints.username],
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Please enter your email';
@@ -130,25 +130,25 @@ class _SignUpPageState extends State<SignUpPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
                       controller: _passwordController,
+                      label: 'Password',
+                      hintText: 'Enter password',
                       obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter password',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
+                      autofillHints: const [AutofillHints.newPassword],
+                      suffixIcon: AppIconButton(
+                        icon: _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        label: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                        color: AppColors.textSecondary,
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
                       validator: (value) {
                         if (value == null || value.length < 6) {
@@ -158,13 +158,11 @@ class _SignUpPageState extends State<SignUpPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
                       controller: _confirmPasswordController,
+                      label: 'Confirm password',
+                      hintText: 'Confirm password',
                       obscureText: _obscurePassword,
-                      decoration: const InputDecoration(
-                        labelText: 'Confirm password',
-                        hintText: 'Confirm password',
-                      ),
                       validator: (value) {
                         if (value != _passwordController.text) {
                           return 'Passwords do not match';
@@ -173,49 +171,41 @@ class _SignUpPageState extends State<SignUpPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: Checkbox(
-                            value: _agreeToTerms,
-                            activeColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            onChanged: (val) {
-                              setState(() {
+                    Semantics(
+                      label: 'Agree to Terms of Use and Privacy Policy',
+                      checked: _agreeToTerms,
+                      child: InkWell(
+                        onTap: () => setState(() {
+                          _agreeToTerms = !_agreeToTerms;
+                        }),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: _agreeToTerms,
+                              onChanged: (val) => setState(() {
                                 _agreeToTerms = val ?? false;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'I have read and agree to our Terms of Use and Privacy Policy',
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
+                              }),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'I agree to the Terms of Use and Privacy Policy',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 28),
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Create account',
                       onPressed: isLoading ? null : _onSignUpPressed,
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text('Create account'),
+                      isLoading: isLoading,
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -228,18 +218,15 @@ class _SignUpPageState extends State<SignUpPage> {
                             fontSize: 14,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            minimumSize: const Size(48, 48),
+                          ),
+                          onPressed: () {
                             Navigator.pop(context);
                           },
-                          child: Text(
-                            'Sign in',
-                            style: GoogleFonts.outfit(
-                              color: AppColors.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: const Text('Sign in'),
                         ),
                       ],
                     ),

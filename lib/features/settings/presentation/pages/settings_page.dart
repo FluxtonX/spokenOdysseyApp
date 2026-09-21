@@ -1421,10 +1421,10 @@ class _SettingsPageState extends State<_SettingsViewState> {
                       ),
                     );
                     if (confirm == true) {
-                      if (!context.mounted) return;
-                      final success = await context
-                          .read<SettingsCubit>()
-                          .disableMfa();
+                      if (!mounted) return;
+                      final settingsCubit = context.read<SettingsCubit>();
+                      final success = await settingsCubit.disableMfa();
+                      if (!mounted) return;
                       if (success) {
                         setState(() => _mfaEnabled = false);
                         _showSnackbar('MFA Disabled');

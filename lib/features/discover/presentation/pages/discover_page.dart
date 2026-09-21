@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/media_url_formatter.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../memories/domain/entities/memory_entity.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
@@ -56,7 +58,7 @@ class _DiscoverPageState extends State<DiscoverPage>
             onRefresh: () async {
               await context.read<DiscoverCubit>().loadDiscovery();
             },
-            color: const Color(0xFF4A3AFF),
+            color: AppColors.primary,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
@@ -159,42 +161,10 @@ class _DiscoverPageState extends State<DiscoverPage>
                 const SizedBox(height: 14),
 
                 // ── 3. Tab Selector: Featured People vs Latest Stories ────────
-                Container(
-                  height: 48,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F0FD),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFE4E1FC),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildTabButton(
-                          label: 'Featured People',
-                          icon: Icons.people_alt_rounded,
-                          isSelected: _selectedTab == 0,
-                          onTap: () {
-                            setState(() => _selectedTab = 0);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: _buildTabButton(
-                          label: 'Latest Stories',
-                          icon: Icons.auto_stories_rounded,
-                          isSelected: _selectedTab == 1,
-                          onTap: () {
-                            setState(() => _selectedTab = 1);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                AppSegmentedControl(
+                  selectedIndex: _selectedTab,
+                  labels: const ['Featured People', 'Latest Stories'],
+                  onChanged: (index) => setState(() => _selectedTab = index),
                 ),
 
                 const SizedBox(height: 18),
@@ -214,69 +184,23 @@ class _DiscoverPageState extends State<DiscoverPage>
                       ? _buildFeaturedPeopleList(state.featuredPeople)
                       : _buildLatestStoriesList(state.memories)
                 else if (state is DiscoverError)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: Center(
-                      child: Text(
-                        state.message,
-                        style: GoogleFonts.outfit(color: Colors.red),
-                      ),
+                  SizedBox(
+                    height: 280,
+                    child: AsyncStateView(
+                      isLoading: false,
+                      errorMessage: state.message,
+                      isEmpty: false,
+                      emptyTitle: '',
+                      emptyMessage: '',
+                      onRetry: () =>
+                          context.read<DiscoverCubit>().loadDiscovery(),
+                      child: const SizedBox.shrink(),
                     ),
                   ),
               ],
             ),
           );
         },
-      ),
-    );
-  }
-
-  // ── Tab Pill Button ────────────────────────────────────────────────────────
-  Widget _buildTabButton({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF4A3AFF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF4A3AFF).withValues(alpha: 0.28),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : const Color(0xFF6B7280),
-            ),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 13.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF6B7280),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

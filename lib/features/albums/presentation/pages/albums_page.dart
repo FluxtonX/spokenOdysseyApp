@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/media_url_formatter.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubits/albums_cubit.dart';
 import '../widgets/create_album_modal.dart';
 import 'album_detail_page.dart';
@@ -92,7 +93,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      AppButton(
+                        label: 'Create album',
+                        expand: false,
                         onPressed: () {
                           showModalBottomSheet(
                             context: context,
@@ -109,13 +112,6 @@ class _AlbumsPageState extends State<AlbumsPage> {
                             ),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                        ),
-                        child: Text(
-                          'Create First Album',
-                          style: GoogleFonts.outfit(color: Colors.white),
-                        ),
                       ),
                     ],
                   ),
@@ -209,11 +205,14 @@ class _AlbumsPageState extends State<AlbumsPage> {
               },
             );
           } else if (state is AlbumsError) {
-            return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
-              ),
+            return AsyncStateView(
+              isLoading: false,
+              errorMessage: state.message,
+              isEmpty: false,
+              emptyTitle: '',
+              emptyMessage: '',
+              onRetry: () => context.read<AlbumsCubit>().loadAlbums(),
+              child: const SizedBox.shrink(),
             );
           }
           return const SizedBox();

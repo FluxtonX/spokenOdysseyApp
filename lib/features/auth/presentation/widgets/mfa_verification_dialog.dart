@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -25,11 +27,7 @@ class _MfaVerificationDialogState extends State<MfaVerificationDialog> {
   @override
   void initState() {
     super.initState();
-    activeTab = widget.availableMethods.contains('totp')
-        ? 'totp'
-        : widget.availableMethods.contains('passkey')
-        ? 'passkey'
-        : 'recovery';
+    activeTab = widget.availableMethods.contains('totp') ? 'totp' : 'recovery';
   }
 
   @override
@@ -85,12 +83,14 @@ class _MfaVerificationDialogState extends State<MfaVerificationDialog> {
               children: [
                 Align(
                   alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
+                  child: AppIconButton(
+                    icon: Icons.close,
+                    label: 'Close verification',
+                    color: AppColors.textSecondary,
                     onPressed: () => Navigator.of(context).pop(false),
                   ),
                 ),
-                const Icon(Icons.security, size: 48, color: Color(0xFF4A3AFF)),
+                const Icon(Icons.security, size: 48, color: AppColors.primary),
                 const SizedBox(height: 16),
                 const Text(
                   'Two-Factor Authentication',
@@ -113,8 +113,6 @@ class _MfaVerificationDialogState extends State<MfaVerificationDialog> {
                   children: [
                     if (widget.availableMethods.contains('totp'))
                       _buildTab('TOTP', 'totp'),
-                    if (widget.availableMethods.contains('passkey'))
-                      _buildTab('Passkey', 'passkey'),
                     _buildTab('Recovery', 'recovery'),
                   ],
                 ),
@@ -137,26 +135,32 @@ class _MfaVerificationDialogState extends State<MfaVerificationDialog> {
   Widget _buildTab(String label, String value) {
     final isActive = activeTab == value;
     return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            activeTab = value;
-          });
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF4A3AFF) : Colors.grey[200],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: isActive ? Colors.white : Colors.black54,
+      child: Semantics(
+        button: true,
+        selected: isActive,
+        label: '$label verification method',
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              activeTab = value;
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.primary : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isActive ? AppColors.textWhite : AppColors.textSecondary,
+              ),
             ),
           ),
         ),
@@ -199,7 +203,7 @@ class _MfaVerificationDialogState extends State<MfaVerificationDialog> {
           child: ElevatedButton(
             onPressed: isLoading ? null : _verifyTotp,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A3AFF),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -241,7 +245,7 @@ class _MfaVerificationDialogState extends State<MfaVerificationDialog> {
           child: ElevatedButton(
             onPressed: isLoading ? null : () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A3AFF),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -293,7 +297,7 @@ class _MfaVerificationDialogState extends State<MfaVerificationDialog> {
           child: ElevatedButton(
             onPressed: isLoading ? null : _verifyRecovery,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A3AFF),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

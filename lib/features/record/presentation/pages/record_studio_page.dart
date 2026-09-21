@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
 import '../../../memories/presentation/widgets/publish_wizard_modal.dart';
 import '../cubit/record_cubit.dart';
@@ -37,11 +38,10 @@ class _RecordStudioView extends StatelessWidget {
         child: BlocConsumer<RecordCubit, RecordState>(
           listener: (context, state) {
             if (state.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage!),
-                  backgroundColor: Colors.red,
-                ),
+              AppFeedback.showSnackBar(
+                context,
+                state.errorMessage!,
+                isError: true,
               );
             }
           },
@@ -101,30 +101,38 @@ class _RecordStudioView extends StatelessWidget {
                   Column(
                     children: [
                       if (state.status == RecordStatus.idle) ...[
-                        GestureDetector(
-                          onTap: () {
-                            context.read<RecordCubit>().startRecording();
-                          },
-                          child: Container(
-                            height: 110,
-                            width: 110,
-                            decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.4,
-                                  ),
-                                  blurRadius: 24,
-                                  spreadRadius: 6,
+                        Semantics(
+                          button: true,
+                          label: 'Start recording',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: () {
+                                context.read<RecordCubit>().startRecording();
+                              },
+                              child: Container(
+                                height: 110,
+                                width: 110,
+                                decoration: BoxDecoration(
+                                  gradient: AppColors.primaryGradient,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      blurRadius: 24,
+                                      spreadRadius: 6,
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.mic_rounded,
-                              size: 52,
-                              color: Colors.white,
+                                child: const Icon(
+                                  Icons.mic_rounded,
+                                  size: 52,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -143,6 +151,9 @@ class _RecordStudioView extends StatelessWidget {
                           children: [
                             // Pause / Resume
                             IconButton(
+                              tooltip: isPaused
+                                  ? 'Resume recording'
+                                  : 'Pause recording',
                               iconSize: 48,
                               icon: Icon(
                                 isPaused
@@ -187,6 +198,7 @@ class _RecordStudioView extends StatelessWidget {
 
                             // Stop & Finish
                             IconButton(
+                              tooltip: 'Stop recording and continue',
                               iconSize: 48,
                               icon: const Icon(
                                 Icons.stop_rounded,
@@ -224,14 +236,9 @@ class _RecordStudioView extends StatelessWidget {
                           children: [
                             TextButton(
                               onPressed: () {
-                                context.read<RecordCubit>().reset();
+                                _confirmReset(context);
                               },
-                              child: Text(
-                                'Reset Recording',
-                                style: GoogleFonts.outfit(
-                                  color: Colors.redAccent,
-                                ),
-                              ),
+                              child: const Text('Reset recording'),
                             ),
                           ],
                         ),
@@ -245,5 +252,31 @@ class _RecordStudioView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmReset(BuildContext context) async {
+    final shouldReset = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Discard this recording?'),
+        content: const Text(
+          'The current recording will be removed and cannot be recovered.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep recording'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Discard recording'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldReset == true && context.mounted) {
+      context.read<RecordCubit>().reset();
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubits/memories_cubit.dart';
 
 class PublishWizardModal extends StatefulWidget {
@@ -24,7 +25,7 @@ class PublishWizardModal extends StatefulWidget {
 class _PublishWizardModalState extends State<PublishWizardModal> {
   int _currentStep = 0;
   final _formKey = GlobalKey<FormState>();
-  
+
   // Form values
   String _memoryType = 'voice';
   final _titleController = TextEditingController();
@@ -32,13 +33,20 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
   final _tagsController = TextEditingController();
   late String _privacy;
   String _mood = 'Reflective';
-  
+
   final List<String> _mediaPaths = [];
   String? _selectedAlbumId;
   bool _isPublishing = false;
 
   final List<String> _moods = [
-    'Happy', 'Peaceful', 'Grateful', 'Nostalgic', 'Reflective', 'Proud', 'Sad', 'Excited'
+    'Happy',
+    'Peaceful',
+    'Grateful',
+    'Nostalgic',
+    'Reflective',
+    'Proud',
+    'Sad',
+    'Excited',
   ];
 
   @override
@@ -76,7 +84,6 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
         .toList();
 
     final nav = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final cubit = context.read<MemoriesCubit>();
 
     final success = await cubit.createMemory(
@@ -94,21 +101,43 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
       setState(() => _isPublishing = false);
       if (success) {
         nav.pop(true);
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Memory successfully published!')),
-        );
+        AppFeedback.showSnackBar(context, 'Memory published.');
       } else {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Failed to publish memory.')),
+        AppFeedback.showSnackBar(
+          context,
+          'Unable to publish this memory. Check your connection and try again.',
+          isError: true,
         );
       }
     }
   }
 
+  bool _canContinueFromCapture() {
+    if (_memoryType == 'voice' && _mediaPaths.isEmpty) {
+      AppFeedback.showSnackBar(
+        context,
+        'Record a memory in Voice Studio before publishing.',
+        isError: true,
+      );
+      return false;
+    }
+    if (_memoryType == 'visual' && _mediaPaths.isEmpty) {
+      AppFeedback.showSnackBar(
+        context,
+        'Add a photo or video before continuing.',
+        isError: true,
+      );
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       padding: EdgeInsets.only(
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -141,6 +170,7 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
               type: StepperType.horizontal,
               currentStep: _currentStep,
               onStepContinue: () {
+                if (_currentStep == 1 && !_canContinueFromCapture()) return;
                 if (_currentStep == 2) {
                   _submit();
                 } else {
@@ -156,13 +186,17 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
                 Step(
                   title: const Text('Type'),
                   isActive: _currentStep >= 0,
-                  state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                  state: _currentStep > 0
+                      ? StepState.complete
+                      : StepState.indexed,
                   content: _buildTypeSelection(),
                 ),
                 Step(
                   title: const Text('Capture'),
                   isActive: _currentStep >= 1,
-                  state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                  state: _currentStep > 1
+                      ? StepState.complete
+                      : StepState.indexed,
                   content: _buildCaptureContent(),
                 ),
                 Step(
@@ -213,7 +247,9 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
         child: Row(
           children: [
             Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
               color: isSelected ? AppColors.primary : Colors.grey,
             ),
             const SizedBox(width: 16),
@@ -236,23 +272,25 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
     return Column(
       children: [
         if (_memoryType == 'voice')
-          const Text('Voice recording flow will appear here...'),
+          const Text(
+            'Voice memories are recorded in Voice Studio. Close this sheet, record your memory, and return here to publish it.',
+          ),
         if (_memoryType == 'written')
-          TextField(
+          AppTextField(
             controller: _descriptionController,
+            label: 'Memory text',
+            hintText: 'Start writing your memory...',
             maxLines: 5,
-            decoration: InputDecoration(
-              hintText: 'Start writing your memory...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
           ),
         if (_memoryType == 'visual')
           Column(
             children: [
-              ElevatedButton.icon(
+              AppButton(
+                expand: false,
+                variant: AppButtonVariant.secondary,
+                icon: Icons.add_photo_alternate,
+                label: 'Add photo or video',
                 onPressed: _pickImage,
-                icon: const Icon(Icons.add_photo_alternate),
-                label: const Text('Add Photo/Video'),
               ),
               const SizedBox(height: 10),
               if (_mediaPaths.isNotEmpty)
@@ -271,16 +309,20 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextFormField(
+          AppTextField(
             controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Title *'),
-            validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+            label: 'Title',
+            hintText: 'Give this memory a title',
+            validator: (val) =>
+                (val == null || val.isEmpty) ? 'Required' : null,
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
             initialValue: _mood,
             decoration: const InputDecoration(labelText: 'Mood'),
-            items: _moods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+            items: _moods
+                .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                .toList(),
             onChanged: (val) {
               if (val != null) setState(() => _mood = val);
             },
@@ -299,15 +341,16 @@ class _PublishWizardModalState extends State<PublishWizardModal> {
             },
           ),
           const SizedBox(height: 10),
-          TextFormField(
+          AppTextField(
             controller: _tagsController,
-            decoration: const InputDecoration(labelText: 'Tags (comma separated)'),
+            label: 'Tags',
+            hintText: 'Separate tags with commas',
           ),
           if (_isPublishing)
             const Padding(
               padding: EdgeInsets.all(16.0),
               child: Center(child: CircularProgressIndicator()),
-            )
+            ),
         ],
       ),
     );

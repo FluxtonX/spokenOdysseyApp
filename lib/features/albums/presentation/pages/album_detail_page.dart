@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/media_url_formatter.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../memories/domain/entities/memory_entity.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
 import '../../../memories/presentation/pages/memory_detail_page.dart';
@@ -86,9 +87,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.primary),
-            tooltip: 'Add Memory to Album',
+          AppIconButton(
+            icon: Icons.add_rounded,
+            label: 'Add memory to album',
+            color: AppColors.primary,
             onPressed: _openCreateMemoryForAlbum,
           ),
         ],
@@ -96,8 +98,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+          ? AsyncStateView(
+              isLoading: false,
+              errorMessage: _error,
+              isEmpty: false,
+              emptyTitle: '',
+              emptyMessage: '',
+              onRetry: _loadAlbum,
+              child: const SizedBox.shrink(),
             )
           : SingleChildScrollView(
               child: Column(
@@ -177,25 +185,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-                                  ElevatedButton.icon(
+                                  AppButton(
+                                    expand: false,
+                                    icon: Icons.add_rounded,
+                                    label: 'Add memory',
                                     onPressed: _openCreateMemoryForAlbum,
-                                    icon: const Icon(
-                                      Icons.add_rounded,
-                                      color: Colors.white,
-                                    ),
-                                    label: Text(
-                                      'Add First Memory',
-                                      style: GoogleFonts.outfit(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
                                   ),
                                 ],
                               ),

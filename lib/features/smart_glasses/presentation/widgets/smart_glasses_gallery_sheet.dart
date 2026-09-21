@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../memories/presentation/widgets/video_player_widget.dart';
 import '../cubit/glasses_cubit.dart';
 import '../cubit/glasses_state.dart';
@@ -90,8 +91,9 @@ class SmartGlassesGallerySheet extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close_rounded),
+              AppIconButton(
+                icon: Icons.close_rounded,
+                label: 'Close Smart Glasses gallery',
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -122,7 +124,7 @@ class SmartGlassesGallerySheet extends StatelessWidget {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFF4F46E5),
+                              color: AppColors.primary,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -130,7 +132,7 @@ class SmartGlassesGallerySheet extends StatelessWidget {
                             child: Text(
                               state.importStatusText.isNotEmpty
                                   ? state.importStatusText
-                                  : 'Downloading media from glasses...',
+                                  : 'Downloading media from Smart Glasses...',
                               style: GoogleFonts.outfit(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -151,31 +153,15 @@ class SmartGlassesGallerySheet extends StatelessWidget {
           // Import Action Button
           BlocBuilder<GlassesCubit, GlassesState>(
             builder: (context, state) {
-              return SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  icon: const Icon(Icons.sync_rounded, size: 20),
-                  label: Text(
-                    state.isImporting
-                        ? 'Syncing...'
-                        : 'Sync & Import New Media',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  onPressed: state.isImporting
-                      ? null
-                      : () => context.read<GlassesCubit>().importAlbum(),
-                ),
+              return AppButton(
+                icon: Icons.sync_rounded,
+                label: state.isImporting
+                    ? 'Syncing...'
+                    : 'Sync and import new media',
+                isLoading: state.isImporting,
+                onPressed: state.isImporting
+                    ? null
+                    : () => context.read<GlassesCubit>().importAlbum(),
               );
             },
           ),

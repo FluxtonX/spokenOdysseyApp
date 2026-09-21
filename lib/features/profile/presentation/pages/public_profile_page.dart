@@ -36,19 +36,9 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
   void initState() {
     super.initState();
     _isFollowing = widget.person.isFollowing;
-    _followersCount = widget.person.followersCount > 0
-        ? widget.person.followersCount
-        : (_isGraceHopper ? 45200 : 0);
+    _followersCount = widget.person.followersCount;
 
     _loadUserContent();
-  }
-
-  bool get _isGraceHopper {
-    final name = widget.person.name?.toLowerCase() ?? '';
-    final id = widget.person.id.toLowerCase();
-    return name.contains('grace') ||
-        name.contains('hopper') ||
-        id.contains('grace-hopper');
   }
 
   Future<void> _loadUserContent() async {
@@ -129,21 +119,22 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
         : 'User';
     final profession = widget.person.profession?.isNotEmpty == true
         ? widget.person.profession!
-        : (_isGraceHopper
-            ? 'Computer Scientist & Naval Officer'
-            : 'Storyteller');
+        : 'Profession not provided';
     final avatar = MediaUrlFormatter.format(widget.person.avatarUrl);
     final cover = MediaUrlFormatter.format(widget.person.coverUrl);
 
     final storiesCount = _realMemories.isNotEmpty
         ? _realMemories.length
-        : (_isGraceHopper
-            ? 2
-            : (widget.person.memoriesCount > 0
-                ? widget.person.memoriesCount
-                : 0));
+        : widget.person.memoriesCount;
 
-    final milestonesCount = _isGraceHopper ? 2 : 0;
+    final milestonesCount = _realMemories.where((memory) {
+      final tags = memory.tags.map((tag) => tag.toLowerCase()).toList();
+      return tags.contains('milestone') ||
+          tags.contains('career & growth') ||
+          tags.contains('turning point') ||
+          tags.contains('proud') ||
+          memory.title.toLowerCase().contains('milestone');
+    }).length;
     final followersFormatted = NumberFormat.compact().format(_followersCount);
 
     return Scaffold(
@@ -400,11 +391,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
 
     return ElevatedButton.icon(
       onPressed: _handleFollowToggle,
-      icon: const Icon(
-        Icons.person_add_rounded,
-        size: 15,
-        color: Colors.white,
-      ),
+      icon: const Icon(Icons.person_add_rounded, size: 15, color: Colors.white),
       label: Text(
         'Follow',
         style: GoogleFonts.outfit(
@@ -418,9 +405,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
         elevation: 0,
         minimumSize: const Size(96, 36),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -767,7 +752,9 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF4A3AFF).withValues(alpha: 0.15),
+                          color: const Color(
+                            0xFF4A3AFF,
+                          ).withValues(alpha: 0.15),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

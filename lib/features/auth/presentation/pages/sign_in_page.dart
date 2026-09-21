@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_constants.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../widgets/mfa_verification_dialog.dart';
@@ -116,13 +117,12 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                     const SizedBox(height: 32),
                     // Email Field
-                    TextFormField(
+                    AppTextField(
                       controller: _emailController,
+                      label: 'Email',
+                      hintText: 'Enter your email',
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'Enter your email',
-                      ),
+                      autofillHints: const [AutofillHints.username],
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Please enter your email';
@@ -135,25 +135,25 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                     const SizedBox(height: 16),
                     // Password Field
-                    TextFormField(
+                    AppTextField(
                       controller: _passwordController,
+                      label: 'Password',
+                      hintText: 'Enter your password',
                       obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter your password',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
+                      autofillHints: const [AutofillHints.password],
+                      suffixIcon: AppIconButton(
+                        icon: _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        label: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                        color: AppColors.textSecondary,
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -166,34 +166,24 @@ class _SignInPageState extends State<SignInPage> {
                     // Forgot password link
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: GestureDetector(
-                        onTap: () {
+                      child: TextButton(
+                        onPressed: () {
                           Navigator.pushNamed(context, '/forgot-password');
                         },
-                        child: Text(
-                          'Forgot your password?',
-                          style: GoogleFonts.outfit(
-                            color: AppColors.primary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(48, 48),
+                          alignment: Alignment.centerLeft,
                         ),
+                        child: const Text('Forgot your password?'),
                       ),
                     ),
                     const SizedBox(height: 28),
                     // Sign In Button
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Sign in',
                       onPressed: isLoading ? null : _onSignInPressed,
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text('Sign in'),
+                      isLoading: isLoading,
                     ),
                     const SizedBox(height: 20),
                     // Create account redirect
@@ -201,24 +191,21 @@ class _SignInPageState extends State<SignInPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Not account? ',
+                          'No account? ',
                           style: GoogleFonts.outfit(
                             color: AppColors.textSecondary,
                             fontSize: 14,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            minimumSize: const Size(48, 48),
+                          ),
+                          onPressed: () {
                             Navigator.pushNamed(context, '/sign-up');
                           },
-                          child: Text(
-                            'Create Account',
-                            style: GoogleFonts.outfit(
-                              color: AppColors.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: const Text('Create account'),
                         ),
                       ],
                     ),

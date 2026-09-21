@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -138,43 +139,50 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
                   ),
                   const SizedBox(height: 36),
                   // 6 digit PIN row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(
-                      6,
-                      (index) => SizedBox(
-                        width: 48,
-                        height: 54,
-                        child: TextFormField(
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          style: GoogleFonts.outfit(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                          ),
-                          decoration: InputDecoration(
-                            counterText: '',
-                            contentPadding: EdgeInsets.zero,
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: AppColors.borderLight,
-                                width: 1.2,
+                  Semantics(
+                    label: 'Six-digit verification code',
+                    textField: true,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(
+                        6,
+                        (index) => SizedBox(
+                          width: 48,
+                          height: 54,
+                          child: TextFormField(
+                            controller: _controllers[index],
+                            focusNode: _focusNodes[index],
+                            keyboardType: TextInputType.number,
+                            autofillHints: index == 0
+                                ? const [AutofillHints.oneTimeCode]
+                                : null,
+                            textAlign: TextAlign.center,
+                            maxLength: 1,
+                            style: GoogleFonts.outfit(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                            decoration: InputDecoration(
+                              counterText: '',
+                              contentPadding: EdgeInsets.zero,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: AppColors.borderLight,
+                                  width: 1.2,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primary,
+                                  width: 1.8,
+                                ),
                               ),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: AppColors.primary,
-                                width: 1.8,
-                              ),
-                            ),
+                            onChanged: (val) => _onOtpChanged(index, val),
                           ),
-                          onChanged: (val) => _onOtpChanged(index, val),
                         ),
                       ),
                     ),
@@ -197,37 +205,28 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
                                 color: AppColors.textLight,
                               ),
                             )
-                          : GestureDetector(
-                              onTap: () {
+                          : TextButton(
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                minimumSize: const Size(48, 48),
+                              ),
+                              onPressed: () {
                                 _startTimer();
                                 context.read<AuthCubit>().forgotPassword(
                                   widget.email,
                                 );
                               },
-                              child: Text(
-                                'Resend Code',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
-                              ),
+                              child: const Text('Resend code'),
                             ),
                     ],
                   ),
                   const Spacer(),
-                  ElevatedButton(
+                  AppButton(
+                    label: 'Verify code',
                     onPressed: isLoading ? null : _verifyCode,
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('Verify & Continue'),
+                    isLoading: isLoading,
                   ),
                   const SizedBox(height: 16),
                 ],
