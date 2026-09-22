@@ -1,4 +1,5 @@
 import 'package:spokenodyssey/features/memories/data/models/memory_model.dart';
+import '../../domain/entities/family_prompt_entity.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
@@ -33,6 +34,17 @@ abstract class FamilyRemoteDataSource {
   Future<List<Map<String, dynamic>>> searchTaggableUsers(String query);
   Future<void> addDirectMember(String targetUserId, String relationship);
   Future<void> reactToMemory(String memoryId, String reactionType);
+  Future<String?> getCurrentFamilyCircleId();
+  Future<List<FamilyPromptEntity>> getFamilyPrompts(String circleId);
+  Future<FamilyPromptEntity> createFamilyPrompt(
+    String circleId,
+    String question,
+    String category,
+  );
+  Future<FamilyPromptResponse> respondToFamilyPrompt(
+    String promptId,
+    String text,
+  );
 }
 
 class FamilyRemoteDataSourceImpl implements FamilyRemoteDataSource {
@@ -348,5 +360,61 @@ class FamilyRemoteDataSourceImpl implements FamilyRemoteDataSource {
       ApiEndpoints.memoryReact(memoryId),
       data: {'type': reactionType, 'reactionType': reactionType},
     );
+  }
+
+  @override
+  Future<String?> getCurrentFamilyCircleId() async {
+    try {
+      final response = await apiClient.get(ApiEndpoints.familyCircle);
+      final data = response.data['data'] ?? response.data;
+      if (data is Map<String, dynamic>) {
+        return data['id']?.toString();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  @override
+  Future<List<FamilyPromptEntity>> getFamilyPrompts(String circleId) async {
+    try {
+      final response = await apiClient.get(ApiEndpoints.familyPrompts(circleId));
+      final list = _extractList(response.data);
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map((json) => FamilyPromptEntity.fromJson(json))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<FamilyPromptEntity> createFamilyPrompt(
+    String circleId,
+    String question,
+    String category,
+  ) async {
+    final response = await apiClient.post(
+      ApiEndpoints.familyPrompts(circleId),
+      data: {
+        'question': question,
+        'category': category,
+      },
+    );
+    final data = response.data['data'] ?? response.data;
+    return FamilyPromptEntity.fromJson(data as Map<String, dynamic>);
+  }
+
+  @override
+  Future<FamilyPromptResponse> respondToFamilyPrompt(
+    String promptId,
+    String text,
+  ) async {
+    final response = await apiClient.post(
+      ApiEndpoints.respondFamilyPrompt(promptId),
+      data: {'text': text},
+    );
+    final data = response.data['data'] ?? response.data;
+    return FamilyPromptResponse.fromJson(data as Map<String, dynamic>);
   }
 }

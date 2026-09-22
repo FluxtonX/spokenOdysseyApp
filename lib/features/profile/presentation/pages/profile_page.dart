@@ -9,10 +9,12 @@ import '../../../albums/presentation/cubits/albums_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
+import '../../../settings/presentation/pages/insights_page.dart';
 import '../cubits/followers_cubit.dart';
 import '../cubits/followers_state.dart';
 import '../cubits/profile_cubit.dart';
 import '../widgets/share_profile_modal.dart';
+import 'followers_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -144,6 +146,52 @@ class _ProfilePageState extends State<ProfilePage>
                                   child: const Icon(
                                     Icons.logout_rounded,
                                     color: Colors.redAccent,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Insights Button on Top-Right of Cover
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            right: 72,
+                            child: Semantics(
+                              button: true,
+                              label: 'Open archive insights',
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const InsightsPage(),
+                                    ),
+                                  );
+                                },
+                                customBorder: const CircleBorder(),
+                                child: Container(
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 48,
+                                    height: 48,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_awesome_rounded,
+                                    color: Color(0xFF5E4EE8),
                                     size: 22,
                                   ),
                                 ),
@@ -532,6 +580,17 @@ class _ProfilePageState extends State<ProfilePage>
                                           return _buildStatCard(
                                             value: count,
                                             title: 'Followers',
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      const FollowersPage(
+                                                        initialTabIndex: 0,
+                                                      ),
+                                                ),
+                                              );
+                                            },
                                           );
                                         },
                                       ),
@@ -542,7 +601,91 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
 
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 16),
+
+                      // AI Archive Insights Banner
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const InsightsPage(),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF4A3AFF), Color(0xFF6E62FF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF4A3AFF,
+                                  ).withValues(alpha: 0.25),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_awesome_rounded,
+                                    color: Colors.amberAccent,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Archive Insights & Analytics',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'View legacy score, emotional landscape & themes',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
 
                       // Quote / Life Motto Card
                       Padding(
@@ -758,37 +901,58 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   // Stat Card (2x2 Grid)
-  Widget _buildStatCard({required String value, required String title}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FE),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF6366F1).withValues(alpha: 0.35),
-          width: 1.2,
+  Widget _buildStatCard({
+    required String value,
+    required String title,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEDE9FE),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+            width: 1.2,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF1E1E2D),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: GoogleFonts.outfit(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF1E1E2D),
+              ),
             ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF4B5563),
+            const SizedBox(height: 3),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF4B5563),
+                  ),
+                ),
+                if (onTap != null) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 10,
+                    color: Color(0xFF6366F1),
+                  ),
+                ],
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

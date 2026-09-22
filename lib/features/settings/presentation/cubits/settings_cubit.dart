@@ -123,6 +123,14 @@ class SettingsCubit extends Cubit<SettingsState> {
     }
   }
 
+  Future<Map<String, dynamic>> getInsightsSummary() async {
+    try {
+      return await repository.getInsightsSummary();
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<Map<String, dynamic>?> setupMfa() async {
     try {
       return await repository.setupMfa();

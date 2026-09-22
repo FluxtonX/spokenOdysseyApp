@@ -10,4 +10,8 @@ abstract class LegacyRepository {
     required String reason,
   });
   Future<List<dynamic>> getVaultMemories();
+  Future<List<dynamic>> getPendingRequests();
+  Future<List<dynamic>> getFamilyVaults();
+  Future<void> approveRelease(String requestId);
+  Future<void> rejectRelease(String requestId, {String? reason});
 }

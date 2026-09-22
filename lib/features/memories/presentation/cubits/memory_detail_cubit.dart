@@ -83,4 +83,19 @@ class MemoryDetailCubit extends Cubit<MemoryDetailState> {
       }
     }
   }
+
+  Future<void> reactToComment(String memoryId, String commentId, String reactionType) async {
+    try {
+      await repository.reactToComment(memoryId, commentId, reactionType);
+      final comments = await repository.getComments(memoryId);
+      if (state is MemoryDetailLoaded) {
+        final currentMemory = (state as MemoryDetailLoaded).memory;
+        emit(MemoryDetailLoaded(memory: currentMemory, comments: comments));
+      }
+    } catch (e) {
+      if (state is! MemoryDetailLoaded) {
+        emit(MemoryDetailError(ErrorParser.extractMessage(e)));
+      }
+    }
+  }
 }

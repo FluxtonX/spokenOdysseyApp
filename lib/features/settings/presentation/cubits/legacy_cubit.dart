@@ -12,7 +12,16 @@ class LegacyCubit extends Cubit<LegacyState> {
     try {
       final settings = await repository.getLegacySettings();
       final vaultMemories = await repository.getVaultMemories();
-      emit(LegacyLoaded(settings: settings, vaultMemories: vaultMemories));
+      final pendingRequests = await repository.getPendingRequests();
+      final familyVaults = await repository.getFamilyVaults();
+      emit(
+        LegacyLoaded(
+          settings: settings,
+          vaultMemories: vaultMemories,
+          pendingRequests: pendingRequests,
+          familyVaults: familyVaults,
+        ),
+      );
     } catch (e) {
       emit(LegacyError('Failed to load legacy settings: ${e.toString()}'));
     }
@@ -24,7 +33,15 @@ class LegacyCubit extends Cubit<LegacyState> {
       final currentVault = state is LegacyLoaded
           ? (state as LegacyLoaded).vaultMemories
           : [];
-      emit(LegacyLoaded(settings: updated, vaultMemories: currentVault));
+      final current = state is LegacyLoaded ? state as LegacyLoaded : null;
+      emit(
+        LegacyLoaded(
+          settings: updated,
+          vaultMemories: currentVault,
+          pendingRequests: current?.pendingRequests ?? const [],
+          familyVaults: current?.familyVaults ?? const [],
+        ),
+      );
     } catch (e) {
       emit(LegacyError('Failed to update legacy settings: ${e.toString()}'));
     }
@@ -39,6 +56,24 @@ class LegacyCubit extends Cubit<LegacyState> {
       loadLegacyData();
     } catch (e) {
       emit(LegacyError('Failed to request vault release: ${e.toString()}'));
+    }
+  }
+
+  Future<void> approveRelease(String requestId) async {
+    try {
+      await repository.approveRelease(requestId);
+      await loadLegacyData();
+    } catch (e) {
+      emit(LegacyError('Failed to approve release: ${e.toString()}'));
+    }
+  }
+
+  Future<void> rejectRelease(String requestId) async {
+    try {
+      await repository.rejectRelease(requestId);
+      await loadLegacyData();
+    } catch (e) {
+      emit(LegacyError('Failed to reject release: ${e.toString()}'));
     }
   }
 }

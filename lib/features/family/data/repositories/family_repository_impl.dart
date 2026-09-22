@@ -1,6 +1,7 @@
 import 'package:spokenodyssey/features/memories/domain/entities/memory_entity.dart';
 import '../../../../core/network/cache_manager.dart';
 import '../../domain/entities/family_member_entity.dart';
+import '../../domain/entities/family_prompt_entity.dart';
 import '../../domain/repositories/family_repository.dart';
 import '../datasources/family_remote_datasource.dart';
 
@@ -144,5 +145,36 @@ class FamilyRepositoryImpl implements FamilyRepository {
   @override
   Future<void> reactToMemory(String memoryId, String reactionType) async {
     await remoteDataSource.reactToMemory(memoryId, reactionType);
+  }
+
+  @override
+  Future<String?> getCurrentFamilyCircleId() async {
+    return await remoteDataSource.getCurrentFamilyCircleId();
+  }
+
+  @override
+  Future<List<FamilyPromptEntity>> getFamilyPrompts(String circleId) async {
+    return await remoteDataSource.getFamilyPrompts(circleId);
+  }
+
+  @override
+  Future<FamilyPromptEntity> createFamilyPrompt(
+    String circleId,
+    String question,
+    String category,
+  ) async {
+    return await remoteDataSource.createFamilyPrompt(
+      circleId,
+      question,
+      category,
+    );
+  }
+
+  @override
+  Future<FamilyPromptResponse> respondToFamilyPrompt(
+    String promptId,
+    String text,
+  ) async {
+    return await remoteDataSource.respondToFamilyPrompt(promptId, text);
   }
 }

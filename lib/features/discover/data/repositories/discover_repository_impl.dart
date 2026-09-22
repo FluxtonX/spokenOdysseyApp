@@ -22,7 +22,10 @@ class DiscoverRepositoryImpl implements DiscoverRepository {
   }
 
   @override
-  Future<SearchResultsEntity> search(String query, {String type = 'all'}) async {
+  Future<SearchResultsEntity> search(
+    String query, {
+    String type = 'all',
+  }) async {
     return await remoteDataSource.search(query, type: type);
   }
 
@@ -32,13 +35,24 @@ class DiscoverRepositoryImpl implements DiscoverRepository {
   }
 
   @override
-  Future<List<User>> getFeaturedPeople({String? category, String? query}) async {
-    return await remoteDataSource.getFeaturedPeople(category: category, query: query);
+  Future<List<User>> getFeaturedPeople({
+    String? category,
+    String? query,
+  }) async {
+    return await remoteDataSource.getFeaturedPeople(
+      category: category,
+      query: query,
+    );
   }
 
   @override
   Future<List<User>> getFollowers() async {
     return await remoteDataSource.getFollowers();
+  }
+
+  @override
+  Future<List<User>> getFollowing() async {
+    return await remoteDataSource.getFollowing();
   }
 
   @override

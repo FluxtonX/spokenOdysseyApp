@@ -5,6 +5,7 @@ import '../../../../core/error/exceptions.dart';
 import 'package:spokenodyssey/features/memories/domain/entities/memory_entity.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../domain/entities/family_member_entity.dart';
+import '../../domain/entities/family_prompt_entity.dart';
 import '../../domain/repositories/family_repository.dart';
 
 abstract class FamilyState {}
@@ -20,6 +21,8 @@ class FamilyLoaded extends FamilyState {
   final List<FamilyInvitationEntity> myInvitations;
   final List<FamilyInvitationEntity> awaitingApprovalInvites;
   final List<FamilyInvitationEntity> sentInvitations;
+  final List<FamilyPromptEntity> prompts;
+  final String? currentCircleId;
   final bool isAdmin;
   final String? actionError;
 
@@ -30,6 +33,8 @@ class FamilyLoaded extends FamilyState {
     required this.myInvitations,
     this.awaitingApprovalInvites = const [],
     this.sentInvitations = const [],
+    this.prompts = const [],
+    this.currentCircleId,
     required this.isAdmin,
     this.actionError,
   });
@@ -41,6 +46,8 @@ class FamilyLoaded extends FamilyState {
     List<FamilyInvitationEntity>? myInvitations,
     List<FamilyInvitationEntity>? awaitingApprovalInvites,
     List<FamilyInvitationEntity>? sentInvitations,
+    List<FamilyPromptEntity>? prompts,
+    String? currentCircleId,
     bool? isAdmin,
     String? actionError,
     bool clearError = false,
@@ -53,6 +60,8 @@ class FamilyLoaded extends FamilyState {
       awaitingApprovalInvites:
           awaitingApprovalInvites ?? this.awaitingApprovalInvites,
       sentInvitations: sentInvitations ?? this.sentInvitations,
+      prompts: prompts ?? this.prompts,
+      currentCircleId: currentCircleId ?? this.currentCircleId,
       isAdmin: isAdmin ?? this.isAdmin,
       actionError: clearError ? null : (actionError ?? this.actionError),
     );
@@ -242,6 +251,15 @@ class FamilyCubit extends Cubit<FamilyState> {
       return sent;
     }).toList();
 
+    final circleId =
+        await repository.getCurrentFamilyCircleId().catchError((_) => null);
+    List<FamilyPromptEntity> prompts = [];
+    if (circleId != null && circleId.isNotEmpty) {
+      try {
+        prompts = await repository.getFamilyPrompts(circleId);
+      } catch (_) {}
+    }
+
     emit(
       FamilyLoaded(
         members: members,
@@ -250,6 +268,8 @@ class FamilyCubit extends Cubit<FamilyState> {
         myInvitations: myInvitations,
         awaitingApprovalInvites: existingAwaiting,
         sentInvitations: updatedSentList,
+        prompts: prompts,
+        currentCircleId: circleId,
         isAdmin: isAdmin || pendingApprovals.isNotEmpty,
       ),
     );
@@ -555,6 +575,83 @@ class FamilyCubit extends Cubit<FamilyState> {
       await repository.reactToMemory(memoryId, reactionType);
     } catch (e) {
       _emitError(e);
+    }
+  }
+
+  // ── FAMILY PROMPTS (Q&A) ───────────────────────────────────────────────────
+  Future<void> loadPrompts() async {
+    if (state is! FamilyLoaded) return;
+    final current = state as FamilyLoaded;
+    try {
+      final circleId = current.currentCircleId ??
+          await repository.getCurrentFamilyCircleId();
+      if (circleId != null && circleId.isNotEmpty) {
+        final prompts = await repository.getFamilyPrompts(circleId);
+        emit(current.copyWith(prompts: prompts, currentCircleId: circleId));
+      }
+    } catch (_) {}
+  }
+
+  Future<bool> createPrompt({
+    required String question,
+    required String category,
+  }) async {
+    if (state is! FamilyLoaded) return false;
+    final current = state as FamilyLoaded;
+    try {
+      final circleId = current.currentCircleId ??
+          await repository.getCurrentFamilyCircleId();
+      if (circleId == null || circleId.isEmpty) {
+        emit(current.copyWith(
+            actionError: 'No active family circle found to post prompt.'));
+        return false;
+      }
+      final newPrompt = await repository.createFamilyPrompt(
+        circleId,
+        question,
+        category,
+      );
+      emit(current.copyWith(
+        prompts: [newPrompt, ...current.prompts],
+        currentCircleId: circleId,
+      ));
+      return true;
+    } catch (e) {
+      emit(current.copyWith(actionError: ErrorParser.extractMessage(e)));
+      return false;
+    }
+  }
+
+  Future<bool> respondToPrompt({
+    required String promptId,
+    required String text,
+  }) async {
+    if (state is! FamilyLoaded) return false;
+    final current = state as FamilyLoaded;
+    try {
+      final newResponse =
+          await repository.respondToFamilyPrompt(promptId, text);
+      final updatedPrompts = current.prompts.map((p) {
+        if (p.id == promptId) {
+          return FamilyPromptEntity(
+            id: p.id,
+            familyCircleId: p.familyCircleId,
+            question: p.question,
+            category: p.category,
+            audioUrl: p.audioUrl,
+            creatorName: p.creatorName,
+            creatorAvatar: p.creatorAvatar,
+            createdAt: p.createdAt,
+            responses: [...p.responses, newResponse],
+          );
+        }
+        return p;
+      }).toList();
+      emit(current.copyWith(prompts: updatedPrompts));
+      return true;
+    } catch (e) {
+      emit(current.copyWith(actionError: ErrorParser.extractMessage(e)));
+      return false;
     }
   }
 }

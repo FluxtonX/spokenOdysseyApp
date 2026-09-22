@@ -4,13 +4,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_constants.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/media_url_formatter.dart';
+import '../../../../core/widgets/app_ui.dart';
 import '../../../profile/presentation/cubits/profile_cubit.dart';
 import '../cubits/settings_cubit.dart';
 import '../widgets/mfa_setup_modal.dart';
 import 'legacy_vault_page.dart';
+import 'insights_page.dart';
 
 import '../../../smart_glasses/presentation/cubit/glasses_cubit.dart';
 
@@ -85,6 +88,9 @@ class _SettingsPageState extends State<_SettingsViewState> {
   bool _familyNotif = true;
   bool _communityNotif = true;
   bool _isLoadingNotif = false;
+  bool _isLoadingInsights = false;
+  String? _insightsError;
+  Map<String, dynamic> _insights = {};
 
   @override
   void initState() {
@@ -94,35 +100,23 @@ class _SettingsPageState extends State<_SettingsViewState> {
     final profileState = context.read<ProfileCubit>().state;
     final user = profileState is ProfileLoaded ? profileState.user : null;
 
-    _displayNameController = TextEditingController(
-      text: user?.name ?? 'John Anderson',
-    );
+    _displayNameController = TextEditingController(text: user?.name ?? '');
     _professionController = TextEditingController(
-      text: user?.profession?.isNotEmpty == true
-          ? user!.profession!
-          : 'Technology Executive & Mentor',
+      text: user?.profession?.isNotEmpty == true ? user!.profession! : '',
     );
     _locationController = TextEditingController(
-      text: user?.location?.isNotEmpty == true
-          ? user!.location!
-          : 'San Francisco, CA',
+      text: user?.location?.isNotEmpty == true ? user!.location! : '',
     );
     _birthDateController = TextEditingController(
       text: user?.birthDate?.isNotEmpty == true
           ? user!.birthDate!
-          : (user?.dateOfBirth?.isNotEmpty == true
-                ? user!.dateOfBirth!
-                : 'Feb-03-1980'),
+          : (user?.dateOfBirth?.isNotEmpty == true ? user!.dateOfBirth! : ''),
     );
     _bioController = TextEditingController(
-      text: user?.bio?.isNotEmpty == true
-          ? user!.bio!
-          : 'Documenting my journey and preserving wisdom for the next generation.',
+      text: user?.bio?.isNotEmpty == true ? user!.bio! : '',
     );
     _lifeMottoController = TextEditingController(
-      text: user?.lifeMotto?.isNotEmpty == true
-          ? user!.lifeMotto!
-          : 'The best time to plant a tree was 20 years ago. The second best time is now.',
+      text: user?.lifeMotto?.isNotEmpty == true ? user!.lifeMotto! : '',
     );
     _newExpertiseController = TextEditingController();
 
@@ -133,7 +127,7 @@ class _SettingsPageState extends State<_SettingsViewState> {
     if (user?.expertise != null && user!.expertise!.isNotEmpty) {
       _expertiseList = List.from(user.expertise!);
     } else {
-      _expertiseList = ['Leadership', 'IT', 'Mentorship'];
+      _expertiseList = [];
     }
 
     _fetchNotificationData();
@@ -167,6 +161,21 @@ class _SettingsPageState extends State<_SettingsViewState> {
         _isLoadingSessions = false;
       });
     }
+  }
+
+  Future<void> _fetchInsights() async {
+    if (_isLoadingInsights) return;
+    setState(() {
+      _isLoadingInsights = true;
+      _insightsError = null;
+    });
+    final data = await context.read<SettingsCubit>().getInsightsSummary();
+    if (!mounted) return;
+    setState(() {
+      _insights = data;
+      _isLoadingInsights = false;
+      _insightsError = data.isEmpty ? 'Insights are not available yet.' : null;
+    });
   }
 
   @override
@@ -594,23 +603,16 @@ class _SettingsPageState extends State<_SettingsViewState> {
                 ),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Color(0xFF1F2937),
-                        size: 20,
-                      ),
+                    AppIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      label: 'Back to profile',
+                      color: AppColors.textPrimary,
                       onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Settings',
-                      style: GoogleFonts.outfit(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1F2937),
-                        letterSpacing: -0.3,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ],
                 ),
@@ -627,59 +629,25 @@ class _SettingsPageState extends State<_SettingsViewState> {
                     children: [
                       Text(
                         'Manage account preferences, privacy, and security',
-                        style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          color: const Color(0xFF6B7280),
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 18),
 
-                      // Horizontal Scrollable Segmented Control
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Container(
-                          height: 44,
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF5E4EE8,
-                              ).withValues(alpha: 0.35),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildSegmentTab(
-                                0,
-                                'Profile',
-                                Icons.person_outline_rounded,
-                              ),
-                              _buildSegmentTab(
-                                1,
-                                'Privacy',
-                                Icons.lock_outline_rounded,
-                              ),
-                              _buildSegmentTab(
-                                2,
-                                'Security',
-                                Icons.shield_outlined,
-                              ),
-                              _buildSegmentTab(
-                                3,
-                                'Notifications',
-                                Icons.notifications_none_rounded,
-                              ),
-                              _buildSegmentTab(
-                                4,
-                                'Insights',
-                                Icons.analytics_outlined,
-                              ),
-                            ],
-                          ),
-                        ),
+                      AppSegmentedControl(
+                        selectedIndex: _selectedTabIndex,
+                        labels: const [
+                          'Profile',
+                          'Privacy',
+                          'Security',
+                          'Notifications',
+                          'Insights',
+                        ],
+                        onChanged: (index) {
+                          setState(() => _selectedTabIndex = index);
+                          if (index == 2) _fetchSecurityData();
+                          if (index == 3) _fetchNotificationData();
+                          if (index == 4) _fetchInsights();
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -695,44 +663,6 @@ class _SettingsPageState extends State<_SettingsViewState> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSegmentTab(int index, String title, IconData icon) {
-    final isSelected = _selectedTabIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedTabIndex = index);
-        if (index == 2) _fetchSecurityData();
-        if (index == 3) _fetchNotificationData();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5E4EE8) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : const Color(0xFF5E4EE8),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? Colors.white : const Color(0xFF5E4EE8),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1602,24 +1532,88 @@ class _SettingsPageState extends State<_SettingsViewState> {
 
   // ── TAB 4: INSIGHTS ───────────────────────────────────────────────────────
   Widget _buildInsightsTab() {
+    if (_isLoadingInsights) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_insightsError != null) {
+      return AsyncStateView(
+        isLoading: false,
+        errorMessage: _insightsError,
+        isEmpty: false,
+        emptyTitle: '',
+        emptyMessage: '',
+        onRetry: _fetchInsights,
+        child: const SizedBox.shrink(),
+      );
+    }
+
+    final summary = _insights['summary'] is Map
+        ? Map<String, dynamic>.from(_insights['summary'] as Map)
+        : _insights;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Archive Insights & Analytics',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF1F2937),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Your family story repository stats at a glance',
-          style: GoogleFonts.outfit(
-            fontSize: 13,
-            color: const Color(0xFF6B7280),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Archive Insights & Analytics',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your family story repository stats at a glance',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InsightsPage()),
+                );
+              },
+              icon: const Icon(
+                Icons.auto_awesome_rounded,
+                size: 16,
+                color: Color(0xFF4A3AFF),
+              ),
+              label: Text(
+                'Full Report',
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF4A3AFF),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF4A3AFF)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
 
@@ -1633,28 +1627,41 @@ class _SettingsPageState extends State<_SettingsViewState> {
           children: [
             _buildInsightCard(
               title: 'Recorded Odysseys',
-              value: '24',
+              value: _displayInsightValue(summary, const [
+                'memoriesCount',
+                'memoryCount',
+                'totalMemories',
+              ]),
               subtitle: 'Voice Memories',
               icon: Icons.mic_rounded,
               color: const Color(0xFF5E4EE8),
             ),
             _buildInsightCard(
               title: 'Audio Hours',
-              value: '8.4 hrs',
+              value: _displayInsightValue(summary, const [
+                'audioHours',
+                'totalAudioHours',
+              ], suffix: ' hrs'),
               subtitle: 'Total Storytelling',
               icon: Icons.schedule_rounded,
               color: const Color(0xFF10B981),
             ),
             _buildInsightCard(
               title: 'Family Members',
-              value: '6',
+              value: _displayInsightValue(summary, const [
+                'familyMembersCount',
+                'familyCount',
+              ]),
               subtitle: 'Connected Circle',
               icon: Icons.group_rounded,
               color: const Color(0xFFF59E0B),
             ),
             _buildInsightCard(
               title: 'Vault Status',
-              value: 'Protected',
+              value: _displayInsightValue(summary, const [
+                'vaultStatus',
+                'legacyStatus',
+              ], fallback: 'Not configured'),
               subtitle: 'Legacy Executor Active',
               icon: Icons.verified_user_rounded,
               color: const Color(0xFF6366F1),
@@ -1663,6 +1670,21 @@ class _SettingsPageState extends State<_SettingsViewState> {
         ),
       ],
     );
+  }
+
+  String _displayInsightValue(
+    Map<String, dynamic> data,
+    List<String> keys, {
+    String fallback = '0',
+    String suffix = '',
+  }) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return '${value.toString()}$suffix';
+      }
+    }
+    return fallback;
   }
 
   Widget _buildInsightCard({

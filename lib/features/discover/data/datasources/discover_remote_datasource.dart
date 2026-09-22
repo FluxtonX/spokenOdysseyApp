@@ -18,6 +18,7 @@ abstract class DiscoverRemoteDataSource {
   Future<List<UserModel>> getSuggestedPeople();
   Future<List<UserModel>> getFeaturedPeople({String? category, String? query});
   Future<List<UserModel>> getFollowers();
+  Future<List<UserModel>> getFollowing();
   Future<void> followUser(String targetUid);
   Future<void> unfollowUser(String targetUid);
 }
@@ -50,7 +51,10 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
   }
 
   @override
-  Future<SearchResultsEntity> search(String query, {String type = 'all'}) async {
+  Future<SearchResultsEntity> search(
+    String query, {
+    String type = 'all',
+  }) async {
     final response = await apiClient.get(
       ApiEndpoints.search,
       queryParameters: {'q': query, 'type': type},
@@ -62,16 +66,26 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
 
     if (data is Map) {
       if (data['memories'] is List) {
-        memories = (data['memories'] as List).map((m) => MemoryModel.fromJson(m)).toList();
+        memories = (data['memories'] as List)
+            .map((m) => MemoryModel.fromJson(m))
+            .toList();
       }
       if (data['albums'] is List) {
-        albums = (data['albums'] as List).map((a) => AlbumModel.fromJson(a)).toList();
+        albums = (data['albums'] as List)
+            .map((a) => AlbumModel.fromJson(a))
+            .toList();
       }
       if (data['users'] is List) {
-        users = (data['users'] as List).map((u) => UserModel.fromJson(u)).toList();
+        users = (data['users'] as List)
+            .map((u) => UserModel.fromJson(u))
+            .toList();
       }
     }
-    return SearchResultsEntity(memories: memories, albums: albums, users: users);
+    return SearchResultsEntity(
+      memories: memories,
+      albums: albums,
+      users: users,
+    );
   }
 
   @override
@@ -85,7 +99,10 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
   }
 
   @override
-  Future<List<UserModel>> getFeaturedPeople({String? category, String? query}) async {
+  Future<List<UserModel>> getFeaturedPeople({
+    String? category,
+    String? query,
+  }) async {
     final response = await apiClient.get(
       ApiEndpoints.usersFeatured,
       queryParameters: {
@@ -103,6 +120,16 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
   @override
   Future<List<UserModel>> getFollowers() async {
     final response = await apiClient.get(ApiEndpoints.followers);
+    final data = response.data['data'] ?? response.data;
+    if (data is List) {
+      return data.map((json) => UserModel.fromJson(json)).toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<List<UserModel>> getFollowing() async {
+    final response = await apiClient.get(ApiEndpoints.following);
     final data = response.data['data'] ?? response.data;
     if (data is List) {
       return data.map((json) => UserModel.fromJson(json)).toList();

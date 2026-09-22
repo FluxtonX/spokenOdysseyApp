@@ -15,7 +15,14 @@ class LegacyLoading extends LegacyState {
 class LegacyLoaded extends LegacyState {
   final LegacySettingsEntity settings;
   final List<dynamic> vaultMemories;
-  const LegacyLoaded({required this.settings, required this.vaultMemories});
+  final List<dynamic> pendingRequests;
+  final List<dynamic> familyVaults;
+  const LegacyLoaded({
+    required this.settings,
+    required this.vaultMemories,
+    this.pendingRequests = const [],
+    this.familyVaults = const [],
+  });
 }
 
 class LegacyError extends LegacyState {

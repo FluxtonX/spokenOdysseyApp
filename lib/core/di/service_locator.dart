@@ -48,6 +48,7 @@ import '../../features/discover/data/datasources/discover_remote_datasource.dart
 import '../../features/discover/data/repositories/discover_repository_impl.dart';
 import '../../features/discover/domain/repositories/discover_repository.dart';
 import '../../features/discover/presentation/cubits/discover_cubit.dart';
+import '../../features/discover/presentation/cubits/search_cubit.dart';
 
 // Notifications
 import '../../features/notifications/data/datasources/notifications_remote_datasource.dart';
@@ -60,6 +61,7 @@ import '../../features/settings/data/datasources/settings_remote_datasource.dart
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/presentation/cubits/settings_cubit.dart';
+import '../../features/settings/presentation/cubits/insights_cubit.dart';
 
 import '../../features/memories/data/datasources/ai_historian_remote_datasource.dart';
 import '../../features/memories/data/repositories/ai_historian_repository_impl.dart';
@@ -202,8 +204,10 @@ Future<void> initServiceLocator() async {
   sl.registerFactory(() => AlbumsCubit(repository: sl()));
   sl.registerFactory(() => FamilyCubit(repository: sl()));
   sl.registerFactory(() => DiscoverCubit(repository: sl()));
+  sl.registerFactory(() => SearchCubit(repository: sl()));
   sl.registerFactory(() => NotificationsCubit(repository: sl()));
   sl.registerFactory(() => SettingsCubit(repository: sl()));
+  sl.registerFactory(() => InsightsCubit(repository: sl()));
   sl.registerFactory(() => LegacyCubit(repository: sl()));
   sl.registerFactory(() => StoreCubit(repository: sl()));
 }

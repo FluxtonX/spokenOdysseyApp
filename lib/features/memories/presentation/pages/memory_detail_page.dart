@@ -262,6 +262,47 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                   ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            comment.text,
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  context.read<MemoryDetailCubit>().reactToComment(
+                    widget.memoryId,
+                    comment.id,
+                    comment.isLiked ? 'none' : 'heart',
+                  );
+                },
+                child: Row(
+                  children: [
+                    Icon(
+                      comment.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      size: 14,
+                      color: comment.isLiked ? Colors.red : AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${comment.likesCount}',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: comment.isLiked ? Colors.red : AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -279,14 +320,6 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            comment.text,
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
           ),
           if (comment.replies.isNotEmpty) ...[
             const SizedBox(height: 8),

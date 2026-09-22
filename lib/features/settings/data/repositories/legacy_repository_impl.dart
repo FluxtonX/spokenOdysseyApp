@@ -34,4 +34,24 @@ class LegacyRepositoryImpl implements LegacyRepository {
   Future<List<dynamic>> getVaultMemories() async {
     return await remoteDataSource.getVaultMemories();
   }
+
+  @override
+  Future<List<dynamic>> getPendingRequests() async {
+    return await remoteDataSource.getPendingRequests();
+  }
+
+  @override
+  Future<List<dynamic>> getFamilyVaults() async {
+    return await remoteDataSource.getFamilyVaults();
+  }
+
+  @override
+  Future<void> approveRelease(String requestId) async {
+    await remoteDataSource.approveRelease(requestId);
+  }
+
+  @override
+  Future<void> rejectRelease(String requestId, {String? reason}) async {
+    await remoteDataSource.rejectRelease(requestId, reason: reason);
+  }
 }

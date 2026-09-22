@@ -16,6 +16,7 @@ import '../../domain/entities/family_member_entity.dart';
 import '../cubits/family_cubit.dart';
 import '../pages/qr_scanner_page.dart';
 import '../widgets/family_tree_widget.dart';
+import '../widgets/family_prompts_widget.dart';
 import '../widgets/invite_member_modal.dart';
 
 class FamilyCirclePage extends StatefulWidget {
@@ -41,9 +42,9 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 4,
+      length: 5,
       vsync: this,
-      initialIndex: widget.initialTab.clamp(0, 3),
+      initialIndex: widget.initialTab.clamp(0, 4),
     );
     final familyCubit = context.read<FamilyCubit>();
     if (familyCubit.state is! FamilyLoaded) {
@@ -135,6 +136,7 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                     const Tab(text: 'Members'),
                     const Tab(text: 'Family Tree'),
                     const Tab(text: 'Memories'),
+                    const Tab(text: 'Ask Family'),
                     Tab(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -239,7 +241,9 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                           ),
                           // Tab 3: Shared Memories
                           _buildMemoriesTab(context, state),
-                          // Tab 4: Invitations (Pending Approvals + Incoming Invitations)
+                          // Tab 4: Ask Family (Prompts & Q&A)
+                          FamilyPromptsWidget(prompts: state.prompts),
+                          // Tab 5: Invitations (Pending Approvals + Incoming Invitations)
                           _buildInvitationsTab(context, state),
                         ],
                       );

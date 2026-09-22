@@ -61,6 +61,11 @@ class SettingsRepositoryImpl implements SettingsRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> getInsightsSummary() async {
+    return await remoteDataSource.getInsightsSummary();
+  }
+
+  @override
   Future<void> updatePrivacySettings({
     String? defaultEntryPrivacy,
     String? profileVisibility,

@@ -20,6 +20,7 @@ abstract class SettingsRemoteDataSource {
   );
   Future<List<Map<String, dynamic>>> getActiveSessions();
   Future<void> revokeSession(String sessionId);
+  Future<Map<String, dynamic>> getInsightsSummary();
   Future<void> updatePrivacySettings({
     String? defaultEntryPrivacy,
     String? profileVisibility,
@@ -109,10 +110,14 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
 
   @override
   Future<void> revokeSession(String sessionId) async {
-    await apiClient.post(
-      ApiEndpoints.revokeSession,
-      data: {'sessionId': sessionId},
-    );
+    await apiClient.delete('${ApiEndpoints.activeSessions}/$sessionId');
+  }
+
+  @override
+  Future<Map<String, dynamic>> getInsightsSummary() async {
+    final response = await apiClient.get(ApiEndpoints.insightsSummary);
+    final data = response.data['data'] ?? response.data;
+    return data is Map<String, dynamic> ? data : {};
   }
 
   @override

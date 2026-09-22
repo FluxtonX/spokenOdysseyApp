@@ -24,6 +24,7 @@ abstract class DiscoverRepository {
   Future<List<User>> getSuggestedPeople();
   Future<List<User>> getFeaturedPeople({String? category, String? query});
   Future<List<User>> getFollowers();
+  Future<List<User>> getFollowing();
   Future<void> followUser(String targetUid);
   Future<void> unfollowUser(String targetUid);
 }

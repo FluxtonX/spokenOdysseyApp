@@ -780,6 +780,9 @@ The first implementation slice now exists in the Flutter client:
 - Timeline and Discover inner tabs use the shared accessible segmented control; milestone and discovery empty/error states are explicit and recoverable.
 - Main shell actions, Profile cover actions, Album actions, Notifications/Family retry actions, and Smart Glasses sheet actions use stable labeled touch targets.
 - Public Profile and Profile surfaces no longer present hard-coded sample identities or showcase counts when API data is absent.
+- Settings uses the shared segmented control for Profile, Privacy, Security, Notifications, and Insights, with real-data empty values instead of sample account content.
+- The authenticated shell uses semantic Flutter navigation controls and a labeled `Create a memory` FAB with stable touch targets.
+- `MemoryCard` now uses the shared surface tokens, restrained borders, and labeled touch targets for opening, reacting, commenting, and privacy context across memory-based screens.
 
 These changes preserve Cubit, repository, API, media SDK, and navigation contracts. The remaining shared primitives and screen migrations in the roadmap are still planned work, not completed standards.
 

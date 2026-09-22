@@ -8,68 +8,74 @@ class AppSegmentedControl extends StatelessWidget {
   final int selectedIndex;
   final List<String> labels;
   final ValueChanged<int> onChanged;
+  final bool isExpanded;
 
   const AppSegmentedControl({
     super.key,
     required this.selectedIndex,
     required this.labels,
     required this.onChanged,
+    this.isExpanded = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    Widget content = Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        mainAxisSize: isExpanded ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          for (var index = 0; index < labels.length; index++) ...[
+            if (index > 0) const SizedBox(width: 4),
+            if (isExpanded)
+              Expanded(child: _buildItem(context, index))
+            else
+              _buildItem(context, index),
+          ],
+        ],
+      ),
+    );
+
+    if (!isExpanded) {
+      content = SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: content,
+      );
+    }
+
     return Semantics(
       container: true,
       label: 'View selector',
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      child: content,
+    );
+  }
+
+  Widget _buildItem(BuildContext context, int index) {
+    return Semantics(
+      button: true,
+      selected: selectedIndex == index,
+      label: labels[index],
+      child: InkWell(
+        onTap: () => onChanged(index),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
         child: Container(
-          padding: const EdgeInsets.all(4),
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
-            border: Border.all(color: AppColors.borderLight),
+            color: selectedIndex == index ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var index = 0; index < labels.length; index++) ...[
-                if (index > 0) const SizedBox(width: 4),
-                Semantics(
-                  button: true,
-                  selected: selectedIndex == index,
-                  label: labels[index],
-                  child: InkWell(
-                    onTap: () => onChanged(index),
-                    borderRadius: BorderRadius.circular(
-                      DesignTokens.radiusSmall,
-                    ),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: selectedIndex == index
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(
-                          DesignTokens.radiusSmall,
-                        ),
-                      ),
-                      child: Text(
-                        labels[index],
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: selectedIndex == index
-                                  ? AppColors.textWhite
-                                  : AppColors.primary,
-                            ),
-                      ),
-                    ),
-                  ),
+          child: Text(
+            labels[index],
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: selectedIndex == index ? AppColors.textWhite : AppColors.primary,
                 ),
-              ],
-            ],
           ),
         ),
       ),

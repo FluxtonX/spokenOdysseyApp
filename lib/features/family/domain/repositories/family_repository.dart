@@ -1,6 +1,7 @@
 import 'package:spokenodyssey/features/memories/domain/entities/memory_entity.dart';
 
 import '../entities/family_member_entity.dart';
+import '../entities/family_prompt_entity.dart';
 
 abstract class FamilyRepository {
   Future<List<FamilyMemberEntity>> getFamilyMembers();
@@ -32,4 +33,15 @@ abstract class FamilyRepository {
   Future<List<Map<String, dynamic>>> searchTaggableUsers(String query);
   Future<void> addDirectMember(String targetUserId, String relationship);
   Future<void> reactToMemory(String memoryId, String reactionType);
+  Future<String?> getCurrentFamilyCircleId();
+  Future<List<FamilyPromptEntity>> getFamilyPrompts(String circleId);
+  Future<FamilyPromptEntity> createFamilyPrompt(
+    String circleId,
+    String question,
+    String category,
+  );
+  Future<FamilyPromptResponse> respondToFamilyPrompt(
+    String promptId,
+    String text,
+  );
 }

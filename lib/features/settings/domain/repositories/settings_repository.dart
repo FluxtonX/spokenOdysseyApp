@@ -18,6 +18,7 @@ abstract class SettingsRepository {
   );
   Future<List<Map<String, dynamic>>> getActiveSessions();
   Future<void> revokeSession(String sessionId);
+  Future<Map<String, dynamic>> getInsightsSummary();
   Future<void> updatePrivacySettings({
     String? defaultEntryPrivacy,
     String? profileVisibility,

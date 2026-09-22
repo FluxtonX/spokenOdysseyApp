@@ -15,6 +15,7 @@ import '../../../memories/presentation/widgets/video_player_widget.dart';
 import '../../../profile/presentation/pages/public_profile_page.dart';
 import '../../../store/presentation/pages/store_catalog_page.dart';
 import '../cubits/discover_cubit.dart';
+import 'search_page.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
@@ -91,21 +92,41 @@ class _DiscoverPageState extends State<DiscoverPage>
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.storefront_rounded,
-                        color: Color(0xFF4A3AFF),
-                        size: 26,
-                      ),
-                      tooltip: 'Hardware Store',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const StoreCatalogPage(),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF4A3AFF),
+                            size: 26,
                           ),
-                        );
-                      },
+                          tooltip: 'Search Archive',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SearchPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.storefront_rounded,
+                            color: Color(0xFF4A3AFF),
+                            size: 26,
+                          ),
+                          tooltip: 'Hardware Store',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const StoreCatalogPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -113,47 +134,64 @@ class _DiscoverPageState extends State<DiscoverPage>
                 const SizedBox(height: 16),
 
                 // ── 2. Search Bar ─────────────────────────────────────────────
-                Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onSubmitted: (val) {
-                      context.read<DiscoverCubit>().search(val);
-                    },
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      color: const Color(0xFF111827),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SearchPage()),
+                    );
+                  },
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Search name,profile...',
-                      hintStyle: GoogleFonts.outfit(
-                        fontSize: 14,
-                        color: const Color(0xFF9CA3AF),
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: Color(0xFF9CA3AF),
-                        size: 20,
-                      ),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                context.read<DiscoverCubit>().loadDiscovery();
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF9CA3AF),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Search memories, albums, people...',
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              color: const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF0FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Search',
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF4A3AFF),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -164,6 +202,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                 AppSegmentedControl(
                   selectedIndex: _selectedTab,
                   labels: const ['Featured People', 'Latest Stories'],
+                  isExpanded: true,
                   onChanged: (index) => setState(() => _selectedTab = index),
                 ),
 

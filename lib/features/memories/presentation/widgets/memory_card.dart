@@ -4,6 +4,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:readmore/readmore.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/media_url_formatter.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../domain/entities/memory_entity.dart';
 import 'comments_bottom_sheet.dart';
 import 'reaction_bar.dart';
@@ -119,11 +120,7 @@ class _MemoryCardState extends State<MemoryCard> {
         return const Text('😡', style: TextStyle(fontSize: 16));
       case 'heart':
       default:
-        return const Icon(
-          Icons.favorite_rounded,
-          color: Colors.red,
-          size: 18,
-        );
+        return const Icon(Icons.favorite_rounded, color: Colors.red, size: 18);
     }
   }
 
@@ -184,87 +181,162 @@ class _MemoryCardState extends State<MemoryCard> {
 
     return Stack(
       children: [
-        GestureDetector(
-          onTap: widget.onTap,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: EdgeInsets.all(widget.isGridMode ? 12 : 16),
-            decoration: BoxDecoration(
-              color: const Color(
-                0xFFFCE9EA,
-              ), // Match pinkish color from screenshot
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2C9E4), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header (Category Tag & Date)
-                if (widget.isGridMode)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (widget.memory.tags.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF5E4EE8),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            widget.memory.tags.first,
-                            style: GoogleFonts.outfit(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLarge),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(
+                button: true,
+                label: 'Open memory: ${widget.memory.title}',
+                child: InkWell(
+                  onTap: widget.onTap,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(DesignTokens.radiusLarge),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(widget.isGridMode ? 12 : 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                  // Header (Category Tag & Date)
+                  if (widget.isGridMode)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.memory.tags.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(
+                                DesignTokens.radiusSmall,
+                              ),
+                            ),
+                            child: Text(
+                              widget.memory.tags.first,
+                              style: GoogleFonts.outfit(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.calendar_today_outlined,
-                                size: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                widget.memory.createdAt != null
-                                    ? widget.memory.createdAt!.split('T').first
-                                    : 'Just now',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 11,
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 12,
                                   color: AppColors.textSecondary,
                                 ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.memory.createdAt != null
+                                      ? widget.memory.createdAt!
+                                            .split('T')
+                                            .first
+                                      : 'Just now',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (widget.onDelete != null)
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: PopupMenuButton<String>(
+                                  onSelected: (val) {
+                                    if (val == 'delete') widget.onDelete!();
+                                  },
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(
+                                    Icons.more_vert,
+                                    size: 16,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text(
+                                        'Delete Memory',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
-                          if (widget.onDelete != null)
-                            SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: PopupMenuButton<String>(
+                          ],
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (widget.memory.tags.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(
+                                DesignTokens.radiusSmall,
+                              ),
+                            ),
+                            child: Text(
+                              widget.memory.tags.first,
+                              style: GoogleFonts.outfit(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                        else
+                          const SizedBox(),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              size: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.memory.createdAt != null
+                                  ? widget.memory.createdAt!.split('T').first
+                                  : 'Just now',
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            if (widget.onDelete != null)
+                              PopupMenuButton<String>(
                                 onSelected: (val) {
                                   if (val == 'delete') widget.onDelete!();
                                 },
                                 padding: EdgeInsets.zero,
                                 icon: const Icon(
                                   Icons.more_vert,
-                                  size: 16,
+                                  size: 18,
                                   color: AppColors.textSecondary,
                                 ),
                                 itemBuilder: (context) => [
@@ -277,334 +349,304 @@ class _MemoryCardState extends State<MemoryCard> {
                                   ),
                                 ],
                               ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 10),
+
+                  // Title & Description
+                  Text(
+                    widget.memory.title,
+                    maxLines: widget.isGridMode ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: widget.isGridMode ? 15 : 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (widget.memory.description != null &&
+                      widget.memory.description!.isNotEmpty &&
+                      !widget.isGridMode) ...[
+                    const SizedBox(height: 6),
+                    ReadMoreText(
+                      widget.memory.description!,
+                      trimLines: 3,
+                      colorClickableText: AppColors.primary,
+                      trimMode: TrimMode.Line,
+                      trimCollapsedText: ' Read more',
+                      trimExpandedText: ' Show less',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                      moreStyle: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                      lessStyle: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+
+                  // Audio Player / Image Preview
+                  if (_audioPlayer != null) ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: widget.isGridMode ? 8 : 12,
+                        vertical: widget.isGridMode ? 4 : 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borderLight),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _isPlaying
+                                  ? Icons.pause_circle_filled_rounded
+                                  : Icons.play_circle_fill_rounded,
+                              color: AppColors.primary,
+                              size: widget.isGridMode ? 32 : 40,
+                            ),
+                            onPressed: _togglePlay,
+                          ),
+                          if (!widget.isGridMode)
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  SliderTheme(
+                                    data: SliderThemeData(
+                                      trackHeight: 4,
+                                      thumbShape: const RoundSliderThumbShape(
+                                        enabledThumbRadius: 6,
+                                      ),
+                                      activeTrackColor: AppColors.primary,
+                                      inactiveTrackColor: AppColors.primary
+                                          .withValues(alpha: 0.2),
+                                      thumbColor: AppColors.primary,
+                                    ),
+                                    child: Slider(
+                                      value: _position.inSeconds
+                                          .toDouble()
+                                          .clamp(
+                                            0,
+                                            _duration.inSeconds.toDouble() > 0
+                                                ? _duration.inSeconds.toDouble()
+                                                : 1.0,
+                                          ),
+                                      max: _duration.inSeconds.toDouble() > 0
+                                          ? _duration.inSeconds.toDouble()
+                                          : 1.0,
+                                      onChanged: (val) {
+                                        _audioPlayer?.seek(
+                                          Duration(seconds: val.toInt()),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _formatDuration(_position),
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        _formatDuration(_duration),
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            Expanded(
+                              child: Text(
+                                _formatDuration(_duration),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
                             ),
                         ],
                       ),
-                    ],
-                  )
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (widget.memory.tags.isNotEmpty)
-                        Container(
+                    ),
+                  ] else if (formattedMedia != null &&
+                      (widget.memory.mediaType == 'video' ||
+                          formattedMedia.endsWith('.mp4') ||
+                          formattedMedia.endsWith('.mov') ||
+                          formattedMedia.endsWith('.webm'))) ...[
+                    VideoPlayerWidget(
+                      videoUrl: formattedMedia,
+                      height: widget.isGridMode ? 100 : 200,
+                    ),
+                  ] else if (formattedMedia != null &&
+                      (widget.memory.mediaType == 'image' ||
+                          formattedMedia.endsWith('.png') ||
+                          formattedMedia.endsWith('.jpg') ||
+                          formattedMedia.endsWith('.jpeg') ||
+                          formattedMedia.endsWith('.webp') ||
+                          formattedMedia.endsWith('.gif'))) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        formattedMedia,
+                        height: widget.isGridMode ? 80 : 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox(),
+                      ),
+                    ),
+                  ],
+
+                  // Tags
+                  if (widget.memory.tags.length > 1 && !widget.isGridMode) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 6,
+                      children: widget.memory.tags.skip(1).map((t) {
+                        return Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF5E4EE8),
-                            borderRadius: BorderRadius.circular(6),
+                            color: const Color(
+                              0xFFE9DEF6,
+                            ), // Light purple tag background
+                            borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            widget.memory.tags.first,
+                            t,
                             style: GoogleFonts.outfit(
                               fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF5E4EE8),
                             ),
                           ),
-                        )
-                      else
-                        const SizedBox(),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.memory.createdAt != null
-                                ? widget.memory.createdAt!.split('T').first
-                                : 'Just now',
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          if (widget.onDelete != null)
-                            PopupMenuButton<String>(
-                              onSelected: (val) {
-                                if (val == 'delete') widget.onDelete!();
-                              },
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(
-                                Icons.more_vert,
-                                size: 18,
-                                color: AppColors.textSecondary,
-                              ),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Text(
-                                    'Delete Memory',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: 10),
+                        );
+                      }).toList(),
+                    ),
+                  ],
 
-                // Title & Description
-                Text(
-                  widget.memory.title,
-                  maxLines: widget.isGridMode ? 1 : 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    fontSize: widget.isGridMode ? 15 : 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                if (widget.memory.description != null &&
-                    widget.memory.description!.isNotEmpty &&
-                    !widget.isGridMode) ...[
-                  const SizedBox(height: 6),
-                  ReadMoreText(
-                    widget.memory.description!,
-                    trimLines: 3,
-                    colorClickableText: AppColors.primary,
-                    trimMode: TrimMode.Line,
-                    trimCollapsedText: ' Read more',
-                    trimExpandedText: ' Show less',
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    moreStyle: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                    lessStyle: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-
-                // Audio Player / Image Preview
-                if (_audioPlayer != null) ...[
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: widget.isGridMode ? 8 : 12,
-                      vertical: widget.isGridMode ? 4 : 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            _isPlaying
-                                ? Icons.pause_circle_filled_rounded
-                                : Icons.play_circle_fill_rounded,
-                            color: AppColors.primary,
-                            size: widget.isGridMode ? 32 : 40,
-                          ),
-                          onPressed: _togglePlay,
-                        ),
-                        if (!widget.isGridMode)
-                          Expanded(
-                            child: Column(
-                              children: [
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                    trackHeight: 4,
-                                    thumbShape: const RoundSliderThumbShape(
-                                      enabledThumbRadius: 6,
-                                    ),
-                                    activeTrackColor: AppColors.primary,
-                                    inactiveTrackColor: AppColors.primary
-                                        .withValues(alpha: 0.2),
-                                    thumbColor: AppColors.primary,
-                                  ),
-                                  child: Slider(
-                                    value: _position.inSeconds.toDouble().clamp(
-                                      0,
-                                      _duration.inSeconds.toDouble() > 0
-                                          ? _duration.inSeconds.toDouble()
-                                          : 1.0,
-                                    ),
-                                    max: _duration.inSeconds.toDouble() > 0
-                                        ? _duration.inSeconds.toDouble()
-                                        : 1.0,
-                                    onChanged: (val) {
-                                      _audioPlayer?.seek(
-                                        Duration(seconds: val.toInt()),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      _formatDuration(_position),
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDuration(_duration),
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Expanded(
-                            child: Text(
-                              _formatDuration(_duration),
-                              style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
-                ] else if (formattedMedia != null &&
-                    (widget.memory.mediaType == 'video' ||
-                        formattedMedia.endsWith('.mp4') ||
-                        formattedMedia.endsWith('.mov') ||
-                        formattedMedia.endsWith('.webm'))) ...[
-                  VideoPlayerWidget(
-                    videoUrl: formattedMedia,
-                    height: widget.isGridMode ? 100 : 200,
-                  ),
-                ] else if (formattedMedia != null &&
-                    (widget.memory.mediaType == 'image' ||
-                        formattedMedia.endsWith('.png') ||
-                        formattedMedia.endsWith('.jpg') ||
-                        formattedMedia.endsWith('.jpeg') ||
-                        formattedMedia.endsWith('.webp') ||
-                        formattedMedia.endsWith('.gif'))) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.network(
-                      formattedMedia,
-                      height: widget.isGridMode ? 80 : 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox(),
-                    ),
-                  ),
-                ],
+                ),
+              ),
+              
+              const Divider(color: AppColors.borderLight, height: 1),
 
-                // Tags
-                if (widget.memory.tags.length > 1 && !widget.isGridMode) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    children: widget.memory.tags.skip(1).map((t) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                            0xFFE9DEF6,
-                          ), // Light purple tag background
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          t,
-                          style: GoogleFonts.outfit(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF5E4EE8),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-
-                const SizedBox(height: 12),
-                const Divider(color: Color(0xFFE2C9E4)),
-
-                // Interaction Bar
-                Row(
+              // Interaction Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        GestureDetector(
-                          onLongPress: () {
-                            setState(() => _showReactions = !_showReactions);
-                          },
-                          onTap: _handleLikeTap,
-                          child: Row(
-                            children: [
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 200),
-                                transitionBuilder: (child, anim) =>
-                                    ScaleTransition(scale: anim, child: child),
-                                child: KeyedSubtree(
-                                  key: ValueKey<String?>(_userReaction),
-                                  child: _buildReactionWidget(),
-                                ),
+                        Semantics(
+                          button: true,
+                          label: _userReaction == null
+                              ? 'React to memory'
+                              : 'Remove reaction from memory',
+                          child: InkWell(
+                            onLongPress: () {
+                              setState(
+                                () => _showReactions = !_showReactions,
+                              );
+                            },
+                            onTap: _handleLikeTap,
+                            borderRadius: BorderRadius.circular(
+                              DesignTokens.radiusSmall,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                children: [
+                                  AnimatedSwitcher(
+                                    duration: const Duration(
+                                      milliseconds: 200,
+                                    ),
+                                    transitionBuilder: (child, anim) =>
+                                        ScaleTransition(
+                                          scale: anim,
+                                          child: child,
+                                        ),
+                                    child: KeyedSubtree(
+                                      key: ValueKey<String?>(_userReaction),
+                                      child: _buildReactionWidget(),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$_likesCount',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      color: _userReaction != null
+                                          ? (_userReaction == 'heart'
+                                                ? Colors.red
+                                                : const Color(0xFF4A3AFF))
+                                          : AppColors.textSecondary,
+                                      fontWeight: _userReaction != null
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '$_likesCount',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 12,
-                                  color: _userReaction != null
-                                      ? (_userReaction == 'heart'
-                                          ? Colors.red
-                                          : const Color(0xFF4A3AFF))
-                                      : AppColors.textSecondary,
-                                  fontWeight: _userReaction != null
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                         SizedBox(width: widget.isGridMode ? 8 : 16),
-                        GestureDetector(
-                          onTap: _handleCommentTap,
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.chat_bubble_outline_rounded,
-                                color: AppColors.textSecondary,
-                                size: 18,
+                        Semantics(
+                          button: true,
+                          label: 'Open memory comments',
+                          child: InkWell(
+                            onTap: _handleCommentTap,
+                            borderRadius: BorderRadius.circular(
+                              DesignTokens.radiusSmall,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.chat_bubble_outline_rounded,
+                                    color: AppColors.textSecondary,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$_commentsCount',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '$_commentsCount',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -613,13 +655,13 @@ class _MemoryCardState extends State<MemoryCard> {
                       widget.memory.privacy == 'family'
                           ? Icons.people_alt_outlined
                           : Icons.public,
-                      color: const Color(0xFF5E4EE8),
+                      color: AppColors.primary,
                       size: 18,
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         if (_showReactions)

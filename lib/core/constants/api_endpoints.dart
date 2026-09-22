@@ -62,6 +62,11 @@ class ApiEndpoints {
   static String albumById(String id) => '$baseUrl/albums/$id';
 
   // Family Circle & Invitations
+  static String get familyCircle => '$baseUrl/family-circle';
+  static String familyPrompts(String circleId) =>
+      '$baseUrl/family-circle/$circleId/prompts';
+  static String respondFamilyPrompt(String promptId) =>
+      '$baseUrl/family-circle/prompts/$promptId/respond';
   static String get familyCircleMembers => '$baseUrl/family-circle/members';
   static String get familySharedMemories =>
       '$baseUrl/family-circle/shared-memories';
@@ -114,10 +119,17 @@ class ApiEndpoints {
       '$baseUrl/legacy-access/vault-memories';
   static String get legacyFamilyVaults =>
       '$baseUrl/legacy-access/family-vaults';
+  static String get legacyPendingRequests =>
+      '$baseUrl/legacy-access/pending-requests';
+  static String legacyApproveRelease(String requestId) =>
+      '$baseUrl/legacy-access/verify-release/$requestId';
+  static String legacyRejectRelease(String requestId) =>
+      '$baseUrl/legacy-access/reject-release/$requestId';
 
   // AI Family Historian Endpoints
   static String get aiHistorianChat => '$baseUrl/ai/family-historian/chat';
   static String get aiHistorianStatus => '$baseUrl/ai/family-historian/status';
+  static String get insightsSummary => '$baseUrl/insights/summary';
 
   // Story Layers Endpoints
   static String storyLayers(String memoryId) =>
