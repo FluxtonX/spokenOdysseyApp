@@ -8,6 +8,7 @@ import 'package:in_app_update/in_app_update.dart';
 import 'package:spokenodyssey/features/memories/presentation/widgets/ai_historian_sheet.dart';
 import 'package:spokenodyssey/features/profile/presentation/pages/profile_page.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/app_ui.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
@@ -361,16 +362,22 @@ class _MainScreenState extends State<MainScreen> {
             child: IndexedStack(index: _currentIndex, children: _pages),
           ),
         ),
-        // True Floating Action Button docked to center
+        // True Floating Action Button docked to center — with violet glow
         floatingActionButton: Semantics(
           button: true,
           label: 'Create a memory',
-          child: FloatingActionButton(
-            tooltip: 'Create a memory',
-            backgroundColor: AppColors.primary,
-            elevation: 4,
-            onPressed: () => _showCreateOptionsModal(context),
-            child: const Icon(Icons.add, color: Colors.white, size: 28),
+          child: Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: DesignTokens.fabGlow,
+            ),
+            child: FloatingActionButton(
+              tooltip: 'Create a memory',
+              backgroundColor: AppColors.primary,
+              elevation: 0,
+              onPressed: () => _showCreateOptionsModal(context),
+              child: const Icon(Icons.add, color: Colors.white, size: 28),
+            ),
           ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -384,13 +391,18 @@ class _MainScreenState extends State<MainScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(
-                  top: BorderSide(color: Colors.grey.shade200, width: 1),
+                  top: BorderSide(color: Colors.grey.shade100, width: 0.8),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, -6),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 4,
+                    offset: const Offset(0, -1),
                   ),
                 ],
               ),

@@ -3,7 +3,9 @@ class ApiEndpoints {
 
   // Deployed AWS EC2 Production Backend URL (Identical to spoken-odyssey-web configuration)
   static const String liveProductionUrl =
-      'http://ec2-13-206-196-136.ap-south-1.compute.amazonaws.com:5001/api';
+      'http://13.206.178.92:5001/api';
+// static const String liveProductionUrl =
+//       'http://ec2-13-206-196-136.ap-south-1.compute.amazonaws.com:5001/api';
 
   // Toggle this flag if you want to switch to local development backend
   static const bool useLiveProductionBackend = true;

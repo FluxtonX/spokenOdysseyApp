@@ -1,7 +1,13 @@
 import 'package:get_it/get_it.dart';
 
+import '../constants/api_endpoints.dart';
 import '../network/api_client.dart';
+import '../network/network_info.dart';
+import '../storage/offline_cache_storage.dart';
 import '../storage/secure_storage_service.dart';
+
+// Connectivity
+import '../../features/connectivity/presentation/cubit/connectivity_cubit.dart';
 
 // Auth
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
@@ -22,6 +28,7 @@ import '../../features/profile/presentation/cubits/profile_cubit.dart';
 import '../../features/profile/presentation/cubits/followers_cubit.dart';
 
 // Memories
+import '../../features/memories/data/datasources/memories_local_datasource.dart';
 import '../../features/memories/data/datasources/memories_remote_datasource.dart';
 import '../../features/memories/data/repositories/memories_repository_impl.dart';
 import '../../features/memories/domain/repositories/memories_repository.dart';
@@ -95,7 +102,15 @@ Future<void> initServiceLocator() async {
 
   // Storage & Network Services
   sl.registerLazySingleton<SecureStorageService>(() => SecureStorageService());
-  sl.registerLazySingleton<ApiClient>(() => ApiClient(storageService: sl()));
+  sl.registerLazySingleton<OfflineCacheStorage>(
+    () => OfflineCacheStorage(sharedPreferences: sl()),
+  );
+  sl.registerLazySingleton<NetworkInfo>(
+    () => NetworkInfoImpl.forBaseUrl(ApiEndpoints.baseUrl),
+  );
+  sl.registerLazySingleton<ApiClient>(
+    () => ApiClient(storageService: sl(), networkInfo: sl()),
+  );
 
   // Data Sources
   sl.registerLazySingleton<GlassesRemoteDataSource>(
@@ -112,6 +127,9 @@ Future<void> initServiceLocator() async {
   );
   sl.registerLazySingleton<MemoriesRemoteDataSource>(
     () => MemoriesRemoteDataSourceImpl(apiClient: sl()),
+  );
+  sl.registerLazySingleton<MemoriesLocalDataSource>(
+    () => MemoriesLocalDataSourceImpl(storage: sl()),
   );
   sl.registerLazySingleton<AiHistorianRemoteDataSource>(
     () => AiHistorianRemoteDataSourceImpl(apiClient: sl()),
@@ -143,13 +161,20 @@ Future<void> initServiceLocator() async {
     () => GlassesRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
   );
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(remoteDataSource: sl(), storageService: sl()),
+    () => AuthRepositoryImpl(
+      remoteDataSource: sl(),
+      storageService: sl(),
+      offlineCache: sl(),
+    ),
   );
   sl.registerLazySingleton<ProfileRepository>(
     () => ProfileRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton<MemoriesRepository>(
-    () => MemoriesRepositoryImpl(remoteDataSource: sl()),
+    () => MemoriesRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+    ),
   );
   sl.registerLazySingleton<AiHistorianRepository>(
     () => AiHistorianRepositoryImpl(remoteDataSource: sl()),
@@ -184,6 +209,7 @@ Future<void> initServiceLocator() async {
   sl.registerLazySingleton(() => ResetPasswordUseCase(sl()));
 
   // Cubits
+  sl.registerLazySingleton(() => ConnectivityCubit(networkInfo: sl()));
   sl.registerLazySingleton(() => GlassesCubit(repository: sl()));
   sl.registerLazySingleton(
     () => AuthCubit(

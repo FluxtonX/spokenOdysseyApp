@@ -13,7 +13,8 @@ class SmartGlassesStatusBar extends StatelessWidget {
     return BlocBuilder<GlassesCubit, GlassesState>(
       builder: (context, state) {
         final isConnected = state.status == GlassesConnectionStatus.connected;
-        final isConnecting = state.status == GlassesConnectionStatus.connecting ||
+        final isConnecting =
+            state.status == GlassesConnectionStatus.connecting ||
             state.status == GlassesConnectionStatus.scanning;
 
         Color iconColor;
@@ -23,7 +24,10 @@ class SmartGlassesStatusBar extends StatelessWidget {
         if (isConnected) {
           iconColor = const Color(0xFF10B981); // Emerald Green
           statusIcon = Icons.bluetooth_connected_rounded;
-          tooltip = '${state.connectedDevice?.name ?? "Glasses"} (Connected ${state.connectedDevice?.batteryLevel ?? 88}%)';
+          final device = state.connectedDevice;
+          tooltip = device != null && device.hasBatteryInfo
+              ? '${device.name} · Connected · ${device.batteryLevel}%'
+              : '${device?.name ?? 'Smart Glasses'} · Connected';
         } else if (isConnecting) {
           iconColor = const Color(0xFFF59E0B); // Amber Pulse
           statusIcon = Icons.bluetooth_searching_rounded;
@@ -38,11 +42,7 @@ class SmartGlassesStatusBar extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: Icon(
-                statusIcon,
-                color: iconColor,
-                size: 24,
-              ),
+              icon: Icon(statusIcon, color: iconColor, size: 24),
               tooltip: tooltip,
               onPressed: () {
                 Navigator.push(
@@ -50,7 +50,9 @@ class SmartGlassesStatusBar extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => BlocProvider.value(
                       value: context.read<GlassesCubit>(),
-                      child: const SmartGlassesSettingsPage(isStandalonePage: true),
+                      child: const SmartGlassesSettingsPage(
+                        isStandalonePage: true,
+                      ),
                     ),
                   ),
                 );

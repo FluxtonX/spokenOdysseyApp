@@ -109,21 +109,34 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
             children: [
               // Tab bar
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.borderLight, width: 1),
-                  ),
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: TabBar(
                   controller: _tabController,
-                  labelColor: AppColors.primary,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  indicatorColor: AppColors.primary,
-                  indicatorWeight: 3,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: const Color(0xFF6B7280),
+                  indicator: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5B3EFF), Color(0xFF7000FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5B3EFF).withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 14),
                   labelStyle: GoogleFonts.outfit(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -150,13 +163,13 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary,
+                                color: Colors.amber.shade400,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 '$totalInvitesBadge',
                                 style: GoogleFonts.outfit(
-                                  color: Colors.white,
+                                  color: const Color(0xFF1F2937),
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -383,31 +396,47 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: _openInviteModal,
-                  icon: const Icon(
-                    Icons.person_add_rounded,
-                    color: Colors.white,
-                    size: 16,
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5B3EFF), Color(0xFF7000FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5B3EFF).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  label: Text(
-                    'Invite',
-                    style: GoogleFonts.outfit(
+                  child: ElevatedButton.icon(
+                    onPressed: _openInviteModal,
+                    icon: const Icon(
+                      Icons.person_add_rounded,
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      size: 16,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                    label: Text(
+                      'Invite',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 9,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
                   ),
                 ),
               ],
@@ -514,8 +543,6 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
     final name = member.user?.name ?? 'Family Member';
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'F';
     final isPending = member.status == 'pending';
-    final isLegacyAccess =
-        (member.role == 'admin' || member.role == 'ADMIN') && !isPending;
     final joinedDate = _formatJoinDate(member.joinedAt);
 
     final memCount = state.sharedMemories.where((mem) {
@@ -530,33 +557,27 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
     }).length;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isPending ? Colors.amber.shade400 : const Color(0xFF6366F1),
-          width: 1.2,
-        ),
         boxShadow: [
           BoxShadow(
-            color: (isPending ? Colors.amber : const Color(0xFF6366F1))
-                .withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar
               CircleAvatar(
-                radius: 28,
+                radius: 34,
                 backgroundColor: isPending
                     ? Colors.amber.shade50
                     : const Color(0xFFEEF2FF),
@@ -569,241 +590,65 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                           color: isPending
                               ? Colors.amber.shade800
                               : const Color(0xFF4A3AFF),
-                          fontSize: 20,
+                          fontSize: 24,
                         ),
                       )
                     : null,
               ),
-              const SizedBox(width: 12),
-
-              // Name + relationship info
+              const SizedBox(width: 16),
+              // Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: const Color(0xFF1E1B4B),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8,
+                    // Name and relation pill
+                    Row(
                       children: [
-                        Text(
-                          member.relationship,
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            color: isPending
-                                ? Colors.amber.shade800
-                                : const Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  name,
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 18,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEEBFF),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  member.relationship,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF5B3EFF),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (!isPending) ...[
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.favorite_border_rounded,
-                                size: 13,
-                                color: Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                '$memCount shared',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 11,
-                                  color: const Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.access_time_rounded,
-                                size: 13,
-                                color: Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                joinedDate,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 11,
-                                  color: const Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ] else ...[
-                          Text(
-                            '• Awaiting Approval',
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.amber.shade800,
+                        if (isAdmin && !isPending)
+                          PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.more_horiz,
+                              color: Color(0xFF9CA3AF),
+                              size: 20,
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 6),
-
-              // Badge
-              if (isPending)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.access_time_rounded,
-                        size: 11,
-                        color: Colors.amber.shade900,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Join Request',
-                        style: GoogleFonts.outfit(
-                          fontSize: 10.5,
-                          color: Colors.amber.shade900,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                _buildAccessBadge(
-                  isLegacyAccess ? 'Legacy Access' : 'Public Only',
-                  isLegacyAccess,
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-          // Horizontal divider line
-          Container(
-            height: 1,
-            color: const Color(0xFFC7D2FE).withValues(alpha: 0.8),
-          ),
-          const SizedBox(height: 12),
-
-          // Action buttons (Sleek height)
-          Row(
-            children: [
-              if (isPending) ...[
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: OutlinedButton(
-                      onPressed: () => context
-                          .read<FamilyCubit>()
-                          .declineApproval(member.id),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.borderLight),
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        'Decline',
-                        style: GoogleFonts.outfit(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: ElevatedButton.icon(
-                      onPressed: () => context
-                          .read<FamilyCubit>()
-                          .approveInvitation(member.id),
-                      icon: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      label: Text(
-                        'Approve & Connect',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                ),
-              ] else ...[
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedMemberFilterId = member.user?.id ?? 'ALL';
-                        });
-                        _tabController.animateTo(2);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4A3AFF),
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 38),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'View Shared',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: isAdmin
-                        ? PopupMenuButton<String>(
                             onSelected: (val) {
                               if (val == 'promote') {
                                 context.read<FamilyCubit>().promoteMember(
@@ -828,51 +673,148 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
                                 ),
                               ),
                             ],
-                            child: OutlinedButton(
-                              onPressed: null,
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                  color: Color(0xFF4A3AFF),
-                                  width: 1,
-                                ),
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(0, 38),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: Text(
-                                'Manage Access',
-                                style: GoogleFonts.outfit(
-                                  color: const Color(0xFF1E1B4B),
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          )
-                        : OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: Color(0xFF4A3AFF),
-                                width: 1,
-                              ),
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 38),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              'Manage Access',
-                              style: GoogleFonts.outfit(
-                                color: const Color(0xFF1E1B4B),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
                           ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    // Location (Placeholder)
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: Color(0xFF6B7280),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Location unavailable',
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Member since
+                    Text(
+                      'Member since $joinedDate',
+                      style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                    if (isPending) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Awaiting Approval',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.amber.shade800,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Bottom row: Memories shared and View Profile button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_month_outlined,
+                    size: 16,
+                    color: Color(0xFF5B3EFF),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$memCount memories shared',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF5B3EFF),
+                    ),
+                  ),
+                ],
+              ),
+              if (isPending && isAdmin) ...[
+                Row(
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => context
+                          .read<FamilyCubit>()
+                          .declineApproval(member.id),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE5E7EB)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        minimumSize: const Size(0, 36),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        'Decline',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF374151),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => context
+                          .read<FamilyCubit>()
+                          .approveInvitation(member.id),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5B3EFF),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        minimumSize: const Size(0, 36),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Approve',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedMemberFilterId = member.user?.id ?? 'ALL';
+                    });
+                    _tabController.animateTo(2);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    minimumSize: const Size(0, 38),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    'View Profile',
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF111827),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -881,60 +823,6 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
         ],
       ),
     );
-  }
-
-  Widget _buildAccessBadge(String label, bool isLegacy) {
-    if (isLegacy) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF15803D),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.shield_outlined, size: 11, color: Colors.white),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 10.5,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF1D5CE),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.lock_outline_rounded,
-              size: 11,
-              color: Color(0xFFC2410C),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 10.5,
-                color: const Color(0xFFC2410C),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
   }
 
   String _formatJoinDate(String? joinedAt) {
@@ -971,10 +859,12 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
         final matchesId =
             m.author?.id == _selectedMemberFilterId ||
             m.author?.firebaseUid == _selectedMemberFilterId;
-        final selectedMember = state.members.firstWhere(
-          (mb) => mb.user?.id == _selectedMemberFilterId,
-          orElse: () => state.members.first,
-        );
+        final selectedMember = state.members
+            .cast<FamilyMemberEntity>()
+            .firstWhere(
+              (mb) => mb.user?.id == _selectedMemberFilterId,
+              orElse: () => state.members.first,
+            );
         final matchesEmail =
             selectedMember.user?.email != null &&
             m.author?.email.toLowerCase() ==
@@ -1370,18 +1260,33 @@ class _FamilyCirclePageState extends State<FamilyCirclePage>
     final isSelected = _selectedFormatFilter == value;
     return GestureDetector(
       onTap: () => setState(() => _selectedFormatFilter = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1E1B4B) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(12),
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF5B3EFF), Color(0xFF7000FF)],
+                )
+              : null,
+          color: isSelected ? null : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF5B3EFF).withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: GoogleFonts.outfit(
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
+            color: isSelected ? Colors.white : const Color(0xFF4B5563),
           ),
         ),
       ),

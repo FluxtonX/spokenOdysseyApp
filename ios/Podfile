@@ -31,6 +31,8 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  # Vendor smart glasses SDK (QCSDK) + Swift bridge, see QCGlassesKit/QCGlassesKit.podspec.
+  pod 'QCGlassesKit', :path => 'QCGlassesKit'
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -41,12 +43,35 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
 
     target.build_configurations.each do |config|
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
-        '$(inherited)',
+      # permission_handler compiles every iOS permission out unless its macro
+      # is set here. Append (don't `||=`) so pods that already define macros
+      # still get these.
+      defs = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+      defs = [defs] if defs.is_a?(String)
+      [
         'PERMISSION_CAMERA=1',
         'PERMISSION_PHOTOS=1',
         'PERMISSION_MICROPHONE=1',
-      ]
+        'PERMISSION_BLUETOOTH=1',
+      ].each { |macro| defs << macro unless defs.include?(macro) }
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
     end
+  end
+end
+
+# QCSDK / JLAudioUnitKit ship an iPhone (device) slice only. Link them for `iphoneos`
+# builds only, so Simulator builds keep working (QCGlassesKit compiles its SDK calls out
+# there). Runs after integration, when the xcconfig files exist on disk.
+post_integrate do |installer|
+  support = File.join(installer.sandbox.root, 'Target Support Files')
+  Dir.glob(File.join(support, '{QCGlassesKit,Pods-Runner}', '*.xcconfig')).each do |path|
+    text = File.read(path)
+    next if text.include?('QC_GLASSES_LDFLAGS')
+    pod_target = File.basename(File.dirname(path)) == 'QCGlassesKit'
+    text = text.gsub(' -framework "QCSDK"', '').gsub(' -framework "JLAudioUnitKit"', '')
+    text = text.sub(/^OTHER_LDFLAGS = (.*)$/) { "OTHER_LDFLAGS = #{$1} $(QC_GLASSES_LDFLAGS)" }
+    device_flags = pod_target ? '-ObjC -framework "QCSDK" -framework "JLAudioUnitKit"' : '-framework "JLAudioUnitKit"'
+    text << "\nQC_GLASSES_LDFLAGS = \nQC_GLASSES_LDFLAGS[sdk=iphoneos*] = #{device_flags}\n"
+    File.write(path, text)
   end
 end

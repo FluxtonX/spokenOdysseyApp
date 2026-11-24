@@ -4,6 +4,9 @@ import '../theme/design_tokens.dart';
 
 enum AppButtonVariant { primary, secondary, text }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AppSegmentedControl — premium animated pill tabs
+// ─────────────────────────────────────────────────────────────────────────────
 class AppSegmentedControl extends StatelessWidget {
   final int selectedIndex;
   final List<String> labels;
@@ -56,25 +59,39 @@ class AppSegmentedControl extends StatelessWidget {
   }
 
   Widget _buildItem(BuildContext context, int index) {
+    final isSelected = selectedIndex == index;
     return Semantics(
       button: true,
-      selected: selectedIndex == index,
+      selected: isSelected,
       label: labels[index],
-      child: InkWell(
+      child: GestureDetector(
         onTap: () => onChanged(index),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minHeight: 36),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selectedIndex == index ? AppColors.primary : Colors.transparent,
+            gradient: isSelected ? DesignTokens.primaryGradient : null,
+            color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Text(
             labels[index],
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: selectedIndex == index ? AppColors.textWhite : AppColors.primary,
+                  color: isSelected ? AppColors.textWhite : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 13,
                 ),
           ),
         ),
@@ -83,6 +100,9 @@ class AppSegmentedControl extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AsyncStateView — loading / error / empty state wrapper
+// ─────────────────────────────────────────────────────────────────────────────
 class AsyncStateView extends StatelessWidget {
   final bool isLoading;
   final String? errorMessage;
@@ -114,7 +134,9 @@ class AsyncStateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
     if (errorMessage != null) {
       return _StateMessage(
@@ -162,44 +184,64 @@ class _StateMessage extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: color),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 16),
-              AppButton(
-                label: actionLabel!,
-                expand: false,
-                onPressed: onAction,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLarge),
+            boxShadow: DesignTokens.cardShadow,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 36, color: color),
               ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: 20),
+                AppButton(
+                  label: actionLabel!,
+                  expand: false,
+                  onPressed: onAction,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class AppButton extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// AppButton — gradient primary, outlined secondary, text variant
+// ─────────────────────────────────────────────────────────────────────────────
+class AppButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
   final AppButtonVariant variant;
   final bool isLoading;
   final bool expand;
   final IconData? icon;
+  final double? height;
+  final EdgeInsetsGeometry? padding;
 
   const AppButton({
     super.key,
@@ -209,22 +251,28 @@ class AppButton extends StatelessWidget {
     this.isLoading = false,
     this.expand = true,
     this.icon,
+    this.height,
+    this.padding,
   });
 
   @override
+  State<AppButton> createState() => _AppButtonState();
+}
+
+class _AppButtonState extends State<AppButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    final progressColor = variant == AppButtonVariant.primary
+    final effectiveHeight = widget.height ?? DesignTokens.controlHeight;
+    final effectivePadding =
+        widget.padding ?? const EdgeInsets.symmetric(horizontal: 24);
+
+    final progressColor = widget.variant == AppButtonVariant.primary
         ? AppColors.textWhite
         : AppColors.primary;
-    final child = isLoading
-        ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : Text(label);
 
-    final progress = isLoading
+    final childWidget = widget.isLoading
         ? SizedBox(
             width: 20,
             height: 20,
@@ -233,52 +281,103 @@ class AppButton extends StatelessWidget {
               color: progressColor,
             ),
           )
-        : child;
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                Icon(widget.icon,
+                    size: 18,
+                    color: widget.variant == AppButtonVariant.primary
+                        ? Colors.white
+                        : AppColors.primary),
+                const SizedBox(width: 8),
+              ],
+              Text(widget.label),
+            ],
+          );
 
-    final button = switch (variant) {
-      AppButtonVariant.primary =>
-        icon == null
-            ? ElevatedButton(
-                onPressed: isLoading ? null : onPressed,
-                child: progress,
-              )
-            : ElevatedButton.icon(
-                onPressed: isLoading ? null : onPressed,
-                icon: Icon(icon),
-                label: progress,
+    if (widget.variant == AppButtonVariant.primary) {
+      return GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.isLoading ? null : widget.onPressed,
+        child: AnimatedScale(
+          scale: _pressed ? 0.97 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          child: Container(
+            width: widget.expand ? double.infinity : null,
+            height: effectiveHeight,
+            padding: effectivePadding,
+            decoration: BoxDecoration(
+              gradient: widget.onPressed != null
+                  ? DesignTokens.primaryGradient
+                  : null,
+              color: widget.onPressed == null ? AppColors.disabled : null,
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
+              boxShadow: widget.onPressed != null && !_pressed
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.28),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Align(
+              alignment: Alignment.center,
+              widthFactor: widget.expand ? null : 1.0,
+              child: DefaultTextStyle(
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+                child: childWidget,
               ),
-      AppButtonVariant.secondary =>
-        icon == null
-            ? OutlinedButton(
-                onPressed: isLoading ? null : onPressed,
-                child: progress,
-              )
-            : OutlinedButton.icon(
-                onPressed: isLoading ? null : onPressed,
-                icon: Icon(icon),
-                label: progress,
-              ),
-      AppButtonVariant.text =>
-        icon == null
-            ? TextButton(
-                onPressed: isLoading ? null : onPressed,
-                child: progress,
-              )
-            : TextButton.icon(
-                onPressed: isLoading ? null : onPressed,
-                icon: Icon(icon),
-                label: progress,
-              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Secondary / text variants — use existing Material buttons
+    final button = switch (widget.variant) {
+      AppButtonVariant.secondary => widget.icon == null
+          ? OutlinedButton(
+              onPressed: widget.isLoading ? null : widget.onPressed,
+              child: childWidget,
+            )
+          : OutlinedButton.icon(
+              onPressed: widget.isLoading ? null : widget.onPressed,
+              icon: Icon(widget.icon),
+              label: childWidget,
+            ),
+      AppButtonVariant.text => widget.icon == null
+          ? TextButton(
+              onPressed: widget.isLoading ? null : widget.onPressed,
+              child: childWidget,
+            )
+          : TextButton.icon(
+              onPressed: widget.isLoading ? null : widget.onPressed,
+              icon: Icon(widget.icon),
+              label: childWidget,
+            ),
+      _ => const SizedBox(),
     };
 
     return SizedBox(
-      width: expand ? double.infinity : null,
-      height: DesignTokens.controlHeight,
+      width: widget.expand ? double.infinity : null,
+      height: effectiveHeight,
       child: button,
     );
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AppTextField — unchanged (styling handled by InputDecorationTheme)
+// ─────────────────────────────────────────────────────────────────────────────
 class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String label;
@@ -327,6 +426,9 @@ class AppTextField extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AppIconButton — semantic icon button, unchanged API
+// ─────────────────────────────────────────────────────────────────────────────
 class AppIconButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -359,6 +461,9 @@ class AppIconButton extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AppFeedback — snack bar helper, unchanged
+// ─────────────────────────────────────────────────────────────────────────────
 class AppFeedback {
   AppFeedback._();
 
@@ -378,5 +483,64 @@ class AppFeedback {
           action: action,
         ),
       );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FadeSlideIn — staggered list-entry animation wrapper
+// ─────────────────────────────────────────────────────────────────────────────
+class FadeSlideIn extends StatefulWidget {
+  final Widget child;
+  final Duration delay;
+  final Duration duration;
+
+  const FadeSlideIn({
+    super.key,
+    required this.child,
+    this.delay = Duration.zero,
+    this.duration = const Duration(milliseconds: 380),
+  });
+
+  @override
+  State<FadeSlideIn> createState() => _FadeSlideInState();
+}
+
+class _FadeSlideInState extends State<FadeSlideIn>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: widget.duration);
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    if (widget.delay == Duration.zero) {
+      _ctrl.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) _ctrl.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
   }
 }

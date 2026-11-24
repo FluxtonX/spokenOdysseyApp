@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import '../../../../core/storage/offline_cache_storage.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -12,11 +13,13 @@ import '../models/user_model.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final SecureStorageService storageService;
+  final OfflineCacheStorage? offlineCache;
   final fb.FirebaseAuth _firebaseAuth;
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
     required this.storageService,
+    this.offlineCache,
     fb.FirebaseAuth? firebaseAuth,
   }) : _firebaseAuth = firebaseAuth ?? fb.FirebaseAuth.instance;
 
@@ -323,6 +326,10 @@ class AuthRepositoryImpl implements AuthRepository {
       await GoogleSignIn().signOut();
     } catch (_) {}
     await storageService.clearAll();
+    // Offline copies (e.g. latest memories) belong to this user only.
+    try {
+      await offlineCache?.clearAll();
+    } catch (_) {}
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -5,21 +7,28 @@ import 'package:permission_handler/permission_handler.dart';
 class SmartGlassesPermissionDialog extends StatelessWidget {
   final VoidCallback onPermissionsGranted;
 
-  const SmartGlassesPermissionDialog({
-    super.key,
-    required onPermissionsGranted,
-  }) : onPermissionsGranted = onPermissionsGranted;
+  const SmartGlassesPermissionDialog({super.key, required onPermissionsGranted})
+    : onPermissionsGranted = onPermissionsGranted;
+
+  /// Permissions that gate pairing. iOS only has a single Bluetooth
+  /// permission (CoreBluetooth needs no location); the Android 12+
+  /// `bluetoothScan`/`bluetoothConnect` permissions don't exist there and
+  /// always report "permanently denied", so they must never be asked on iOS.
+  static List<Permission> get _requiredPermissions => Platform.isIOS
+      ? [Permission.bluetooth]
+      : [
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.locationWhenInUse,
+        ];
 
   static Future<bool> checkAndPrompt({
     required BuildContext context,
     required VoidCallback onGranted,
   }) async {
-    // Check if permissions are already granted
-    final btScan = await Permission.bluetoothScan.status;
-    final btConnect = await Permission.bluetoothConnect.status;
-    final location = await Permission.locationWhenInUse.status;
-
-    if (btScan.isGranted && btConnect.isGranted && location.isGranted) {
+    final needed = _requiredPermissions;
+    final current = await Future.wait(needed.map((p) => p.status));
+    if (current.every((s) => s.isGranted)) {
       onGranted();
       return true;
     }
@@ -32,34 +41,40 @@ class SmartGlassesPermissionDialog extends StatelessWidget {
       builder: (dialogCtx) => SmartGlassesPermissionDialog(
         onPermissionsGranted: () async {
           Navigator.pop(dialogCtx, true);
-
-          // Request permissions via system prompt
-          Map<Permission, PermissionStatus> statuses = await [
-            Permission.bluetoothScan,
-            Permission.bluetoothConnect,
-            Permission.locationWhenInUse,
-            Permission.nearbyWifiDevices,
-          ].request();
-
-          bool allGranted = true;
-          if (statuses[Permission.bluetoothScan]?.isPermanentlyDenied == true ||
-              statuses[Permission.bluetoothConnect]?.isPermanentlyDenied == true ||
-              statuses[Permission.locationWhenInUse]?.isPermanentlyDenied == true) {
-            allGranted = false;
-            openAppSettings();
-          } else if (statuses[Permission.bluetoothScan]?.isGranted != true ||
-              statuses[Permission.bluetoothConnect]?.isGranted != true) {
-            allGranted = false;
-          }
-
-          if (allGranted) {
-            onGranted();
-          }
+          if (await _requestRequired()) onGranted();
         },
       ),
     );
 
     return result ?? false;
+  }
+
+  static Future<bool> _requestRequired() async {
+    if (Platform.isIOS) {
+      final status = await Permission.bluetooth.request();
+      if (status.isGranted) return true;
+      // Once denied, iOS never shows the system prompt again.
+      if (status.isPermanentlyDenied || status.isRestricted) {
+        await openAppSettings();
+      }
+      return false;
+    }
+
+    final statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.locationWhenInUse,
+      Permission.nearbyWifiDevices,
+    ].request();
+
+    if (statuses[Permission.bluetoothScan]?.isPermanentlyDenied == true ||
+        statuses[Permission.bluetoothConnect]?.isPermanentlyDenied == true ||
+        statuses[Permission.locationWhenInUse]?.isPermanentlyDenied == true) {
+      await openAppSettings();
+      return false;
+    }
+    return statuses[Permission.bluetoothScan]?.isGranted == true &&
+        statuses[Permission.bluetoothConnect]?.isGranted == true;
   }
 
   @override
@@ -101,7 +116,9 @@ class SmartGlassesPermissionDialog extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Spoken Odyssey needs Bluetooth & Location access to discover, connect, and import videos from your Smart Glasses.',
+              Platform.isIOS
+                  ? 'Spoken Odyssey needs Bluetooth access to discover, connect, and import videos from your Smart Glasses.'
+                  : 'Spoken Odyssey needs Bluetooth & Location access to discover, connect, and import videos from your Smart Glasses.',
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
                 fontSize: 13,
@@ -115,12 +132,14 @@ class SmartGlassesPermissionDialog extends StatelessWidget {
               title: 'Bluetooth & Nearby Devices',
               subtitle: 'To scan, pair, and communicate with glasses.',
             ),
-            const SizedBox(height: 12),
-            _buildPermissionItem(
-              icon: Icons.wifi_protected_setup_rounded,
-              title: 'Location & Wi-Fi Direct',
-              subtitle: 'To transfer high-definition videos from glasses.',
-            ),
+            if (!Platform.isIOS) ...[
+              const SizedBox(height: 12),
+              _buildPermissionItem(
+                icon: Icons.wifi_protected_setup_rounded,
+                title: 'Location & Wi-Fi Direct',
+                subtitle: 'To transfer high-definition videos from glasses.',
+              ),
+            ],
             const SizedBox(height: 24),
             Row(
               children: [

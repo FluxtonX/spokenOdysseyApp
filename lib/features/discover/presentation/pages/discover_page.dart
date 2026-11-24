@@ -7,6 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/media_url_formatter.dart';
 import '../../../../core/widgets/app_ui.dart';
+import '../../../../core/widgets/animated_waveform.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../memories/domain/entities/memory_entity.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
@@ -142,16 +143,21 @@ class _DiscoverPageState extends State<DiscoverPage>
                     );
                   },
                   child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    height: 56,
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 6,
+                      top: 6,
+                      bottom: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(30),
                       border: Border.all(color: const Color(0xFFE5E7EB)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 6,
+                          blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -161,33 +167,33 @@ class _DiscoverPageState extends State<DiscoverPage>
                         const Icon(
                           Icons.search_rounded,
                           color: Color(0xFF9CA3AF),
-                          size: 20,
+                          size: 22,
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Search memories, albums, people...',
                             style: GoogleFonts.outfit(
-                              fontSize: 14,
+                              fontSize: 15,
                               color: const Color(0xFF9CA3AF),
                             ),
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 20,
+                            vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF0FF),
-                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFF4A3AFF),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                           child: Text(
                             'Search',
                             style: GoogleFonts.outfit(
-                              fontSize: 11,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF4A3AFF),
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -264,15 +270,18 @@ class _DiscoverPageState extends State<DiscoverPage>
     return Column(
       children: [
         for (int i = 0; i < people.length; i++) ...[
-          _FeaturedPersonCard(
-            person: people[i],
-            cardIndex: i,
-            onFollowToggle: () {
-              context.read<DiscoverCubit>().toggleFollow(
-                people[i].id,
-                people[i].isFollowing,
-              );
-            },
+          _DiscoverFadeSlideIn(
+            index: i,
+            child: _FeaturedPersonCard(
+              person: people[i],
+              cardIndex: i,
+              onFollowToggle: () {
+                context.read<DiscoverCubit>().toggleFollow(
+                  people[i].id,
+                  people[i].isFollowing,
+                );
+              },
+            ),
           ),
           if (i < people.length - 1) const SizedBox(height: 18),
         ],
@@ -300,19 +309,22 @@ class _DiscoverPageState extends State<DiscoverPage>
     return Column(
       children: [
         for (int i = 0; i < memories.length; i++) ...[
-          _StoryCard(
-            memory: memories[i],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MemoryDetailPage(memoryId: memories[i].id),
-                ),
-              );
-            },
-            onReact: () {
-              sl<MemoriesCubit>().reactToMemory(memories[i].id, 'LIKE');
-            },
+          _DiscoverFadeSlideIn(
+            index: i,
+            child: _StoryCard(
+              memory: memories[i],
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MemoryDetailPage(memoryId: memories[i].id),
+                  ),
+                );
+              },
+              onReact: () {
+                sl<MemoriesCubit>().reactToMemory(memories[i].id, 'LIKE');
+              },
+            ),
           ),
           if (i < memories.length - 1) const SizedBox(height: 18),
         ],
@@ -354,18 +366,21 @@ class _FeaturedPersonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatar = MediaUrlFormatter.format(person.avatarUrl);
     final cover = MediaUrlFormatter.format(person.coverUrl);
+    final displayImage = cover ?? avatar;
     final gradientColors = _coverGradients[cardIndex % _coverGradients.length];
 
     final name = person.name?.isNotEmpty == true ? person.name! : 'User';
     final profession = person.profession?.isNotEmpty == true
         ? person.profession!
         : 'Storyteller';
-    final bio = person.bio?.isNotEmpty == true
-        ? person.bio!
-        : 'Sharing life stories and preserving memories.';
-
+    final location = person.location?.isNotEmpty == true
+        ? person.location!
+        : 'Unknown Location';
     final followersFormatted = NumberFormat.compact().format(
       person.followersCount,
+    );
+    final memoriesFormatted = NumberFormat.compact().format(
+      person.memoriesCount,
     );
 
     return GestureDetector(
@@ -376,59 +391,73 @@ class _FeaturedPersonCard extends StatelessWidget {
         );
       },
       child: Container(
+        height: 380,
+        width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(24),
+          gradient: displayImage == null
+              ? LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          image: displayImage != null
+              ? DecorationImage(
+                  image: NetworkImage(displayImage),
+                  fit: BoxFit.cover,
+                )
+              : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // ── Cover Banner with Overlapping Avatar ───────────────────────
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  height: 110,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(18),
-                    ),
-                    gradient: cover == null
-                        ? LinearGradient(
-                            colors: gradientColors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    image: cover != null
-                        ? DecorationImage(
-                            image: NetworkImage(cover),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+            // Dark gradient overlay for text readability
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.6),
+                      Colors.black.withValues(alpha: 0.9),
+                    ],
+                    stops: const [0.0, 0.3, 0.7, 1.0],
                   ),
                 ),
-                Positioned(
-                  bottom: -24,
-                  left: 18,
-                  child: Container(
-                    width: 58,
-                    height: 58,
+              ),
+            ),
+            // Top Row: Avatar and Follow Button
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Avatar
+                  Container(
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        width: 2,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -444,119 +473,184 @@ class _FeaturedPersonCard extends StatelessWidget {
                               name.isNotEmpty ? name[0].toUpperCase() : 'U',
                               style: GoogleFonts.outfit(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 22,
+                                fontSize: 16,
                                 color: Colors.white,
                               ),
                             )
                           : null,
                     ),
                   ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 32),
-
-            // ── Body Info ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: GoogleFonts.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF111827),
-                      letterSpacing: -0.2,
+                  // Follow Button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: onFollowToggle,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: person.isFollowing
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : Colors.black.withValues(
+                                  alpha: 0.2,
+                                ), // Added dark translucent background for better contrast if not following
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              person.isFollowing
+                                  ? Icons.check_rounded
+                                  : Icons.add_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              person.isFollowing ? 'Following' : 'Follow',
+                              style: GoogleFonts.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    profession,
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    bio,
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF374151),
-                      height: 1.4,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 14),
-            const Divider(height: 1, color: Color(0xFFF3F4F6)),
-
-            // ── Footer: Followers & Follow Button ──────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Bottom Info Area
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      style: GoogleFonts.outfit(
-                        fontSize: 13,
-                        color: const Color(0xFF6B7280),
-                      ),
-                      children: [
-                        TextSpan(
-                          text: followersFormatted,
-                          style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
-                          ),
-                        ),
-                        const TextSpan(text: ' followers'),
-                      ],
+                  Text(
+                    name,
+                    style: GoogleFonts.outfit(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: onFollowToggle,
-                    icon: Icon(
-                      person.isFollowing
-                          ? Icons.person_rounded
-                          : Icons.person_add_rounded,
-                      size: 15,
-                      color: person.isFollowing
-                          ? const Color(0xFF374151)
-                          : Colors.white,
+                  const SizedBox(height: 4),
+                  Text(
+                    profession,
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
-                    label: Text(
-                      person.isFollowing ? 'Following' : 'Follow',
-                      style: GoogleFonts.outfit(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: person.isFollowing
-                            ? const Color(0xFF374151)
-                            : Colors.white,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Stats Row
+                  Row(
+                    children: [
+                      // Location
+                      Icon(
+                        Icons.language_rounded,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        size: 16,
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: person.isFollowing
-                          ? const Color(0xFFF3F4F6)
-                          : const Color(0xFF4A3AFF),
-                      foregroundColor: person.isFollowing
-                          ? const Color(0xFF374151)
-                          : Colors.white,
-                      elevation: 0,
-                      minimumSize: const Size(92, 34),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 6),
+                      Text(
+                        location,
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      // Memories
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$memoriesFormatted Memories',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        '|',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Followers
+                      Icon(
+                        Icons.favorite_border_rounded,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$followersFormatted Followers',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Explore Archive Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PublicProfilePage(person: person),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4A3AFF),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        'Explore Archive',
+                        style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -713,7 +807,6 @@ class _StoryCardState extends State<_StoryCard> {
   Widget build(BuildContext context) {
     final m = widget.memory;
     final authorName = m.author?.name ?? 'Author';
-    final authorProfession = m.author?.profession ?? 'Storyteller';
     final avatar = MediaUrlFormatter.format(m.author?.avatarUrl);
     final mediaUrl = MediaUrlFormatter.format(m.mediaUrl);
 
@@ -729,79 +822,297 @@ class _StoryCardState extends State<_StoryCard> {
       } catch (_) {}
     }
 
+    String typeLabel = 'Story';
+    if (_isAudio) {
+      typeLabel = 'Voice';
+    } else if (_isVideo) {
+      typeLabel = 'Video';
+    } else if (_isImage) {
+      typeLabel = 'Photo';
+    }
+
+    final bool isMediaCard =
+        (_isImage || _isVideo) && mediaUrl != null && mediaUrl.isNotEmpty;
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: const Color(0xFFE5E7EB)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Author Row ───────────────────────────────────────────────
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color(0xFFEEF2FF),
-                  backgroundImage: avatar != null ? NetworkImage(avatar) : null,
-                  child: avatar == null
-                      ? Text(
-                          authorName.isNotEmpty
-                              ? authorName[0].toUpperCase()
-                              : 'A',
-                          style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF4A3AFF),
-                          ),
-                        )
-                      : null,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: isMediaCard
+              ? _buildMediaLayout(
+                  m,
+                  authorName,
+                  avatar,
+                  mediaUrl,
+                  formattedDate,
+                  tags,
+                  typeLabel,
+                )
+              : _buildTextVoiceLayout(
+                  m,
+                  authorName,
+                  avatar,
+                  mediaUrl,
+                  formattedDate,
+                  tags,
+                  typeLabel,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        authorName,
-                        style: GoogleFonts.outfit(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF111827),
+        ),
+      ),
+    );
+  }
+
+  // ── Full-bleed image/video layout ─────────────────────────────────────────
+  Widget _buildMediaLayout(
+    MemoryEntity m,
+    String authorName,
+    String? avatar,
+    String mediaUrl,
+    String formattedDate,
+    List<String> tags,
+    String typeLabel,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header + title
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: const Color(0xFFEEF2FF),
+                    backgroundImage: avatar != null
+                        ? NetworkImage(avatar)
+                        : null,
+                    child: avatar == null
+                        ? Text(
+                            authorName.isNotEmpty
+                                ? authorName[0].toUpperCase()
+                                : 'A',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF4A3AFF),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          authorName,
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        Text(
+                          formattedDate,
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildPrivacyChip(m.privacy),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                m.title,
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                  letterSpacing: -0.3,
+                  height: 1.25,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+
+        // Full-width media with overlaid footer
+        Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            if (_isImage)
+              Image.network(
+                mediaUrl,
+                height: 270,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox(height: 140),
+              )
+            else
+              VideoPlayerWidget(videoUrl: mediaUrl, height: 270),
+
+            // Gradient scrim
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    stops: const [0.0, 0.5],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.72),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Overlaid footer
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: widget.onReact,
+                          child: Row(
+                            children: [
+                              Icon(
+                                m.userReaction != null
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: 20,
+                                color: m.userReaction != null
+                                    ? Colors.red.shade300
+                                    : Colors.white,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                '${m.likesCount}',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 18),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${m.commentsCount}',
+                              style: GoogleFonts.outfit(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5B3EFF), Color(0xFF8672FF)],
                       ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      typeLabel,
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            if (_isVideo)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.play_circle_outline_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4),
                       Text(
-                        authorProfession,
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF6B7280),
+                        'Video',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+          ],
+        ),
 
-            const SizedBox(height: 12),
-
-            // ── Tags Row ─────────────────────────────────────────────────
-            Wrap(
+        // Tags below image
+        if (tags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            child: Wrap(
               spacing: 6,
               runSpacing: 4,
               children: [
@@ -809,200 +1120,262 @@ class _StoryCardState extends State<_StoryCard> {
                   _buildTagBadge(tags.elementAt(i), i),
               ],
             ),
+          ),
+      ],
+    );
+  }
 
-            const SizedBox(height: 10),
-
-            // ── Story Title ──────────────────────────────────────────────
-            Text(
-              m.title,
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF111827),
-                height: 1.3,
-                letterSpacing: -0.3,
+  // ── Text / Voice layout ───────────────────────────────────────────────────
+  Widget _buildTextVoiceLayout(
+    MemoryEntity m,
+    String authorName,
+    String? avatar,
+    String? mediaUrl,
+    String formattedDate,
+    List<String> tags,
+    String typeLabel,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: const Color(0xFFEEF2FF),
+                    backgroundImage: avatar != null
+                        ? NetworkImage(avatar)
+                        : null,
+                    child: avatar == null
+                        ? Text(
+                            authorName.isNotEmpty
+                                ? authorName[0].toUpperCase()
+                                : 'A',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF4A3AFF),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          authorName,
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          formattedDate,
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildPrivacyChip(m.privacy),
+                ],
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: 6),
-
-            // ── Description / Excerpt ────────────────────────────────────
-            if (m.description != null && m.description!.isNotEmpty)
+              const SizedBox(height: 12),
               Text(
-                m.description!,
+                m.title,
                 style: GoogleFonts.outfit(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xFF4B5563),
-                  height: 1.5,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                  letterSpacing: -0.3,
+                  height: 1.25,
                 ),
-                maxLines: 3,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-
-            // ── Rich Media Display ───────────────────────────────────────
-            if (_isAudio) ...[
               const SizedBox(height: 12),
-              // ── Interactive Voice Player Bar ───────────────────────────
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+
+              if (_isAudio) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
                   ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFDDD6FE)),
-                ),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _togglePlay,
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4A3AFF),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF4A3AFF,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFDDD6FE)),
+                  ),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _togglePlay,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4A3AFF),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF4A3AFF,
+                                ).withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            _isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Voice Recording',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF4A3AFF),
+                                  ),
+                                ),
+                                Text(
+                                  _position > Duration.zero
+                                      ? '${_formatTime(_position)} / ${_formatTime(_duration)}'
+                                      : (_duration > Duration.zero
+                                            ? _formatTime(_duration)
+                                            : 'Audio'),
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            AnimatedWaveform(
+                              isPlaying: _isPlaying,
+                              barCount: 22,
+                              height: 22,
+                              color: const Color(0xFF4A3AFF),
                             ),
                           ],
                         ),
-                        child: Icon(
-                          _isPlaying
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
                       ),
+                    ],
+                  ),
+                ),
+              ] else if (m.description != null &&
+                  m.description!.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Text(
+                    m.description!,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      color: const Color(0xFF374151),
+                      height: 1.55,
+                      fontStyle: FontStyle.italic,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Voice Recording',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF4A3AFF),
-                                ),
-                              ),
-                              Text(
-                                _position > Duration.zero
-                                    ? '${_formatTime(_position)} / ${_formatTime(_duration)}'
-                                    : (_duration > Duration.zero
-                                          ? _formatTime(_duration)
-                                          : 'Audio'),
-                                style: GoogleFonts.outfit(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF6B7280),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          // Sound wave visualizer bars
-                          Row(
-                            children: [
-                              for (int i = 0; i < 18; i++)
-                                Expanded(
-                                  child: Container(
-                                    height: _isPlaying
-                                        ? (8.0 + (i % 5) * 3.5)
-                                        : (4.0 + (i % 4) * 2.0),
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 1.5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _isPlaying
-                                          ? const Color(0xFF4A3AFF)
-                                          : const Color(0xFFA78BFA),
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+
+              if (tags.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (int i = 0; i < tags.take(3).length; i++)
+                      _buildTagBadge(tags.elementAt(i), i),
                   ],
                 ),
-              ),
-            ] else if (_isImage && mediaUrl != null && mediaUrl.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  mediaUrl,
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            ] else if (_isVideo && mediaUrl != null && mediaUrl.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              VideoPlayerWidget(
-                videoUrl: mediaUrl,
-                height: 200,
-                borderRadius: BorderRadius.circular(14),
-              ),
+              ],
             ],
+          ),
+        ),
 
-            const SizedBox(height: 12),
-
-            // ── Date ─────────────────────────────────────────────────────
-            Text(
-              formattedDate,
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: const Color(0xFF9CA3AF),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFFF3F4F6)),
-            const SizedBox(height: 10),
-
-            // ── Bottom Interaction Stats ─────────────────────────────────
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: widget.onReact,
-                  child: Row(
+        Container(height: 1, color: const Color(0xFFE5E7EB)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: widget.onReact,
+                    child: Row(
+                      children: [
+                        Icon(
+                          m.userReaction != null
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          size: 18,
+                          color: m.userReaction != null
+                              ? const Color(0xFFE11D48)
+                              : const Color(0xFF6B7280),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${m.likesCount}',
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Row(
                     children: [
-                      Icon(
-                        m.userReaction != null
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        size: 18,
-                        color: m.userReaction != null
-                            ? const Color(0xFFE11D48)
-                            : const Color(0xFF6B7280),
+                      const Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 16,
+                        color: Color(0xFF6B7280),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 5),
                       Text(
-                        '${m.likesCount}',
+                        '${m.commentsCount}',
                         style: GoogleFonts.outfit(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1011,30 +1384,77 @@ class _StoryCardState extends State<_StoryCard> {
                       ),
                     ],
                   ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
                 ),
-                const SizedBox(width: 18),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      size: 16,
-                      color: Color(0xFF6B7280),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${m.commentsCount}',
-                      style: GoogleFonts.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF5B3EFF), Color(0xFF8672FF)],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
-            ),
-          ],
+                child: Text(
+                  typeLabel,
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildPrivacyChip(String? privacy) {
+    final p = privacy?.toLowerCase() ?? 'public';
+    Color bg;
+    IconData icon;
+    String label;
+    switch (p) {
+      case 'family':
+        bg = const Color(0xFF10B981);
+        icon = Icons.people_alt_rounded;
+        label = 'Family';
+        break;
+      case 'private':
+        bg = const Color(0xFFEF4444);
+        icon = Icons.lock_rounded;
+        label = 'Private';
+        break;
+      default:
+        bg = const Color(0xFF5B3EFF);
+        icon = Icons.public_rounded;
+        label = 'Public';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: bg.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: bg),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: bg,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1046,23 +1466,78 @@ class _StoryCardState extends State<_StoryCard> {
       {'bg': const Color(0xFFEFF6FF), 'text': const Color(0xFF2563EB)},
       {'bg': const Color(0xFFFDF2F8), 'text': const Color(0xFFDB2777)},
     ];
-
     final colorPair = colors[index % colors.length];
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
         color: colorPair['bg'],
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        tag,
+        '#$tag',
         style: GoogleFonts.outfit(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: colorPair['text'],
         ),
       ),
+    );
+  }
+}
+
+class _DiscoverFadeSlideIn extends StatefulWidget {
+  final Widget child;
+  final int index;
+
+  const _DiscoverFadeSlideIn({required this.child, required this.index});
+
+  @override
+  State<_DiscoverFadeSlideIn> createState() => _DiscoverFadeSlideInState();
+}
+
+class _DiscoverFadeSlideInState extends State<_DiscoverFadeSlideIn>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    final delayMs = (widget.index.clamp(0, 6)) * 40;
+    Future.delayed(Duration(milliseconds: delayMs), () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(position: _slideAnimation, child: widget.child),
     );
   }
 }

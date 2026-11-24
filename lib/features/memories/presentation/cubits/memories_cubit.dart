@@ -17,12 +17,16 @@ class MemoriesLoaded extends MemoriesState {
   final String searchQuery;
   final String? actionError;
 
+  /// True when [memories] is the small offline copy (no internet).
+  final bool isOffline;
+
   MemoriesLoaded(
     this.memories, {
     this.filter,
     this.isGridView = false,
     this.searchQuery = '',
     this.actionError,
+    this.isOffline = false,
   });
 
   MemoriesLoaded copyWith({
@@ -32,6 +36,7 @@ class MemoriesLoaded extends MemoriesState {
     String? searchQuery,
     String? actionError,
     bool clearError = false,
+    bool? isOffline,
   }) {
     return MemoriesLoaded(
       memories ?? this.memories,
@@ -39,6 +44,7 @@ class MemoriesLoaded extends MemoriesState {
       isGridView: isGridView ?? this.isGridView,
       searchQuery: searchQuery ?? this.searchQuery,
       actionError: clearError ? null : (actionError ?? this.actionError),
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 }
@@ -68,9 +74,20 @@ class MemoriesCubit extends Cubit<MemoriesState> {
       emit(MemoriesLoaded(memories, isGridView: wasGridView));
     } catch (e) {
       if (state is! MemoriesLoaded) {
+        if (userId == null && await _showOfflineCopy(e)) return;
         emit(MemoriesError(ErrorParser.extractMessage(e)));
       }
     }
+  }
+
+  /// No internet: show the few newest memories saved on the device instead
+  /// of an error. Returns false when [error] isn't a connectivity problem.
+  Future<bool> _showOfflineCopy(Object error) async {
+    if (!ErrorParser.isNetworkError(error)) return false;
+    final cached = await repository.getCachedLatestMemories();
+    if (isClosed) return true;
+    emit(MemoriesLoaded(cached, isOffline: true));
+    return true;
   }
 
   Future<void> loadFeedMemories({bool forceRefresh = false}) async {
@@ -88,6 +105,7 @@ class MemoriesCubit extends Cubit<MemoriesState> {
       emit(MemoriesLoaded(memories, isGridView: wasGridView));
     } catch (e) {
       if (state is! MemoriesLoaded) {
+        if (await _showOfflineCopy(e)) return;
         emit(MemoriesError(ErrorParser.extractMessage(e)));
       }
     }

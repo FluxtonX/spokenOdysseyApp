@@ -1,14 +1,18 @@
+import 'package:flutter/foundation.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/cache_manager.dart';
 import '../../domain/entities/comment_entity.dart';
 import '../../domain/entities/memory_entity.dart';
 import '../../domain/entities/story_layer_entity.dart';
 import '../../domain/repositories/memories_repository.dart';
+import '../datasources/memories_local_datasource.dart';
 import '../datasources/memories_remote_datasource.dart';
 
 class MemoriesRepositoryImpl implements MemoriesRepository {
   final MemoriesRemoteDataSource remoteDataSource;
+  final MemoriesLocalDataSource? localDataSource;
 
-  MemoriesRepositoryImpl({required this.remoteDataSource});
+  MemoriesRepositoryImpl({required this.remoteDataSource, this.localDataSource});
 
   @override
   Future<List<MemoryEntity>> getFeedMemories() async {
@@ -35,7 +39,32 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
 
     final memories = await remoteDataSource.getMemories(userId: userId);
     CacheManager().set(key, memories);
+    // Keep the newest few of the user's own timeline for offline viewing.
+    if (userId == null) await _saveOfflineCopy(memories);
     return memories;
+  }
+
+  @override
+  Future<List<MemoryEntity>> getCachedLatestMemories() async {
+    final local = localDataSource;
+    if (local == null) return [];
+    try {
+      return await local.getCachedMemories();
+    } catch (e) {
+      debugPrint('⚠️ [MemoriesRepository] Offline cache read failed: $e');
+      return [];
+    }
+  }
+
+  Future<void> _saveOfflineCopy(List<MemoryEntity> memories) async {
+    final local = localDataSource;
+    if (local == null) return;
+    try {
+      await local.cacheLatestMemories(memories);
+    } catch (e) {
+      // Never fail an online load because the offline copy couldn't be saved.
+      debugPrint('⚠️ [MemoriesRepository] Offline cache write failed: $e');
+    }
   }
 
   @override
@@ -45,7 +74,18 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
 
   @override
   Future<MemoryEntity> getMemoryDetails(String memoryId) async {
-    return await remoteDataSource.getMemoryDetails(memoryId);
+    try {
+      return await remoteDataSource.getMemoryDetails(memoryId);
+    } catch (e) {
+      // Offline: open the saved copy if this is one of the cached memories.
+      if (ErrorParser.isNetworkError(e)) {
+        final cached = await getCachedLatestMemories();
+        for (final memory in cached) {
+          if (memory.id == memoryId) return memory;
+        }
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -104,6 +144,9 @@ class MemoriesRepositoryImpl implements MemoriesRepository {
   Future<void> deleteMemory(String memoryId) async {
     await remoteDataSource.deleteMemory(memoryId);
     CacheManager().invalidate('memories_');
+    try {
+      await localDataSource?.removeCachedMemory(memoryId);
+    } catch (_) {}
   }
 
   @override

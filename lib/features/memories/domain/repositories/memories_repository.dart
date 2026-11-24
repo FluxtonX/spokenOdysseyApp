@@ -5,6 +5,10 @@ import '../entities/story_layer_entity.dart';
 abstract class MemoriesRepository {
   Future<List<MemoryEntity>> getFeedMemories();
   Future<List<MemoryEntity>> getMemories({String? userId});
+
+  /// The few newest memories saved on the device for offline viewing
+  /// (refreshed every time the timeline loads online). Newest first.
+  Future<List<MemoryEntity>> getCachedLatestMemories();
   Future<List<MemoryEntity>> searchMemories(String query);
   Future<MemoryEntity> getMemoryDetails(String memoryId);
   Future<MemoryEntity> createMemory({

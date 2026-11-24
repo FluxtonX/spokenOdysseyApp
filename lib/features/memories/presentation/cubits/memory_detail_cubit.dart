@@ -27,7 +27,14 @@ class MemoryDetailCubit extends Cubit<MemoryDetailState> {
     try {
       emit(MemoryDetailLoading());
       final memory = await repository.getMemoryDetails(memoryId);
-      final comments = await repository.getComments(memoryId);
+      List<CommentEntity> comments;
+      try {
+        comments = await repository.getComments(memoryId);
+      } catch (e) {
+        // Offline: still show the (cached) memory, just without comments.
+        if (!ErrorParser.isNetworkError(e)) rethrow;
+        comments = const [];
+      }
       emit(MemoryDetailLoaded(memory: memory, comments: comments));
     } catch (e) {
       emit(MemoryDetailError(ErrorParser.extractMessage(e)));

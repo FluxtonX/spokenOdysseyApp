@@ -25,21 +25,27 @@ class AuthCubit extends Cubit<AuthState> {
     required this.authRepository,
   }) : super(AuthInitial());
 
+  /// Restores the session from local secure storage only (no network call),
+  /// so starting the app offline keeps the user signed in.
   Future<void> checkAuthStatus() async {
     emit(AuthLoading());
-    try {
-      final user = await authRepository.getSavedUser().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => null,
-      );
-      if (user != null) {
-        emit(Authenticated(user));
-      } else {
-        emit(Unauthenticated());
+    // A slow or briefly unavailable keychain/keystore must not look like
+    // "signed out": try the local read twice before giving up.
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final user = await authRepository.getSavedUser().timeout(
+          const Duration(seconds: 5),
+        );
+        if (user != null) {
+          emit(Authenticated(user));
+          return;
+        }
+        break; // Nothing saved: genuinely signed out.
+      } catch (_) {
+        // Timeout or storage error: retry once.
       }
-    } catch (_) {
-      emit(Unauthenticated());
     }
+    emit(Unauthenticated());
   }
 
   Future<void> signIn({required String email, required String password}) async {

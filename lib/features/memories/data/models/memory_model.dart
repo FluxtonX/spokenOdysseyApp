@@ -73,6 +73,61 @@ class MemoryModel extends MemoryEntity {
     return null;
   }
 
+  factory MemoryModel.fromEntity(MemoryEntity e) {
+    if (e is MemoryModel) return e;
+    return MemoryModel(
+      id: e.id,
+      title: e.title,
+      description: e.description,
+      mediaUrl: e.mediaUrl,
+      mediaType: e.mediaType,
+      privacy: e.privacy,
+      tags: e.tags,
+      albumId: e.albumId,
+      albumTitle: e.albumTitle,
+      author: e.author,
+      createdAt: e.createdAt,
+      viewsCount: e.viewsCount,
+      likesCount: e.likesCount,
+      commentsCount: e.commentsCount,
+      sharesCount: e.sharesCount,
+      reactionCounts: e.reactionCounts,
+      userReaction: e.userReaction,
+    );
+  }
+
+  /// Compact JSON (text + media URLs only, no media bytes) that
+  /// [MemoryModel.fromJson] reads back to the same memory. Used for the
+  /// small offline cache.
+  Map<String, dynamic> toJson() {
+    final a = author;
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'mediaUrl': mediaUrl,
+      'mediaType': mediaType,
+      'privacy': privacy,
+      'tags': tags,
+      'albumId': albumId,
+      if (albumTitle != null) 'album': {'title': albumTitle},
+      if (a != null)
+        'author': {
+          'id': a.id,
+          'email': a.email,
+          'displayName': a.name,
+          'photoURL': a.avatarUrl,
+        },
+      'createdAt': createdAt,
+      'viewsCount': viewsCount,
+      'likesCount': likesCount,
+      'commentsCount': commentsCount,
+      'sharesCount': sharesCount,
+      'reactionCounts': reactionCounts,
+      'userReaction': userReaction,
+    };
+  }
+
   factory MemoryModel.fromJson(Map<String, dynamic> json) {
     Map<String, int> reactions = {};
     if (json['reactionCounts'] != null && json['reactionCounts'] is Map) {

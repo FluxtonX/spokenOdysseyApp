@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 class ServerException implements Exception {
   final String message;
   final int? statusCode;
@@ -24,11 +26,23 @@ class NetworkException implements Exception {
 }
 
 class ErrorParser {
+  /// True when the request never reached the server (no internet, DNS
+  /// failure, timeout). Such errors must never be treated as "signed out".
+  static bool isNetworkError(dynamic e) {
+    if (e is NetworkException) return true;
+    if (e is DioException) return e.error is NetworkException;
+    return false;
+  }
+
   static String extractMessage(dynamic e) {
     if (e is ServerException) return e.message;
     if (e is CacheException) return e.message;
     if (e is NetworkException) return e.message;
-    
+    if (e is DioException &&
+        (e.error is ServerException || e.error is NetworkException)) {
+      return e.error.toString();
+    }
+
     // Support failures if passed dynamically
     if (e.toString().startsWith('Instance of \'') && e.toString().contains('Failure')) {
       // Basic fallback for failures if dynamic typing hides fields

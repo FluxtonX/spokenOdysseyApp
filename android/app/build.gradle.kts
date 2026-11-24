@@ -36,6 +36,11 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Keep the glasses SDK intact when R8 shrinks the release build.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
@@ -53,6 +58,10 @@ dependencies {
     implementation(files("libs/LIB_GLASSES_SDK-release_4.aar"))
     implementation("org.greenrobot:eventbus:3.3.1")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    // Required by the glasses SDK's Wi-Fi album import (GlassesControl uses com.androidnetworking + okhttp)
+    implementation("com.github.amitshekhariitbhu.Fast-Android-Networking:android-networking:1.0.4")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
 
 flutter {

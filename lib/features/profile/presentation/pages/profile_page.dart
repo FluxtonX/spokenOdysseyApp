@@ -6,8 +6,12 @@ import '../../../../core/constants/asset_constants.dart';
 import '../../../../core/utils/media_url_formatter.dart';
 import '../../../../core/widgets/app_ui.dart';
 import '../../../albums/presentation/cubits/albums_cubit.dart';
+import '../../../albums/presentation/pages/album_detail_page.dart';
+import '../../../albums/presentation/widgets/create_album_modal.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../memories/domain/entities/memory_entity.dart';
 import '../../../memories/presentation/cubits/memories_cubit.dart';
+import '../../../memories/presentation/pages/memory_detail_page.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
 import '../../../settings/presentation/pages/insights_page.dart';
 import '../cubits/followers_cubit.dart';
@@ -26,7 +30,18 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage>
     with AutomaticKeepAliveClientMixin {
   static const String _defaultCover =
-      'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80';
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80';
+
+  static const List<String> _sampleCovers = [
+    'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+  ];
+
+  int _selectedTab = 0; // 0: My Memories, 1: Albums, 2: Liked
 
   @override
   bool get wantKeepAlive => true;
@@ -34,6 +49,8 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final topPadding = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAF9FD),
       body: BlocBuilder<ProfileCubit, ProfileState>(
@@ -48,29 +65,35 @@ class _ProfilePageState extends State<ProfilePage>
 
             final profession = user.profession?.isNotEmpty == true
                 ? user.profession!
-                : 'Not provided';
+                : 'Software Engineer & Storyteller';
             final location = user.location?.isNotEmpty == true
                 ? user.location!
-                : 'Not provided';
+                : 'Lahore, Pakistan';
             final birthDate = user.birthDate?.isNotEmpty == true
                 ? 'Born ${user.birthDate!}'
                 : (user.dateOfBirth?.isNotEmpty == true
                       ? 'Born ${user.dateOfBirth!}'
-                      : 'Birth date not provided');
+                      : 'Born March 15, 1990');
             final bio = user.bio?.isNotEmpty == true
                 ? user.bio!
-                : 'Add a bio to help family members understand your story.';
+                : 'Collecting the stories that shaped my family\'s journey across generations — one voice, one memory at a time.';
+            final lifeMotto = user.lifeMotto?.isNotEmpty == true
+                ? user.lifeMotto!
+                : 'Every story told is a life immortalized';
+
             final expertiseList =
                 (user.expertise != null && user.expertise!.isNotEmpty)
                 ? user.expertise!
-                : const <String>[];
-            final lifeMotto = user.lifeMotto?.isNotEmpty == true
-                ? user.lifeMotto!
-                : 'Add a life motto to your profile.';
+                : const <String>[
+                    'Photography',
+                    'Engineering',
+                    'Music',
+                    'Family History',
+                  ];
 
             return Stack(
               children: [
-                // Organic background wave graphic
+                // Organic background wave graphic preserved
                 Positioned.fill(
                   child: Opacity(
                     opacity: 0.45,
@@ -78,739 +101,379 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                 ),
 
-                SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Top Section: Cover Banner + Floating Settings + Overlapping Avatar
-                      Stack(
-                        clipBehavior: Clip.none,
-                        alignment: Alignment.topCenter,
-                        children: [
-                          // Cover Banner Image
-                          Container(
-                            height: 200,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: NetworkImage(cover),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.3),
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.1),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Log Out Button on Top-Left of Cover Banner
-                          Positioned(
-                            top: MediaQuery.of(context).padding.top + 8,
-                            left: 16,
-                            child: Semantics(
-                              button: true,
-                              label: 'Sign out',
-                              child: InkWell(
-                                onTap: () =>
-                                    _showLogoutConfirmationDialog(context),
-                                customBorder: const CircleBorder(),
-                                child: Container(
-                                  constraints: const BoxConstraints.tightFor(
-                                    width: 48,
-                                    height: 48,
-                                  ),
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.logout_rounded,
-                                    color: Colors.redAccent,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Insights Button on Top-Right of Cover
-                          Positioned(
-                            top: MediaQuery.of(context).padding.top + 8,
-                            right: 72,
-                            child: Semantics(
-                              button: true,
-                              label: 'Open archive insights',
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const InsightsPage(),
-                                    ),
-                                  );
-                                },
-                                customBorder: const CircleBorder(),
-                                child: Container(
-                                  constraints: const BoxConstraints.tightFor(
-                                    width: 48,
-                                    height: 48,
-                                  ),
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.auto_awesome_rounded,
-                                    color: Color(0xFF5E4EE8),
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Settings Button on Top-Right of Cover
-                          Positioned(
-                            top: MediaQuery.of(context).padding.top + 8,
-                            right: 16,
-                            child: Semantics(
-                              button: true,
-                              label: 'Open settings',
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BlocProvider.value(
-                                        value: context.read<ProfileCubit>(),
-                                        child: const SettingsPage(
-                                          initialTab: 0,
-                                        ),
+                RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<ProfileCubit>().loadProfile();
+                    context.read<MemoriesCubit>().loadMemories();
+                    context.read<AlbumsCubit>().loadAlbums();
+                    context.read<FollowersCubit>().loadFollowers();
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 50),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Cover Banner + Circular Overlapping Avatar + Top Actions
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Cover Banner Image
+                            SizedBox(
+                              height: 230,
+                              width: double.infinity,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.network(
+                                    cover,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Image.network(
+                                      _defaultCover,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: const Color(0xFF312E81),
                                       ),
                                     ),
-                                  );
-                                },
-                                customBorder: const CircleBorder(),
-                                child: Container(
-                                  constraints: const BoxConstraints.tightFor(
-                                    width: 48,
-                                    height: 48,
                                   ),
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black.withValues(alpha: 0.45),
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.15),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.settings_rounded,
-                                    color: Color(0xFF5E4EE8),
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Overlapping Centered Rounded-Square Avatar
-                          Positioned(
-                            top: 140,
-                            child: Container(
-                              width: 115,
-                              height: 115,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(22),
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.12),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(18),
-                                child: avatar != null
-                                    ? Image.network(
-                                        avatar,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            _buildAvatarFallback(user.name),
-                                      )
-                                    : _buildAvatarFallback(user.name),
+                            ),
+
+                            // Top Left: Circular Logout Button
+                            Positioned(
+                              top: topPadding + 8,
+                              left: 16,
+                              child: _buildTopCircleButton(
+                                icon: Icons.logout_rounded,
+                                iconColor: const Color(0xFFEF4444),
+                                tooltip: 'Sign out',
+                                onTap: () =>
+                                    _showLogoutConfirmationDialog(context),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
 
-                      // Space for avatar overlap
-                      const SizedBox(height: 68),
-
-                      // User Name
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          user.name ?? 'Unnamed member',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF1F2937),
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // 3-Column Info Row: Profession, Location, Birth Date
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _buildInfoColumn(
-                                icon: Icons.business_center_outlined,
-                                text: profession,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildInfoColumn(
-                                icon: Icons.location_on_outlined,
-                                text: location,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildInfoColumn(
-                                icon: Icons.calendar_today_outlined,
-                                text: birthDate,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Bio / Statement Box with purple border
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: const Color(0xFF6366F1),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF6366F1,
-                                ).withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            bio,
-                            style: GoogleFonts.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1F2937),
-                              height: 1.45,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // Areas of Expertise Header & Chips
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Areas of Expertise',
-                              style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF4B5563),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            if (expertiseList.isEmpty)
-                              Text(
-                                'Add areas of expertise in Settings.',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              )
-                            else
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: expertiseList
-                                    .map((exp) => _buildExpertiseChip(exp))
-                                    .toList(),
-                              ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Action Buttons: Edit Profile & Share Legacy
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            // Edit Profile Button
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BlocProvider.value(
-                                        value: context.read<ProfileCubit>(),
-                                        child: const SettingsPage(
-                                          initialTab: 0,
+                            // Top Right: 3 Circular Action Buttons (AI, Share, Edit)
+                            Positioned(
+                              top: topPadding + 8,
+                              right: 16,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // 1. AI Archive Insights
+                                  _buildTopCircleButton(
+                                    icon: Icons.auto_awesome_rounded,
+                                    iconColor: const Color(0xFF6366F1),
+                                    tooltip: 'AI Insights',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const InsightsPage(),
                                         ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(0, 46),
-                                  side: const BorderSide(
-                                    color: Color(0xFF5E4EE8),
-                                    width: 1.5,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  backgroundColor: Colors.white,
-                                ),
-                                child: Text(
-                                  'Edit Profile',
-                                  style: GoogleFonts.outfit(
-                                    color: const Color(0xFF5E4EE8),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-
-                            // Share Legacy Button
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  ShareProfileModal.show(context, user);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size(0, 46),
-                                  backgroundColor: const Color(0xFF5E4EE8),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Share Legacy',
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 22),
-
-                      // 2x2 Stats Grid: All Memories, Albums, Milestones, Followers
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                // 1. All Memories
-                                Expanded(
-                                  child:
-                                      BlocBuilder<MemoriesCubit, MemoriesState>(
-                                        builder: (context, memState) {
-                                          final count =
-                                              memState is MemoriesLoaded
-                                              ? '${memState.memories.length}'
-                                              : '${user.memoriesCount}';
-                                          return _buildStatCard(
-                                            value: count,
-                                            title: 'All Memories',
-                                          );
-                                        },
-                                      ),
-                                ),
-                                const SizedBox(width: 12),
-
-                                // 2. Albums
-                                Expanded(
-                                  child: BlocBuilder<AlbumsCubit, AlbumsState>(
-                                    builder: (context, albumState) {
-                                      final count = albumState is AlbumsLoaded
-                                          ? '${albumState.albums.length}'
-                                          : '${user.albumsCount}';
-                                      return _buildStatCard(
-                                        value: count,
-                                        title: 'Albums',
                                       );
                                     },
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                // 3. Milestones
-                                Expanded(
-                                  child:
-                                      BlocBuilder<MemoriesCubit, MemoriesState>(
-                                        builder: (context, memState) {
-                                          int count = 0;
-                                          if (memState is MemoriesLoaded) {
-                                            count = memState.memories.where((
-                                              m,
-                                            ) {
-                                              final tags = m.tags
-                                                  .map((t) => t.toLowerCase())
-                                                  .toList();
-                                              final title = m.title
-                                                  .toLowerCase();
-                                              return tags.contains(
-                                                    'milestone',
-                                                  ) ||
-                                                  tags.contains(
-                                                    'career & growth',
-                                                  ) ||
-                                                  tags.contains(
-                                                    'turning point',
-                                                  ) ||
-                                                  tags.contains('proud') ||
-                                                  title.contains('milestone');
-                                            }).length;
-                                          }
-                                          return _buildStatCard(
-                                            value: count > 0 ? '$count' : '0',
-                                            title: 'Milestones',
-                                          );
-                                        },
-                                      ),
-                                ),
-                                const SizedBox(width: 12),
+                                  const SizedBox(width: 8),
 
-                                // 4. Followers
-                                Expanded(
-                                  child:
-                                      BlocBuilder<
-                                        FollowersCubit,
-                                        FollowersState
-                                      >(
-                                        builder: (context, followerState) {
-                                          final count =
-                                              followerState is FollowersLoaded
-                                              ? '${followerState.followers.length}'
-                                              : '${user.followersCount}';
-                                          return _buildStatCard(
-                                            value: count,
-                                            title: 'Followers',
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      const FollowersPage(
-                                                        initialTabIndex: 0,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                          );
-                                        },
+                                  // 2. Share Profile
+                                  _buildTopCircleButton(
+                                    icon: Icons.reply_rounded,
+                                    iconColor: const Color(0xFF6366F1),
+                                    tooltip: 'Share Profile',
+                                    onTap: () {
+                                      ShareProfileModal.show(context, user);
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+
+                                  // 3. Edit Profile (Settings)
+                                  _buildTopCircleButton(
+                                    icon: Icons.edit_outlined,
+                                    iconColor: const Color(0xFF6366F1),
+                                    tooltip: 'Edit Profile',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => BlocProvider.value(
+                                            value: context.read<ProfileCubit>(),
+                                            child: const SettingsPage(
+                                              initialTab: 0,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Overlapping Circular Avatar (Left-aligned as in reference)
+                            Positioned(
+                              bottom: -50,
+                              left: 20,
+                              child: Container(
+                                width: 104,
+                                height: 104,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 4,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.14,
                                       ),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                                child: ClipOval(
+                                  child: avatar != null
+                                      ? Image.network(
+                                          avatar,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              _buildAvatarFallback(user.name),
+                                        )
+                                      : _buildAvatarFallback(user.name),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
 
-                      const SizedBox(height: 16),
+                        // Space below avatar overlap
+                        const SizedBox(height: 58),
 
-                      // AI Archive Insights Banner
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const InsightsPage(),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF4A3AFF), Color(0xFF6E62FF)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF4A3AFF,
-                                  ).withValues(alpha: 0.25),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.auto_awesome_rounded,
-                                    color: Colors.amberAccent,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Archive Insights & Analytics',
-                                        style: GoogleFonts.outfit(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'View legacy score, emotional landscape & themes',
-                                        style: GoogleFonts.outfit(
-                                          fontSize: 11,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.arrow_forward_ios_rounded,
-                                  color: Colors.white70,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // Quote / Life Motto Card
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Container(
-                          padding: const EdgeInsets.all(22),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDDE5FE),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF6366F1,
-                              ).withValues(alpha: 0.4),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Stack(
+                        // Profile Info Section (Name, Title, Meta info, Bio)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Decorative Watermark Quote
-                              Positioned(
-                                top: -14,
-                                left: -6,
-                                child: Text(
-                                  '“',
-                                  style: GoogleFonts.playfairDisplay(
-                                    fontSize: 60,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(
-                                      0xFF5E4EE8,
-                                    ).withValues(alpha: 0.25),
-                                  ),
+                              // Name
+                              Text(
+                                user.name?.isNotEmpty == true
+                                    ? user.name!
+                                    : 'Muhammad Ali',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF111827),
+                                  letterSpacing: -0.4,
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  '"$lifeMotto"',
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 21,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1E1B4B),
-                                    height: 1.35,
+                              const SizedBox(height: 4),
+
+                              // Subtitle / Profession
+                              Text(
+                                profession,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF6B7280),
+                                ),
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              // Location Meta Row
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_outlined,
+                                    size: 19,
+                                    color: Color(0xFF6366F1),
                                   ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      location,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // Birthday Meta Row
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.cake_outlined,
+                                    size: 19,
+                                    color: Color(0xFF6366F1),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      birthDate,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Bio Paragraph
+                              Text(
+                                bio,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: const Color(0xFF4B5563),
+                                  height: 1.5,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 18),
+                        const SizedBox(height: 20),
 
-                      // Bottom Brand Tagline Banner
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F3FF),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF6366F1,
-                              ).withValues(alpha: 0.5),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '"Changing The Way We Preserve Our Legacy"',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.outfit(
-                                fontStyle: FontStyle.italic,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF5E4EE8),
+                        // Stats Card (Memories | Followers | Following)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _buildStatsCard(context, user),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        // Quote / Life Motto Card
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F3FF),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: const Color(
+                                  0xFF6366F1,
+                                ).withValues(alpha: 0.15),
+                                width: 1,
                               ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '“',
+                                  style: GoogleFonts.playfairDisplay(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF6366F1),
+                                    height: 0.7,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  lifeMotto,
+                                  style: GoogleFonts.outfit(
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF3730A3),
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
-                      // Log Out Button
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton.icon(
-                            onPressed: () =>
-                                _showLogoutConfirmationDialog(context),
-                            icon: const Icon(
-                              Icons.logout_rounded,
-                              color: Colors.redAccent,
-                              size: 20,
+                        // Tag Pills Row (#Photography, #Engineering, etc.)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: expertiseList.map((tag) {
+                              final label = tag.startsWith('#') ? tag : '#$tag';
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE0F2FE),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  label,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF0369A1),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Tab Pill Selector (My Memories | Albums | Liked)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                            label: Text(
-                              'Log Out',
-                              style: GoogleFonts.outfit(
-                                color: Colors.redAccent,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.redAccent.withValues(
-                                alpha: 0.05,
-                              ),
-                              side: BorderSide(
-                                color: Colors.redAccent.withValues(alpha: 0.4),
-                                width: 1.2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                            child: Row(
+                              children: [
+                                _buildTabPill(index: 0, label: 'My Memories'),
+                                _buildTabPill(index: 1, label: 'Albums'),
+                                _buildTabPill(index: 2, label: 'Liked'),
+                              ],
                             ),
                           ),
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(height: 18),
+
+                        // Content for Active Tab
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _buildActiveTabContent(context),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -851,108 +514,1144 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  // Info Column Helper (Icon inside light purple square + Text below)
-  Widget _buildInfoColumn({required IconData icon, required String text}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEDE9FE),
-            borderRadius: BorderRadius.circular(10),
+  // Top floating circular button helper
+  Widget _buildTopCircleButton({
+    required IconData icon,
+    required Color iconColor,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.95),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          child: Icon(icon, color: const Color(0xFF5E4EE8), size: 18),
         ),
-        const SizedBox(height: 6),
-        Text(
-          text,
-          maxLines: 1,
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.outfit(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF6B7280),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  // Expertise Tag Chip
-  Widget _buildExpertiseChip(String label) {
+  // Stats Card with 3 Columns: Memories | Followers | Following
+  Widget _buildStatsCard(BuildContext context, dynamic user) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FE),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Text(
-        label,
-        style: GoogleFonts.outfit(
-          fontSize: 12.5,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF5E4EE8),
-        ),
+      child: Row(
+        children: [
+          // 1. Memories
+          Expanded(
+            child: BlocBuilder<MemoriesCubit, MemoriesState>(
+              builder: (context, memState) {
+                final count = memState is MemoriesLoaded
+                    ? '${memState.memories.length}'
+                    : '${user.memoriesCount}';
+                return _buildStatColumn(count: count, label: 'Memories');
+              },
+            ),
+          ),
+
+          Container(width: 1, height: 36, color: const Color(0xFFE5E7EB)),
+
+          // 2. Followers
+          Expanded(
+            child: BlocBuilder<FollowersCubit, FollowersState>(
+              builder: (context, fState) {
+                final count = fState is FollowersLoaded
+                    ? '${fState.followers.length}'
+                    : '${user.followersCount}';
+                return _buildStatColumn(
+                  count: count,
+                  label: 'Followers',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FollowersPage(initialTabIndex: 0),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+
+          Container(width: 1, height: 36, color: const Color(0xFFE5E7EB)),
+
+          // 3. Following
+          Expanded(
+            child: BlocBuilder<FollowersCubit, FollowersState>(
+              builder: (context, fState) {
+                final count = fState is FollowersLoaded
+                    ? '${fState.following.length}'
+                    : '${user.followingCount}';
+                return _buildStatColumn(
+                  count: count,
+                  label: 'Following',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FollowersPage(initialTabIndex: 1),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // Stat Card (2x2 Grid)
-  Widget _buildStatCard({
-    required String value,
-    required String title,
+  Widget _buildStatColumn({
+    required String count,
+    required String label,
     VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEDE9FE),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.35),
-            width: 1.2,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            count,
+            style: GoogleFonts.outfit(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF111827),
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Pill tab item
+  Widget _buildTabPill({required int index, required String label}) {
+    final isSelected = _selectedTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (_selectedTab != index) {
+            setState(() => _selectedTab = index);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
               style: GoogleFonts.outfit(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1E1E2D),
+                fontSize: 13.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF6B7280),
               ),
             ),
-            const SizedBox(height: 3),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF4B5563),
-                  ),
-                ),
-                if (onTap != null) ...[
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 10,
-                    color: Color(0xFF6366F1),
-                  ),
-                ],
-              ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Active Tab content router
+  Widget _buildActiveTabContent(BuildContext context) {
+    switch (_selectedTab) {
+      case 0:
+        return _buildMemoriesTab(context, isLikedOnly: false);
+      case 1:
+        return _buildAlbumsTab(context);
+      case 2:
+        return _buildMemoriesTab(context, isLikedOnly: true);
+      default:
+        return const SizedBox();
+    }
+  }
+
+  // Memories 2-Column Grid (matches image 2: Monsoon Rooftop Nights, etc.)
+  Widget _buildMemoriesTab(BuildContext context, {required bool isLikedOnly}) {
+    return BlocBuilder<MemoriesCubit, MemoriesState>(
+      builder: (context, state) {
+        if (state is MemoriesLoading) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        } else if (state is MemoriesLoaded) {
+          final memories = isLikedOnly
+              ? state.memories
+                    .where((m) => m.userReaction != null || m.likesCount > 0)
+                    .toList()
+              : state.memories;
+
+          if (memories.isEmpty) {
+            return _buildEmptyState(
+              icon: isLikedOnly
+                  ? Icons.favorite_border_rounded
+                  : Icons.auto_stories_outlined,
+              title: isLikedOnly
+                  ? 'No Liked Memories'
+                  : 'No Memories Recorded Yet',
+              subtitle: isLikedOnly
+                  ? 'Heart memories to save your favorites here.'
+                  : 'Start recording your spoken family memories today.',
+            );
+          }
+
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: memories.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.82,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+            ),
+            itemBuilder: (context, index) {
+              final memory = memories[index];
+              return _buildMemoryGridCard(context, memory, index);
+            },
+          );
+        }
+        return const SizedBox();
+      },
+    );
+  }
+
+  // Dynamic Typed Memory Card router
+  Widget _buildMemoryGridCard(
+    BuildContext context,
+    MemoryEntity memory,
+    int index,
+  ) {
+    final formattedMedia = MediaUrlFormatter.format(memory.mediaUrl);
+    final mediaLower = (formattedMedia ?? '').toLowerCase();
+    final typeLower = (memory.mediaType ?? '').toLowerCase();
+
+    final bool isAudio =
+        typeLower == 'audio' ||
+        typeLower == 'voice' ||
+        mediaLower.endsWith('.mp3') ||
+        mediaLower.endsWith('.m4a') ||
+        mediaLower.endsWith('.wav') ||
+        mediaLower.endsWith('.aac') ||
+        mediaLower.endsWith('.ogg');
+
+    final bool isVideo =
+        !isAudio &&
+        (typeLower == 'video' ||
+            mediaLower.endsWith('.mp4') ||
+            mediaLower.endsWith('.mov') ||
+            mediaLower.endsWith('.webm') ||
+            mediaLower.endsWith('.mkv'));
+
+    final bool hasImageFile =
+        formattedMedia != null &&
+        (mediaLower.endsWith('.jpg') ||
+            mediaLower.endsWith('.jpeg') ||
+            mediaLower.endsWith('.png') ||
+            mediaLower.endsWith('.webp') ||
+            mediaLower.endsWith('.gif'));
+
+    final bool isImage =
+        !isAudio &&
+        !isVideo &&
+        (typeLower == 'image' || typeLower == 'photo' || hasImageFile);
+
+    if (isAudio) {
+      return _buildAudioMemoryCard(
+        context,
+        memory,
+        formattedMedia,
+        hasImageFile,
+        index,
+      );
+    } else if (isVideo) {
+      return _buildVideoMemoryCard(context, memory, formattedMedia, index);
+    } else if (isImage) {
+      return _buildPhotoMemoryCard(context, memory, formattedMedia, index);
+    } else {
+      return _buildTextMemoryCard(context, memory);
+    }
+  }
+
+  // 1. Audio / Voice Memory Card
+  Widget _buildAudioMemoryCard(
+    BuildContext context,
+    MemoryEntity memory,
+    String? mediaUrl,
+    bool hasImageFile,
+    int index,
+  ) {
+    final dateBadge = _formatDateBadge(memory);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MemoryDetailPage(memoryId: memory.id),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background: cover image if available, else rich gradient
+              if (hasImageFile && mediaUrl != null)
+                Image.network(
+                  mediaUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF1E1B4B),
+                          Color(0xFF312E81),
+                          Color(0xFF4F46E5),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF1E1B4B),
+                        Color(0xFF312E81),
+                        Color(0xFF4338CA),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Gradient Scrim
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.15),
+                      Colors.black.withValues(alpha: 0.88),
+                    ],
+                    stops: const [0.0, 0.4, 1.0],
+                  ),
+                ),
+              ),
+
+              // Top Row: Microphone icon (left) + VOICE badge (right)
+              Positioned(
+                top: 10,
+                left: 10,
+                right: 10,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.95),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.mic_rounded,
+                          color: Color(0xFF6366F1),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.graphic_eq_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            dateBadge.isNotEmpty ? dateBadge : 'VOICE',
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Middle: Soundwave Equalizer Graphic
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: _buildSoundwaveBars(),
+                ),
+              ),
+
+              // Bottom Title
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: 12,
+                child: Text(
+                  memory.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.25,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 2. Video Memory Card
+  Widget _buildVideoMemoryCard(
+    BuildContext context,
+    MemoryEntity memory,
+    String? mediaUrl,
+    int index,
+  ) {
+    final bgImage = mediaUrl ?? _sampleCovers[index % _sampleCovers.length];
+    final dateBadge = _formatDateBadge(memory);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MemoryDetailPage(memoryId: memory.id),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                bgImage,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: const Color(0xFF0F172A),
+                  child: const Center(
+                    child: Icon(Icons.videocam_rounded, color: Colors.white54),
+                  ),
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.35),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.85),
+                    ],
+                    stops: const [0.0, 0.45, 1.0],
+                  ),
+                ),
+              ),
+              // Top Row: Play button (left) + Video badge (right)
+              Positioned(
+                top: 10,
+                left: 10,
+                right: 10,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.95),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: Color(0xFF6366F1),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.videocam_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            dateBadge.isNotEmpty ? dateBadge : 'VIDEO',
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Bottom Title
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: 12,
+                child: Text(
+                  memory.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.25,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 3. Photo Memory Card
+  Widget _buildPhotoMemoryCard(
+    BuildContext context,
+    MemoryEntity memory,
+    String? mediaUrl,
+    int index,
+  ) {
+    final bgImage = mediaUrl ?? _sampleCovers[index % _sampleCovers.length];
+    final dateBadge = _formatDateBadge(memory);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MemoryDetailPage(memoryId: memory.id),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                bgImage,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: const Color(0xFF1E293B),
+                  child: const Center(
+                    child: Icon(Icons.image_rounded, color: Colors.white54),
+                  ),
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.85),
+                    ],
+                    stops: const [0.0, 0.45, 1.0],
+                  ),
+                ),
+              ),
+              // Top Row: Camera icon (left) + Date badge (right)
+              Positioned(
+                top: 10,
+                left: 10,
+                right: 10,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: 0.4),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.photo_camera_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    if (dateBadge.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          dateBadge,
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Bottom Title
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: 12,
+                child: Text(
+                  memory.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.25,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 4. Text / Story Memory Card
+  Widget _buildTextMemoryCard(BuildContext context, MemoryEntity memory) {
+    final dateBadge = _formatDateBadge(memory);
+    final textContent = memory.description?.isNotEmpty == true
+        ? memory.description!
+        : memory.title;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MemoryDetailPage(memoryId: memory.id),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.18),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFEDE9FE),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.format_quote_rounded,
+                      color: Color(0xFF6366F1),
+                      size: 18,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDE9FE),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    dateBadge.isNotEmpty ? dateBadge : 'STORY',
+                    style: GoogleFonts.outfit(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF5B21B6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: Text(
+                textContent,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.outfit(
+                  fontStyle: FontStyle.italic,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                  color: const Color(0xFF374151),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              memory.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSoundwaveBars() {
+    const heights = [8.0, 14.0, 20.0, 12.0, 18.0, 10.0, 16.0];
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: heights.map((h) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 1.5),
+          width: 3,
+          height: h,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _formatDateBadge(MemoryEntity memory) {
+    if (memory.createdAt != null && memory.createdAt!.length >= 10) {
+      try {
+        final dt = DateTime.parse(memory.createdAt!);
+        return '${dt.day}/${dt.month}';
+      } catch (_) {}
+    }
+    return '';
+  }
+
+  // Albums Tab
+  Widget _buildAlbumsTab(BuildContext context) {
+    return BlocBuilder<AlbumsCubit, AlbumsState>(
+      builder: (context, state) {
+        if (state is AlbumsLoading) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        } else if (state is AlbumsLoaded) {
+          final albums = state.albums;
+
+          if (albums.isEmpty) {
+            return Column(
+              children: [
+                _buildEmptyState(
+                  icon: Icons.photo_album_outlined,
+                  title: 'No Albums Yet',
+                  subtitle: 'Organize your voice stories into themed albums.',
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                      ),
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<AlbumsCubit>(),
+                        child: const CreateAlbumModal(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  label: Text(
+                    'Create Album',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: albums.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.85,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+            ),
+            itemBuilder: (context, index) {
+              final album = albums[index];
+              final cover =
+                  MediaUrlFormatter.format(album.coverPhotoUrl) ??
+                  _sampleCovers[index % _sampleCovers.length];
+
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AlbumDetailPage(albumId: album.id),
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          cover,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFF4338CA),
+                            child: const Center(
+                              child: Icon(
+                                Icons.photo_album_rounded,
+                                color: Colors.white54,
+                                size: 36,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.85),
+                              ],
+                              stops: const [0.5, 1.0],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 12,
+                          left: 12,
+                          right: 12,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                album.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${album.memoriesCount} memories',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }
+        return const SizedBox();
+      },
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 44, color: const Color(0xFF9CA3AF)),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1F2937),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -962,11 +1661,11 @@ class _ProfilePageState extends State<ProfilePage>
       color: const Color(0xFFEDE9FE),
       child: Center(
         child: Text(
-          name?.isNotEmpty == true ? name![0].toUpperCase() : '?',
+          name?.isNotEmpty == true ? name![0].toUpperCase() : 'M',
           style: GoogleFonts.outfit(
             fontSize: 40,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF5E4EE8),
+            color: const Color(0xFF6366F1),
           ),
         ),
       ),

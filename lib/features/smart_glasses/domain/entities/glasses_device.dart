@@ -17,6 +17,27 @@ class GlassesDevice {
     this.firmwareVersion = '',
   });
 
+  /// Name patterns used by HeyCyan / QC smart glasses.
+  bool get isLikelyGlasses {
+    final n = name.toLowerCase();
+    return n.startsWith('o_') ||
+        n.startsWith('q_') ||
+        n.contains('glass') ||
+        n.contains('cyan') ||
+        n.contains('odyssey');
+  }
+
+  /// Signal strength bucket 0..4 derived from RSSI.
+  int get signalLevel {
+    if (rssi >= -55) return 4;
+    if (rssi >= -67) return 3;
+    if (rssi >= -78) return 2;
+    if (rssi >= -90) return 1;
+    return 0;
+  }
+
+  bool get hasBatteryInfo => batteryLevel > 0;
+
   GlassesDevice copyWith({
     String? name,
     String? address,

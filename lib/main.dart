@@ -18,6 +18,8 @@ import 'features/home/presentation/pages/main_screen.dart';
 
 import 'core/network/api_client.dart';
 
+import 'features/connectivity/presentation/cubit/connectivity_cubit.dart';
+import 'features/connectivity/presentation/widgets/offline_banner.dart';
 import 'features/smart_glasses/presentation/cubit/glasses_cubit.dart';
 
 void main() async {
@@ -37,6 +39,9 @@ class SpokenOdysseyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>(create: (context) => sl<AuthCubit>()),
+        BlocProvider<ConnectivityCubit>(
+          create: (context) => sl<ConnectivityCubit>(),
+        ),
         BlocProvider<GlassesCubit>(create: (context) => sl<GlassesCubit>()),
       ],
       child: MaterialApp(
@@ -49,7 +54,8 @@ class SpokenOdysseyApp extends StatelessWidget {
               Positioned.fill(
                 child: Image.asset(AssetConstants.bgPic, fit: BoxFit.cover),
               ),
-              if (child != null) child,
+              if (child != null)
+                Positioned.fill(child: OfflineBannerLayout(child: child)),
             ],
           );
         },
