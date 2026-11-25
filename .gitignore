@@ -47,3 +47,10 @@ app.*.map.json
 /latest_web_build.zip
 *.zip
 /offical apk/
+
+# Local-only files, not part of the app
+/scratch/
+/docs/
+/.agents/
+/package.json
+/package-lock.json
