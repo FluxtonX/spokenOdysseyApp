@@ -527,11 +527,9 @@ import UIKit
         sdkFilesDownloaded = 0
         GlassesLog.log("import: SDK download flow")
         sendEvent(name: "importProgress", data: ["status": "openingWifi"])
-        // Same as the app's own flow: keep the glasses in transfer mode while their Wi‑Fi
-        // is being opened and joined (the SDK sends no heartbeat of its own on iOS).
-        if let peripheral = targetPeripheral {
-            GlassesTransferHeartbeat.start(peripheral: peripheral)
-        }
+        // No app heartbeat during the SDK route: the vendor demo runs the SDK download
+        // on its own, with nothing else writing to the glasses. The fallback flow still
+        // starts the heartbeat itself (at .waitingForHotspot in joinGlassesWiFi).
         sdkKeepaliveTimer?.invalidate()
         sdkKeepaliveTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             guard let self = self, self.isCurrentImport(generation) else { return }
@@ -584,7 +582,14 @@ import UIKit
                     // giving up (it is also the flow that works with Wi‑Fi off).
                     self.sdkFallbackUsed = true
                     GlassesLog.log("import: falling back to the app's own Wi-Fi flow")
-                    self.joinGlassesWiFi(generation: generation)
+                    // Clear the configuration the SDK just applied and give the glasses'
+                    // hotspot a moment to restart before the app's own join applies its own.
+                    GlassesLog.log("import: removing the SDK's Wi-Fi configuration before the fallback join")
+                    QCGlassesBridge.shared.leaveGlassesWiFi()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                        guard let self = self, self.isCurrentImport(generation) else { return }
+                        self.joinGlassesWiFi(generation: generation)
+                    }
                 } else {
                     self.failImport(code: code, detail: "SDK download failed (code \(code))")
                 }
