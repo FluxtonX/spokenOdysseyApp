@@ -323,6 +323,57 @@ public final class QCGlassesBridge: NSObject {
         #endif
     }
 
+    /// The QCSDK's own media download (`startToDownloadMediaResource`): the SDK opens the
+    /// glasses' Wi‑Fi itself and joins it with its own hotspot manager (`QCSDKWiFiManager` —
+    /// NEHotspotConfiguration with retries and its own association timeout), then downloads
+    /// every file from the glasses' HTTP server. This is the flow the vendor demo (and the
+    /// official app) uses, and the one that manages the switch away from the phone's current
+    /// Wi‑Fi by itself.
+    ///
+    /// The peripheral must already be handed to the SDK (`attach`), which the app does on
+    /// connect; no transfer-mode command is needed first — the SDK runs the whole flow.
+    ///
+    /// - `progress`: overall download percent (0–100), sent only when it changes.
+    /// - `file`: one finished file, still in the glasses' raw packed format (unpack it with
+    ///   `GlassesMediaNormalizer`), with its 1-based index and the total file count.
+    /// - `finish`: called exactly once — nil when every file downloaded, otherwise the SDK's
+    ///   error code (QCErrorCode 2000–2006), or -1 when the SDK never answered (30 min) or is
+    ///   not available (Simulator). The SDK has no cancel API; after `finish` the caller just
+    ///   ignores any late callbacks.
+    /// All callbacks run on the main queue.
+    public func downloadMedia(progress: @escaping (_ percent: Int) -> Void,
+                              file: @escaping (_ url: URL, _ index: Int, _ total: Int) -> Void,
+                              finish: @escaping (_ errorCode: Int?) -> Void) {
+        let reply = Once<Int?>(timeout: 30 * 60, fallback: -1) { finish($0) }
+        #if !targetEnvironment(simulator) && canImport(QCSDK)
+        var lastPercent = -1
+        QCSDKManager.shareInstance().startToDownloadMediaResource(progress: { _, _, fraction in
+            let percent = min(100, max(0, Int((fraction * 100).rounded())))
+            guard percent != lastPercent else { return }
+            lastPercent = percent
+            DispatchQueue.main.async { progress(percent) }
+        }, completion: { filePath, error, index, count in
+            DispatchQueue.main.async {
+                if let error = error {
+                    let nsError = error as NSError
+                    GlassesLog.log("SDK download failed: \(nsError.domain) \(nsError.code)")
+                    reply(nsError.code)
+                    return
+                }
+                if let filePath = filePath, !filePath.isEmpty {
+                    GlassesLog.log("SDK downloaded file \(index + 1)/\(count): \((filePath as NSString).lastPathComponent)")
+                    file(URL(fileURLWithPath: filePath), index + 1, count)
+                }
+                if count <= 0 || index >= count - 1 {
+                    reply(nil)
+                }
+            }
+        })
+        #else
+        reply(-1)
+        #endif
+    }
+
     /// Decodes the glasses' raw Opus voice notes to 16 kHz / 16-bit / mono PCM.
     public func opusToPcm(input: String, output: String, completion: @escaping (Bool) -> Void) {
         let reply = Once(timeout: 120, fallback: false, completion)
