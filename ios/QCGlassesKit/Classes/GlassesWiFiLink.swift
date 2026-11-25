@@ -96,8 +96,11 @@ public final class GlassesWiFiLink {
     /// so retrying quickly fails again ("not found").
     private static let retryDelay: TimeInterval = 8
     /// After `apply` returns, how long iOS may take to report the glasses' SSID. `apply` returns
-    /// (without an error) when iOS has either joined or given up, so this is short.
-    private static let associationTimeout: TimeInterval = 5
+    /// (without an error) when iOS has either joined or given up. Switching away from another
+    /// network can take well over 5 s, and declaring failure too early used to blacklist the
+    /// phone's own network as "can't switch" (see `join`), forcing the manual disconnect flow
+    /// on every later import — so this window is generous.
+    private static let associationTimeout: TimeInterval = 12
     /// Once on the glasses' network, how long DHCP may take to give the phone an address.
     private static let verifyTimeout: TimeInterval = 20
     private static let verifyInterval: TimeInterval = 1
@@ -334,6 +337,17 @@ public final class GlassesWiFiLink {
         GlassesLog.log("remembered: iOS can't switch from Wi-Fi \(subnet(address)).x to the glasses")
     }
 
+    /// A direct join from this network worked, so it does not block the switch after all.
+    /// Clears an earlier record (which may have come from one transient failure, e.g. the
+    /// hotspot not being up yet) so it can't force the manual disconnect flow forever.
+    private static func forgetSwitchBlocked(from address: String) {
+        var subnets = UserDefaults.standard.stringArray(forKey: blockedSubnetsKey) ?? []
+        guard subnets.contains(subnet(address)) else { return }
+        subnets.removeAll { $0 == subnet(address) }
+        UserDefaults.standard.set(subnets, forKey: blockedSubnetsKey)
+        GlassesLog.log("forgot the Wi-Fi switch block for \(subnet(address)).x: a direct join worked")
+    }
+
     /// Asks the user to disconnect from their Wi‑Fi (`.needsWiFiDisconnect`) and waits until the
     /// phone has stayed off it for `disconnectSettle` seconds. Completion `false` on timeout.
     private static func waitForWiFiDisconnect(token: Int, step: @escaping (Step) -> Void,
@@ -400,10 +414,17 @@ public final class GlassesWiFiLink {
                 } else {
                     GlassesLog.log("apply accepted by iOS, checking the connection…")
                 }
+                // A failed attempt is only evidence that iOS refused to leave the phone's
+                // Wi‑Fi when `apply` itself reported an error, or when a retry failed too.
+                // An error-free `apply` whose SSID never showed up on the first attempt
+                // usually just means the glasses' hotspot wasn't broadcasting yet — the
+                // phone staying on its Wi‑Fi is expected then, and must not blacklist the
+                // network or send the user to disconnect manually.
+                let switchRefused = applyError != nil || attempt >= 2
                 let retryOrFail: (String) -> Void = { state in
-                    // The phone was on its own Wi‑Fi and is still (or again) on it: iOS refused to
-                    // switch. Ask the user to disconnect, then continue by itself.
-                    if attempt < maxJoinAttempts, let previous = addressBeforeJoin,
+                    // The phone was on its own Wi‑Fi and iOS refused to switch: ask the user
+                    // to disconnect, then continue by itself.
+                    if attempt < maxJoinAttempts, switchRefused, let previous = addressBeforeJoin,
                        homeWiFiAddress() != nil || !isSwitchBlocked(from: previous) {
                         rememberSwitchBlocked(from: previous)
                         GlassesLog.log("iOS couldn't switch from the phone's Wi-Fi (\(state)); asking the user to disconnect")
@@ -450,6 +471,11 @@ public final class GlassesWiFiLink {
                     verify(ssid: ssid, deadline: Date().addingTimeInterval(verifyTimeout), token: token) { address, state in
                         guard token == generation else { return }
                         if let address = address {
+                            // A direct join from the phone's previous network worked, so
+                            // that network does not block the switch after all.
+                            if let previous = addressBeforeJoin {
+                                forgetSwitchBlocked(from: previous)
+                            }
                             // The glasses are the hotspot's gateway (x.x.x.1).
                             let host = subnet(address) + ".1"
                             GlassesLog.log("joined: \(state) → glasses at \(host)")
