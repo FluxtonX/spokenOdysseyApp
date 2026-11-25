@@ -35,8 +35,17 @@ class SmartGlassesScanSheet extends StatefulWidget {
 }
 
 class _SmartGlassesScanSheetState extends State<SmartGlassesScanSheet> {
-  late final GlassesCubit _cubit = context.read<GlassesCubit>();
+  late final GlassesCubit _cubit;
   bool _closing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Capture the cubit while the widget is active. Reading it lazily (or in
+    // dispose) can hit a deactivated widget and throw
+    // "Looking up a deactivated widget's ancestor is unsafe".
+    _cubit = context.read<GlassesCubit>();
+  }
 
   @override
   void dispose() {
