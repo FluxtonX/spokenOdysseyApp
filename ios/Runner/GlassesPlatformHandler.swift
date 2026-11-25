@@ -458,15 +458,14 @@ import UIKit
     // MARK: - Media import (Wi‑Fi)
     //
     // 1. Local Network permission (asked in the app, up front).
-    // 2. Primary route: the QCSDK's own download (`startSDKDownload`) — the SDK opens the
-    //    glasses' Wi‑Fi and joins it with its own hotspot manager, which handles the switch
-    //    away from the phone's Wi‑Fi by itself (the app's own join couldn't switch from some
-    //    networks and ended up asking the user to disconnect manually).
-    // 3. Fallback (only when the SDK route ends with an error before any file arrived):
-    //    GlassesWiFiLink (open the glasses' hotspot over Bluetooth, join it, confirm) +
+    // 2. GlassesWiFiLink (open the glasses' hotspot over Bluetooth, join it, confirm) +
     //    GlassesMediaDownloader (media.config + each file over HTTP from the glasses).
-    // 4. GlassesMediaNormalizer: unpack each file into a playable photo / video / voice note.
-    // 5. Glasses back to normal mode, phone back to its usual Wi‑Fi.
+    // 3. GlassesMediaNormalizer: unpack each file into a playable photo / video / voice note.
+    // 4. Glasses back to normal mode, phone back to its usual Wi‑Fi.
+    //
+    // The QCSDK's own download (`startSDKDownload`) is not called: it opens the glasses'
+    // Wi‑Fi with `openWifi` (`02 01 04`, Wi‑Fi Direct), which an iPhone can't join. Its
+    // "Successfully connected" log only means `apply` returned no error.
 
     private func importAlbum(result: @escaping FlutterResult) {
         guard isConnected else {
@@ -500,7 +499,7 @@ import UIKit
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
                 guard let self = self, self.isCurrentImport(generation) else { return }
-                self.startSDKDownload(generation: generation)
+                self.joinGlassesWiFi(generation: generation)
             }
         }
         result(true)
@@ -513,7 +512,7 @@ import UIKit
         importing && generation == importGeneration
     }
 
-    // MARK: - Media import via the vendor SDK (primary route)
+    // MARK: - Media import via the vendor SDK (not called, see the notes above)
 
     /// Keeps the Flutter import watchdog alive while the SDK opens the glasses' Wi‑Fi and
     /// joins it (the SDK reports nothing during that phase).

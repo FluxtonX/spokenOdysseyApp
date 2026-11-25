@@ -89,8 +89,8 @@ public final class GlassesWiFiLink {
     /// How often the "please disconnect" step is repeated while waiting.
     private static let disconnectReminder: TimeInterval = 10
     /// Subnets (x.x.x) of the user's networks from which iOS refused to switch to the glasses.
-    /// Next time on such a network the user is asked to disconnect right away, while the hotspot
-    /// starts, instead of after a failed join.
+    /// Next time on such a network the automatic join is still tried, but the user is asked to
+    /// disconnect after one failed attempt instead of two.
     private static let blockedSubnetsKey = "GlassesWiFiSwitchBlockedSubnets"
     /// Wait before applying again. After a failed join the hotspot can drop for a few seconds,
     /// so retrying quickly fails again ("not found").
@@ -293,27 +293,15 @@ public final class GlassesWiFiLink {
         guard token == generation else { return }
         currentSSID = credentials.ssid
         step(.waitingForHotspot)
-        let hotspotReady = Date().addingTimeInterval(warmUp)
         let firstJoin = {
             join(ssid: credentials.ssid, passphrase: credentials.password, attempt: 1, lastError: nil,
                  token: token, step: step, completion: completion)
         }
-        if let address = homeWiFiAddress(), isSwitchBlocked(from: address) {
-            // This network refused the switch before: ask now, while the hotspot starts.
-            GlassesLog.log("step 2: the phone's Wi-Fi (\(subnet(address)).x) blocked the switch before; " +
-                           "asking the user to disconnect while the hotspot starts")
-            waitForWiFiDisconnect(token: token, step: step) { disconnected in
-                guard disconnected else {
-                    return completion(.couldNotLeaveWiFi(detail: "phone stayed on its Wi-Fi (IP \(address))"))
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + max(0, hotspotReady.timeIntervalSinceNow)) {
-                    firstJoin()
-                }
-            }
-        } else {
-            GlassesLog.log("step 2: waiting \(Int(warmUp)) s for the hotspot \"\(credentials.ssid)\" to start")
-            DispatchQueue.main.asyncAfter(deadline: .now() + warmUp) { firstJoin() }
-        }
+        // Always try the automatic switch, also from a network that refused it before: the
+        // refusal may have been a one-off, and only a real attempt can clear the record.
+        GlassesLog.log("step 2: waiting \(Int(warmUp)) s for the hotspot \"\(credentials.ssid)\" to start " +
+                       "(phone Wi-Fi IP: \(addressBeforeJoin ?? "none"))")
+        DispatchQueue.main.asyncAfter(deadline: .now() + warmUp) { firstJoin() }
     }
 
     // MARK: - Leaving the phone's Wi‑Fi
@@ -443,8 +431,10 @@ public final class GlassesWiFiLink {
                 // An error-free `apply` whose SSID never showed up on the first attempt
                 // usually just means the glasses' hotspot wasn't broadcasting yet — the
                 // phone staying on its Wi‑Fi is expected then, and must not blacklist the
-                // network or send the user to disconnect manually.
-                let switchRefused = applyError != nil || attempt >= 2
+                // network or send the user to disconnect manually. On a network that refused
+                // the switch before, one failed attempt is enough to ask.
+                let refusedBefore = addressBeforeJoin.map { isSwitchBlocked(from: $0) } ?? false
+                let switchRefused = applyError != nil || attempt >= 2 || refusedBefore
                 let retryOrFail: (String) -> Void = { state in
                     // The phone was on its own Wi‑Fi and iOS refused to switch: ask the user
                     // to disconnect, then continue by itself.
