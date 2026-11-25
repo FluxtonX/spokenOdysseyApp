@@ -91,7 +91,13 @@ public final class GlassesTransferHeartbeat {
 
 /// Import diagnostics. Lines start with `[GlassesImport]` in the Xcode / `flutter run` console.
 public enum GlassesLog {
+    /// Set by the app (Runner) to mirror every line to Dart, where it is printed
+    /// with `debugPrint` so it also shows in the Flutter debug console
+    /// (e.g. Android Studio), not only in Xcode's console.
+    public static var forwarder: ((String) -> Void)?
+
     public static func log(_ message: String) {
         NSLog("[GlassesImport] %@", message)
+        forwarder?(message)
     }
 }
