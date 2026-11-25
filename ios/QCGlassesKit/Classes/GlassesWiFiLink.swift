@@ -392,6 +392,30 @@ public final class GlassesWiFiLink {
         guard token == generation else { return }
         step(.joining(attempt: attempt, of: maxJoinAttempts))
         GlassesLog.log("step 3: joining \"\(ssid)\" (attempt \(attempt)/\(maxJoinAttempts))")
+        // Remove any leftover configuration for this SSID before applying: a stale one
+        // can make `apply` report success without iOS actually associating again.
+        NEHotspotConfigurationManager.shared.getConfiguredSSIDs { configuredSSIDs in
+            DispatchQueue.main.async {
+                guard token == generation else { return }
+                if configuredSSIDs.contains(ssid) {
+                    GlassesLog.log("removing leftover Wi-Fi configuration for \"\(ssid)\" before joining")
+                    NEHotspotConfigurationManager.shared.removeConfiguration(forSSID: ssid)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        applyJoin(ssid: ssid, passphrase: passphrase, attempt: attempt,
+                                  lastError: lastError, token: token, step: step, completion: completion)
+                    }
+                } else {
+                    applyJoin(ssid: ssid, passphrase: passphrase, attempt: attempt,
+                              lastError: lastError, token: token, step: step, completion: completion)
+                }
+            }
+        }
+    }
+
+    /// Builds the hotspot configuration and applies it (the second half of `join`).
+    private static func applyJoin(ssid: String, passphrase: String, attempt: Int, lastError: String?,
+                                  token: Int, step: @escaping (Step) -> Void, completion: @escaping (Outcome) -> Void) {
+        guard token == generation else { return }
         let configuration = passphrase.isEmpty
             ? NEHotspotConfiguration(ssid: ssid)
             : NEHotspotConfiguration(ssid: ssid, passphrase: passphrase, isWEP: false)
