@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -76,6 +77,11 @@ class GlassesCubit extends Cubit<GlassesState> {
 
   void _handleEvent(Map<String, dynamic> event) {
     switch (event['event'] as String?) {
+      case 'log':
+        // Native glasses diagnostics (Wi-Fi join, hotspot, download) mirrored
+        // from the platform side so they print in the Flutter debug console.
+        debugPrint('[GlassesImport] ${event['message'] ?? ''}');
+        break;
       case 'scanResult':
         _onScanResult(event);
         break;
