@@ -51,6 +51,11 @@ import UIKit
     override init() {
         super.init()
         setupAudioSession()
+        // Mirror the native glasses diagnostics to Dart so they print in the
+        // Flutter debug console as `[GlassesImport] …` lines.
+        GlassesLog.forwarder = { [weak self] message in
+            self?.sendEvent(name: "log", data: ["message": message])
+        }
         QCGlassesBridge.shared.onBattery = { [weak self] level, charging in
             self?.sendEvent(name: "batteryUpdated", data: ["battery": level, "isCharging": charging])
         }
