@@ -457,11 +457,14 @@ import UIKit
 
     // MARK: - Media import (Wi‑Fi)
     //
-    // Same flow as the Android SDK, adapted to iOS (no Wi‑Fi Direct):
     // 1. Local Network permission (asked in the app, up front).
-    // 2. GlassesWiFiLink: open the glasses' Wi‑Fi over Bluetooth, wait until their hotspot is
-    //    really up, join it and confirm the join.
-    // 3. GlassesMediaDownloader: media.config + each file over HTTP from the glasses.
+    // 2. Primary route: the QCSDK's own download (`startSDKDownload`) — the SDK opens the
+    //    glasses' Wi‑Fi and joins it with its own hotspot manager, which handles the switch
+    //    away from the phone's Wi‑Fi by itself (the app's own join couldn't switch from some
+    //    networks and ended up asking the user to disconnect manually).
+    // 3. Fallback (only when the SDK route ends with an error before any file arrived):
+    //    GlassesWiFiLink (open the glasses' hotspot over Bluetooth, join it, confirm) +
+    //    GlassesMediaDownloader (media.config + each file over HTTP from the glasses).
     // 4. GlassesMediaNormalizer: unpack each file into a playable photo / video / voice note.
     // 5. Glasses back to normal mode, phone back to its usual Wi‑Fi.
 
@@ -475,6 +478,7 @@ import UIKit
         downloadFinished = false
         pendingNormalizations = 0
         currentImportFile = ""
+        sdkFallbackUsed = false
         importGeneration += 1
         let generation = importGeneration
 
@@ -496,7 +500,7 @@ import UIKit
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
                 guard let self = self, self.isCurrentImport(generation) else { return }
-                self.joinGlassesWiFi(generation: generation)
+                self.startSDKDownload(generation: generation)
             }
         }
         result(true)
@@ -507,6 +511,98 @@ import UIKit
 
     private func isCurrentImport(_ generation: Int) -> Bool {
         importing && generation == importGeneration
+    }
+
+    // MARK: - Media import via the vendor SDK (primary route)
+
+    /// Keeps the Flutter import watchdog alive while the SDK opens the glasses' Wi‑Fi and
+    /// joins it (the SDK reports nothing during that phase).
+    private var sdkKeepaliveTimer: Timer?
+    /// Files the SDK route delivered in the current import (decides the fallback below).
+    private var sdkFilesDownloaded = 0
+    /// The app's own Wi‑Fi flow runs at most once per import, as the SDK route's fallback.
+    private var sdkFallbackUsed = false
+
+    private func startSDKDownload(generation: Int) {
+        sdkFilesDownloaded = 0
+        GlassesLog.log("import: SDK download flow")
+        sendEvent(name: "importProgress", data: ["status": "openingWifi"])
+        // Same as the app's own flow: keep the glasses in transfer mode while their Wi‑Fi
+        // is being opened and joined (the SDK sends no heartbeat of its own on iOS).
+        if let peripheral = targetPeripheral {
+            GlassesTransferHeartbeat.start(peripheral: peripheral)
+        }
+        sdkKeepaliveTimer?.invalidate()
+        sdkKeepaliveTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+            guard let self = self, self.isCurrentImport(generation) else { return }
+            self.sendEvent(name: "importProgress", data: ["status": "openingWifi"])
+        }
+        QCGlassesBridge.shared.downloadMedia(progress: { [weak self] percent in
+            guard let self = self, self.isCurrentImport(generation) else { return }
+            self.stopSDKKeepalive()
+            self.markImportStarted()
+            self.sendEvent(name: "importProgress", data: [
+                "status": "downloading", "file": self.currentImportFile, "progress": percent,
+            ])
+        }, file: { [weak self] url, index, total in
+            guard let self = self, self.isCurrentImport(generation) else { return }
+            self.stopSDKKeepalive()
+            self.markImportStarted()
+            self.sdkFilesDownloaded += 1
+            self.currentImportFile = url.lastPathComponent
+            self.sendEvent(name: "importProgress", data: ["status": "count", "index": index, "total": total])
+            // Copy the file out of the SDK's cache right away: the SDK may clean it up
+            // after its callback returns.
+            guard let staged = GlassesMediaNormalizer.stage(url) else {
+                GlassesLog.log("import: couldn't stage the SDK's file \(url.lastPathComponent)")
+                self.sendEvent(name: "importProgress", data: [
+                    "status": "fileError", "fileType": 0, "file": url.lastPathComponent,
+                ])
+                return
+            }
+            self.pendingNormalizations += 1
+            GlassesMediaNormalizer.normalize(staged) { [weak self] media in
+                guard let self = self else { return }
+                self.pendingNormalizations -= 1
+                guard generation == self.importGeneration else { return }
+                if let media = media {
+                    self.sendEvent(name: "mediaImported", data: media)
+                } else {
+                    self.sendEvent(name: "importProgress", data: [
+                        "status": "fileError", "fileType": 0, "file": staged.lastPathComponent,
+                    ])
+                }
+                self.finishImportIfDone()
+            }
+        }, finish: { [weak self] code in
+            guard let self = self, self.isCurrentImport(generation) else { return }
+            self.stopSDKKeepalive()
+            if let code = code, code != 2006 {
+                GlassesLog.log("import: SDK download ended with error \(code) after \(self.sdkFilesDownloaded) file(s)")
+                if self.sdkFilesDownloaded == 0, !self.sdkFallbackUsed {
+                    // Nothing arrived through the SDK: run the app's own flow once before
+                    // giving up (it is also the flow that works with Wi‑Fi off).
+                    self.sdkFallbackUsed = true
+                    GlassesLog.log("import: falling back to the app's own Wi-Fi flow")
+                    self.joinGlassesWiFi(generation: generation)
+                } else {
+                    self.failImport(code: code, detail: "SDK download failed (code \(code))")
+                }
+                return
+            }
+            if code == 2006 {
+                // The SDK's "file list is empty": no new media — a normal end, not a failure.
+                GlassesLog.log("import: SDK reports no media on the glasses")
+            }
+            self.markImportStarted()
+            self.downloadFinished = true
+            self.finishImportIfDone()
+        })
+    }
+
+    private func stopSDKKeepalive() {
+        sdkKeepaliveTimer?.invalidate()
+        sdkKeepaliveTimer = nil
     }
 
     private func joinGlassesWiFi(generation: Int) {
@@ -631,6 +727,7 @@ import UIKit
 
     private func finishImport() {
         importing = false
+        stopSDKKeepalive()
         GlassesLog.log("import complete")
         sendEvent(name: "importProgress", data: ["status": "complete"])
         restoreAfterTransfer()
@@ -638,6 +735,7 @@ import UIKit
 
     private func failImport(code: Int, detail: String? = nil) {
         importing = false
+        stopSDKKeepalive()
         downloader?.cancel()
         downloader = nil
         GlassesLog.log("import failed: code \(code)\(detail.map { " — \($0)" } ?? "")")
@@ -649,6 +747,7 @@ import UIKit
 
     private func cancelImport() {
         importing = false
+        stopSDKKeepalive()
         importGeneration += 1
         downloader?.cancel()
         downloader = nil
